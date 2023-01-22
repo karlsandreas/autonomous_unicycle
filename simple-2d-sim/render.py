@@ -30,6 +30,8 @@ TORQUE_SIZE = 0.5
 
 CAMERA_TAU = 0.1
 
+MIN_DT = 0.001
+
 # Translating from/to pixel-space to/from unit-space
 class ScreenSpaceTranslator:
     def __init__(
@@ -139,7 +141,11 @@ class Render:
             pygame.display.flip()
 
             dt = time.time() - last_t
+            while dt > MIN_DT:
+                self.step(MIN_DT)
+                dt -= MIN_DT
             self.step(dt)
+
             last_t = time.time()
 
     def draw_grid(self) -> None:
@@ -265,8 +271,8 @@ class Render:
             torque_wanted, g, r0, R1, m0, m1, motor_tau = self.sim.params
             x, x_d, θ1, θ1_d, torque = self.sim.state
 
-            wanted = np.array([x, r0])
-            self.space.view_center = self.space.view_center + (wanted - self.space.view_center) * dt / CAMERA_TAU
+            pos = np.array([x, r0])
+            expected = pos + CAMERA_TAU * np.array([x_d, 0])
 
 screen = pygame.display.set_mode((1000, 800))
 
