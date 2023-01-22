@@ -2,6 +2,9 @@ from typing import Tuple
 
 import pygame
 import numpy as np
+import random
+
+from pidcontroller import PIDcontroller
 
 import time
 
@@ -14,6 +17,7 @@ WHEEL_COLOR = (200, 200, 200)
 SPOKE_COLOR = (150, 150, 150)
 
 TORQUE_COLOR = (255, 0, 0)
+SETPOINT_COLOR = (0, 255, 0)
 
 # all relative to wheel diameter
 OUTSIDE_THICKNESS = 0.2
@@ -72,6 +76,10 @@ DEFAULT_SIM = SimulationState(
         0, # motor_torque
     ]),
 )
+DEFAULT_PID = PIDcontroller(14.0, #Kp
+                            0.9, #Ki
+                            6.0,#Kd
+                            np.pi/2)   #setpoint, in this case, the angle
 
 # Space = switch view mode (follow, free)
 #   right-click drag = pan in free mode
@@ -84,13 +92,15 @@ class Render:
 
         sim: SimulationState,
         integrator: RungeKuttaIntegrator,
+        pid: PIDcontroller,
     ) -> None:
         self.screen = screen
 
         self.sim = sim
         self.integrator = integrator
-
+        self.pid = pid
         self.done = False
+
 
         self.space = ScreenSpaceTranslator(200, np.array([0., 0.,]), self.screen.get_size())
 
@@ -227,14 +237,28 @@ class Render:
             3,
         )
 
-    def step(self, dt: float) -> None:
-        if pygame.key.get_pressed()[pygame.K_LEFT]:
-            self.sim.params[0] = 3
-        elif pygame.key.get_pressed()[pygame.K_RIGHT]:
-            self.sim.params[0] = -3
-        else:
-            self.sim.params[0] = 0
+        # draw setpoint
 
+        setpoint_center = wheel_center + R1 * np.array([np.cos(self.pid.setpoint), np.sin(self.pid.setpoint)])
+        pygame.draw.line(
+            self.screen,
+            SETPOINT_COLOR,
+            self.space.unit2screen(wheel_center),
+            self.space.unit2screen(setpoint_center),
+            2,
+        )
+
+    def step(self, dt: float) -> None:
+        noise = random.uniform(-1,1) * dt  #Simulation sensor noise
+        angle_with_noise = self.sim.state[2] + noise
+
+        pidout = -self.pid(angle_with_noise,dt)
+        self.sim.params[0] = pidout
+
+        if pygame.key.get_pressed()[pygame.K_LEFT]:
+            self.pid.setpoint += dt * 0.1
+        elif pygame.key.get_pressed()[pygame.K_RIGHT]:
+            self.pid.setpoint -= dt * 0.1
         self.sim = self.integrator.step(self.sim, dt * self.speed_mult).limit()
 
         if self.mode == "follow":
@@ -246,5 +270,7 @@ class Render:
 
 screen = pygame.display.set_mode((1000, 800))
 
-r = Render(screen, DEFAULT_SIM, RungeKuttaIntegrator())
+r = Render(screen, DEFAULT_SIM, RungeKuttaIntegrator(), DEFAULT_PID)
+
+
 r.run()
