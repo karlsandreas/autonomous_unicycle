@@ -60,6 +60,28 @@ class ScreenSpaceTranslator:
         x2, y2 = self.unit2screen(c2)
         return pygame.Rect(x1, y1, x2 - x1, y2 - y1)
 
+class Regulator:
+    def __init__(
+        self,
+        angle_pid: PIDcontroller,
+    ):
+        self.angle_pid = angle_pid
+
+    # Returns motor torque to apply
+    def __call__(self, sim: SimulationState, dt: float) -> float:
+        torque_wanted, g, r0, R1, m0, m1, motor_tau = sim.params
+        x, x_d, θ1, θ1_d, torque = sim.state
+
+        # Calculate torque to counteract the static force of gravity on the top load
+        F_g = m1 * g
+        F_g1 = F_g * np.cos(θ1)
+        torque_0 = -F_g1 / (R1 * m1)
+
+        delta_torque = -self.angle_pid(θ1, dt)
+
+        return torque_0 + delta_torque
+
+
 DEFAULT_SIM = SimulationState(
     np.array([
         0, # torque_wanted
@@ -68,20 +90,25 @@ DEFAULT_SIM = SimulationState(
         0.8, # R1
         1, # m0
         1, # m1
-        0.1, # motor_tau
+        0.001, # motor_tau
     ]),
     np.array([
         0, # x
         0, # x_d
-        np.pi / 2, # Θ1
+        np.pi / 2 + 0.1, # Θ1
         0, # Θ1_d
         0, # motor_torque
     ]),
 )
-DEFAULT_PID = PIDcontroller(14.0, #Kp
-                            0.9, #Ki
-                            6.0,#Kd
-                            np.pi/2)   #setpoint, in this case, the angle
+
+DEFAULT_REGULATOR = Regulator(
+    angle_pid=PIDcontroller(
+        12.0, #Kp
+        2.0, #Ki
+        4.0, #Kd
+        np.pi/2,
+    )
+)
 
 # Space = switch view mode (follow, free)
 #   right-click drag = pan in free mode
@@ -94,15 +121,14 @@ class Render:
 
         sim: SimulationState,
         integrator: RungeKuttaIntegrator,
-        pid: PIDcontroller,
+        regulator: Regulator,
     ) -> None:
         self.screen = screen
 
         self.sim = sim
         self.integrator = integrator
-        self.pid = pid
+        self.regulator = regulator
         self.done = False
-
 
         self.space = ScreenSpaceTranslator(200, np.array([0., 0.,]), self.screen.get_size())
 
@@ -243,28 +269,29 @@ class Render:
             3,
         )
 
-        # draw setpoint
+        # draw angle setpoint
 
-        setpoint_center = wheel_center + R1 * np.array([np.cos(self.pid.setpoint), np.sin(self.pid.setpoint)])
+        angle_setpoint_center = wheel_center + R1 * np.array([np.cos(self.regulator.angle_pid.setpoint), np.sin(self.regulator.angle_pid.setpoint)])
         pygame.draw.line(
             self.screen,
             SETPOINT_COLOR,
             self.space.unit2screen(wheel_center),
-            self.space.unit2screen(setpoint_center),
+            self.space.unit2screen(angle_setpoint_center),
             2,
         )
 
     def step(self, dt: float) -> None:
-        noise = random.uniform(-1,1) * dt  #Simulation sensor noise
-        angle_with_noise = self.sim.state[2] + noise
-
-        pidout = -self.pid(angle_with_noise,dt)
-        self.sim.params[0] = pidout
-
         if pygame.key.get_pressed()[pygame.K_LEFT]:
-            self.pid.setpoint += dt * 0.1
+            self.regulator.angle_pid.setpoint += dt * 0.3
         elif pygame.key.get_pressed()[pygame.K_RIGHT]:
-            self.pid.setpoint -= dt * 0.1
+            self.regulator.angle_pid.setpoint -= dt * 0.3
+
+        noise = np.zeros_like(self.sim.state)
+        # noise[2] = random.uniform(-1,1) * dt # Apply sensor noise to angle
+
+        applied_torque = self.regulator(self.sim.apply_velocities(noise), dt)
+        self.sim.params[0] = applied_torque
+
         self.sim = self.integrator.step(self.sim, dt * self.speed_mult).limit()
 
         if self.mode == "follow":
@@ -272,12 +299,12 @@ class Render:
             x, x_d, θ1, θ1_d, torque = self.sim.state
 
             pos = np.array([x, r0])
-            expected = pos + CAMERA_TAU * np.array([x_d, 0])
+            expected = pos + CAMERA_TAU * 0.8 * np.array([x_d, 0])
             self.space.view_center = self.space.view_center + (expected - self.space.view_center) * dt / CAMERA_TAU
 
 screen = pygame.display.set_mode((1000, 800))
 
-r = Render(screen, DEFAULT_SIM, RungeKuttaIntegrator(), DEFAULT_PID)
+r = Render(screen, DEFAULT_SIM, RungeKuttaIntegrator(), DEFAULT_REGULATOR)
 
 
 r.run()
