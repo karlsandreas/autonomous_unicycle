@@ -273,6 +273,7 @@ class Render:
 
             pos = np.array([x, r0])
             expected = pos + CAMERA_TAU * np.array([x_d, 0])
+            self.space.view_center = self.space.view_center + (expected - self.space.view_center) * dt / CAMERA_TAU
 
 screen = pygame.display.set_mode((1000, 800))
 
