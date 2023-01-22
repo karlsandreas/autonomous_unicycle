@@ -377,6 +377,7 @@ class Render:
 pygame.init()
 pygame.font.init()
 screen = pygame.display.set_mode((1000, 800), pygame.RESIZABLE)
+pygame.display.set_caption("Autonomous Unicycle")
 
 r = Render(screen, DEFAULT_SIM, RungeKuttaIntegrator(), DEFAULT_REGULATOR)
 
