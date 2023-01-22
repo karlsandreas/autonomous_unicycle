@@ -4,7 +4,7 @@ import pygame
 import numpy as np
 import random
 
-from pidcontroller import PIDcontroller
+from pidcontroller import PIDController
 
 import time
 
@@ -63,7 +63,7 @@ class ScreenSpaceTranslator:
 class Regulator:
     def __init__(
         self,
-        angle_pid: PIDcontroller,
+        angle_pid: PIDController,
     ):
         self.angle_pid = angle_pid
 
@@ -95,14 +95,14 @@ DEFAULT_SIM = SimulationState(
     np.array([
         0, # x
         0, # x_d
-        np.pi / 2 + 0.1, # Θ1
+        np.pi / 2, # Θ1
         0, # Θ1_d
         0, # motor_torque
     ]),
 )
 
 DEFAULT_REGULATOR = Regulator(
-    angle_pid=PIDcontroller(
+    angle_pid=PIDController(
         12.0, #Kp
         2.0, #Ki
         4.0, #Kd
