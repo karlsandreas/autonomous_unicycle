@@ -35,7 +35,7 @@ class SimulationParameters:
 class ControlSignals:
     def __init__(
         self,
-        motor_torque_signal: float,
+        motor_torque_signal: float = 0,
     ):
         self.motor_torque_signal = motor_torque_signal
 
@@ -124,7 +124,7 @@ class Simulator:
         k1 = self.state_derivative(state, signals)
         k2 = self.state_derivative(state.apply_velocities(k1, dt / 2), signals)
         k3 = self.state_derivative(state.apply_velocities(k2, dt / 2), signals)
-        k4 = self.state_derivative(state.apply_velocities(k2, dt), signals)
+        k4 = self.state_derivative(state.apply_velocities(k3, dt), signals)
         res = state.apply_velocities(k1, dt/6).apply_velocities(k2, dt/3).apply_velocities(k3, dt/3).apply_velocities(k4, dt/6)
         self.limit(res, signals)
         return res
