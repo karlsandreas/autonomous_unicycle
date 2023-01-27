@@ -8,7 +8,7 @@ from pidcontroller import PIDController
 
 import time
 
-from sim import SimulationState, RungeKuttaIntegrator
+from sim import SimulationState, SimulationParameters, ControlSignals, Simulator
 from fmt import fmt_unit
 
 # Parameters for rendering
@@ -68,54 +68,20 @@ class ScreenSpaceTranslator:
         x2, y2 = self.unit2screen(c2)
         return pygame.Rect(x1, y1, x2 - x1, y2 - y1)
 
-class Regulator:
-    def __init__(
-        self,
-        angle_pid: PIDController,
-    ):
-        self.angle_pid = angle_pid
-
-    # Returns motor torque to apply
-    def __call__(self, sim: SimulationState, dt: float) -> float:
-        torque_wanted, g, r0, R1, m0, m1, motor_tau = sim.params
-        x, x_d, θ1, θ1_d, torque = sim.state
-
-        # Calculate torque to counteract the static force of gravity on the top load
-        F_g = m1 * g
-        F_g1 = F_g * np.cos(θ1)
-        torque_0 = -F_g1 / (R1 * m1)
-
-        delta_torque = -self.angle_pid(θ1, dt)
-
-        return torque_0 + delta_torque
-
-
-DEFAULT_SIM = SimulationState(
-    np.array([
-        0, # torque_wanted
-        9.82, # g
-        0.28, # r0
-        0.8, # R1
-        1, # m0
-        1, # m1
-        0.001, # motor_tau
-    ]),
-    np.array([
-        0, # x
-        0, # x_d
-        np.pi / 2, # Θ1
-        0, # Θ1_d
-        0, # motor_torque
-    ]),
+INIT_STATE = SimulationState(
+    wheel_position = 0,
+    wheel_position_d = 0,
+    top_angle = 0,
+    top_angle_d = 0,
+    motor_torque = 0,
 )
 
-DEFAULT_REGULATOR = Regulator(
-    angle_pid=PIDController(
-        12.0, #Kp
-        2.0, #Ki
-        4.0, #Kd
-        np.pi/2,
-    )
+DEFAULT_PARAMETERS = SimulationParameters(
+    wheel_rad = 0.28,
+    wheel_mass = 5,
+    top_height = 0.8,
+    top_mass = 1,
+    motor_reaction_speed = 0.1,
 )
 
 # Space = switch view mode (follow, free)
@@ -127,26 +93,21 @@ class Render:
         self,
         screen: pygame.surface.Surface,
 
-        sim: SimulationState,
-        integrator: RungeKuttaIntegrator,
-        regulator: Regulator,
+        simulator: Simulator,
+        init_state: SimulationState,
     ) -> None:
         self.screen = screen
 
-        self.sim = sim
-        self.integrator = integrator
-        self.regulator = regulator
+        self.sim = simulator
+        self.init_state = self.state = init_state
+
         self.done = False
-
         self.space = ScreenSpaceTranslator(200, np.array([0., 0.,]), self.screen.get_size())
-
         self.mode = "follow" # "follow" follows the vehicle, "free_cam" allows for scrolling around with right-click
-
-        self.speed_mult = 0.5
+        self.speed_mult = 1
 
         self.font = pygame.font.Font(*INFO_FONT)
-
-        self.info_height = int(self.screen.get_height() * 0.3)
+        self.info_height = 300
         # used in self.draw, size is set when needed, according to self.screen_split_at
         self.surf_render = pygame.surface.Surface((1, 1))
         self.surf_info = pygame.surface.Surface((1, 1))
@@ -181,7 +142,7 @@ class Render:
                         elif self.mode == "follow":
                             self.mode = "free_cam"
                     if event.key == pygame.K_TAB:
-                        self.sim = DEFAULT_SIM
+                        self.state = self.init_state
 
             self.draw()
 
@@ -206,25 +167,22 @@ class Render:
 
 
     def step(self, dt: float) -> None:
+        control_signal = ControlSignals(motor_torque_signal=0.0)
+
         if pygame.key.get_pressed()[pygame.K_LEFT]:
-            self.regulator.angle_pid.setpoint += dt * 0.3
+            mult = 1 if pygame.key.get_pressed()[pygame.K_LSHIFT] else 3
+            control_signal.motor_torque_signal += mult
         elif pygame.key.get_pressed()[pygame.K_RIGHT]:
-            self.regulator.angle_pid.setpoint -= dt * 0.3
+            mult = 1 if pygame.key.get_pressed()[pygame.K_LSHIFT] else 3
+            control_signal.motor_torque_signal -= mult
 
-        noise = np.zeros_like(self.sim.state)
-        # noise[2] = random.gauss(0,0.1) * dt ** 0.5 # Apply sensor noise to angle
 
-        applied_torque = self.regulator(self.sim.apply_velocities(noise), dt)
-        self.sim.params[0] = applied_torque
-
-        self.sim = self.integrator.step(self.sim, dt * self.speed_mult).limit()
+        self.state = self.sim.step(self.state, control_signal, dt)
 
         if self.mode == "follow":
-            torque_wanted, g, r0, R1, m0, m1, motor_tau = self.sim.params
-            x, x_d, θ1, θ1_d, torque = self.sim.state
+            pos = np.array([self.state.wheel_position, self.sim.params.wheel_rad])
 
-            pos = np.array([x, r0])
-            expected = pos + CAMERA_TAU * 0.8 * np.array([x_d, 0])
+            expected = pos + CAMERA_TAU * 0.8 * np.array([self.state.wheel_position_d, 0])
             self.space.view_center = self.space.view_center + (expected - self.space.view_center) * dt / CAMERA_TAU
 
     def draw(self) -> None:
@@ -247,21 +205,21 @@ class Render:
     def render(self, surf: pygame.surface.Surface) -> None:
         self.space.set_screen_size(surf.get_size())
 
-        torque_wanted, g, r0, R1, m0, m1, motor_tau = self.sim.params
-        x, x_d, θ1, θ1_d, torque = self.sim.state
-
         surf.fill((0, 0, 0))
         self.draw_grid(surf)
 
-        wheel_center = np.array([x, r0])
+        wheel_center = np.array([self.state.wheel_position, self.sim.params.wheel_rad])
+        wx, wy = self.space.unit2screen(wheel_center)
+        if wx < -surf.get_width() or wx > surf.get_width() * 2 or wy < -surf.get_height() or wy > surf.get_height() * 2:
+            return
 
         # spokes
         for spoke in range(N_SPOKES):
             inherit_angle = 2 * np.pi * spoke / N_SPOKES
-            angle = inherit_angle - x / r0
+            angle = inherit_angle - self.state.wheel_position / self.sim.params.wheel_rad
 
-            r_out = r0 * (1 - OUTSIDE_THICKNESS * 0.5)
-            r_in = r0 * INNER_SIZE * (1 - INNER_THICKNESS * 0.5)
+            r_out = self.sim.params.wheel_rad * (1 - OUTSIDE_THICKNESS * 0.5)
+            r_in = self.sim.params.wheel_rad * INNER_SIZE * (1 - INNER_THICKNESS * 0.5)
 
             rot = np.array([np.cos(angle), np.sin(angle)])
 
@@ -270,67 +228,90 @@ class Render:
                 SPOKE_COLOR,
                 self.space.unit2screen(wheel_center + r_out * rot),
                 self.space.unit2screen(wheel_center + r_in * rot),
-                int(r0 * SPOKE_SIZE * self.space.pixels_per_unit + 0.5),
+                int(self.sim.params.wheel_rad * SPOKE_SIZE * self.space.pixels_per_unit + 0.5),
             )
+
         # outer
         pygame.draw.circle(
             surf,
             WHEEL_COLOR,
             self.space.unit2screen(wheel_center),
-            r0 * self.space.pixels_per_unit,
-            int(OUTSIDE_THICKNESS * r0 * self.space.pixels_per_unit + 0.5),
+            self.sim.params.wheel_rad * self.space.pixels_per_unit,
+            int(self.sim.params.wheel_rad * OUTSIDE_THICKNESS * self.space.pixels_per_unit + 0.5),
         )
+
         # inner
         pygame.draw.circle(
             surf,
             WHEEL_COLOR,
             self.space.unit2screen(wheel_center),
-            r0 * INNER_SIZE * self.space.pixels_per_unit,
-            int(INNER_SIZE * INNER_THICKNESS * r0 * self.space.pixels_per_unit + 0.5),
+            self.sim.params.wheel_rad * INNER_SIZE * self.space.pixels_per_unit,
+            int(self.sim.params.wheel_rad * INNER_SIZE * INNER_THICKNESS * self.space.pixels_per_unit + 0.5),
         )
-        # torque
-        top_left = wheel_center - r0 * TORQUE_SIZE * np.array([0.5, -0.5])
-        bottom_right = wheel_center + r0 * TORQUE_SIZE * np.array([0.5, -0.5])
 
-        angle = torque
+        # torque
+        torque_rect_top_left = wheel_center - self.sim.params.wheel_rad * TORQUE_SIZE * np.array([0.5, -0.5])
+        torque_rect_bottom_right = wheel_center + self.sim.params.wheel_rad * TORQUE_SIZE * np.array([0.5, -0.5])
+
+        angle = self.state.motor_torque
 
         start, end = (np.pi / 2, np.pi / 2 + angle) if angle > 0 else (np.pi/2 + angle, np.pi / 2)
 
         pygame.draw.arc(
             surf,
             TORQUE_COLOR,
-            self.space.units2rect(top_left, bottom_right),
+            self.space.units2rect(torque_rect_top_left, torque_rect_bottom_right),
             start, end,
-            int(r0 * TORQUE_SIZE * 0.3 * self.space.pixels_per_unit), # this is incredibly ugly for some reason
+            int(self.sim.params.wheel_rad * TORQUE_SIZE * 0.3 * self.space.pixels_per_unit), # this is incredibly ugly for some reason
         )
 
-        # draw weight
-        box_center = wheel_center + R1 * np.array([np.cos(θ1), np.sin(θ1)])
+        # draw top
+        top_angle = self.state.top_angle
+        top_center = wheel_center + self.sim.params.top_height * np.array([-np.sin(top_angle), np.cos(top_angle)])
         pygame.draw.circle(
             surf,
             WHEEL_COLOR,
-            self.space.unit2screen(box_center),
+            self.space.unit2screen(top_center),
             0.1 * self.space.pixels_per_unit,
         )
 
         pygame.draw.line(
             surf,
             SPOKE_COLOR,
-            self.space.unit2screen(box_center),
+            self.space.unit2screen(top_center),
             self.space.unit2screen(wheel_center),
             3,
         )
 
         # draw angle setpoint
 
-        angle_setpoint_center = wheel_center + R1 * np.array([np.cos(self.regulator.angle_pid.setpoint), np.sin(self.regulator.angle_pid.setpoint)])
-        pygame.draw.line(
-            surf,
-            SETPOINT_COLOR,
-            self.space.unit2screen(wheel_center),
-            self.space.unit2screen(angle_setpoint_center),
-            2,
-        )
+        # angle_setpoint_center = wheel_center + R1 * np.array([np.cos(self.regulator.angle_pid.setpoint), np.sin(self.regulator.angle_pid.setpoint)])
+        # pygame.draw.line(
+        #     surf,
+        #     SETPOINT_COLOR,
+        #     self.space.unit2screen(wheel_center),
+        #     self.space.unit2screen(angle_setpoint_center),
+        #     2,
+        # )
+
+        # position_setpoint_x, _ = self.space.unit2screen(np.array([self.regulator.position_setpoint, 0]))
+        # pygame.draw.line(
+        #     surf,
+        #     SETPOINT_COLOR,
+        #     (position_setpoint_x, 0),
+        #     (position_setpoint_x, surf.get_height()),
+        #     2,
+        # )
+
+        # if self.regulator.xi != None:
+        #     position_setpoint_x, _ = self.space.unit2screen(np.array([self.regulator.xi, 0]))
+        #     pygame.draw.line(
+        #         surf,
+        #         (255, 255, 255),
+        #         (position_setpoint_x, 0),
+        #         (position_setpoint_x, surf.get_height()),
+        #         2,
+        #     )
 
     def draw_grid(self, surf: pygame.surface.Surface) -> None:
         (x0, y0), (x1, y1) = self.space.screen2unit((0, 0)), self.space.screen2unit(surf.get_size())
@@ -353,19 +334,17 @@ class Render:
             )
 
     def draw_info(self, surf: pygame.surface.Surface) -> None:
-        torque_wanted, g, r0, R1, m0, m1, motor_tau = self.sim.params
-        x, x_d, θ1, θ1_d, torque = self.sim.state
-
         surf.fill((20, 20, 20))
 
         y = 10
         for name, val, unit in [
             ("Frame rate", self.current_fps, "FPS"),
             ("Tick time", self.avg_tick_time, "s"),
-            ("Position", x, "m"),
-            ("Speed", x_d * 3600, "m/h"),
-            ("Angle", 90 - θ1 / np.pi * 180, "deg"),
-            ("Motor torque", torque, "Nm"),
+            ("Position", self.state.wheel_position, "m"),
+            ("Speed", self.state.wheel_position_d * 3600, "m/h"),
+            # ("Acceleration", x_dd, "m/s²"),
+            ("Angle", self.state.top_angle / np.pi * 180, "deg"),
+            ("Motor torque", self.state.motor_torque, "Nm"),
         ]:
             text = f"{name}: {fmt_unit(val, unit)}"
 
@@ -376,10 +355,14 @@ class Render:
 
 pygame.init()
 pygame.font.init()
-screen = pygame.display.set_mode((1000, 800), pygame.RESIZABLE)
+screen = pygame.display.set_mode((1000, 600), pygame.RESIZABLE)
 pygame.display.set_caption("Autonomous Unicycle")
 
-r = Render(screen, DEFAULT_SIM, RungeKuttaIntegrator(), DEFAULT_REGULATOR)
+r = Render(
+    screen,
+    Simulator(DEFAULT_PARAMETERS),
+    INIT_STATE,
+)
 
 
 r.run()
