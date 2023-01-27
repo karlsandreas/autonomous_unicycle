@@ -80,13 +80,13 @@ class Simulator:
         force_on_wheel_center = -gravity_top_parallel * np.sin(state.top_angle) # Positive = rightwards
 
         wheel_inertia = self.params.wheel_mass * self.params.wheel_rad ** 2
-        # Ignoring static force on wheel center from top
+        # Ignoring the indirect static force on wheel center from top
         wheel_angle_dd = -state.motor_torque / wheel_inertia
 
         # Inertia around wheel center
-        top_inertia = self.params.top_mass * self.params.top_mass ** 2
+        top_inertia = self.params.top_mass * self.params.top_height ** 2
         top_angle_dd = \
-            gravity_top_norm * self.params.top_mass / top_inertia \
+            gravity_top_norm * self.params.top_height / top_inertia \
             + state.motor_torque / top_inertia
 
 
