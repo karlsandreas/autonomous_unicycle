@@ -22,7 +22,7 @@ SPOKE_COLOR = (150, 150, 150)
 TORQUE_COLOR = (255, 0, 0)
 SETPOINT_COLOR = (0, 255, 0)
 
-INFO_FONT = "ShareTech.ttf", 30 # path, size
+INFO_FONT = "autonomous_unicycle\simple-2d-sim\ShareTech.ttf", 30 # path, size
 
 # all relative to wheel diameter
 OUTSIDE_THICKNESS = 0.2
@@ -89,6 +89,46 @@ class Regulator:
 
         return torque_0 + delta_torque
 
+class Regulator_Speed:
+    def __init__(
+        self,
+        speed_pid: PIDController,
+    ):
+        self.speed_pid = speed_pid
+
+
+    def __call__(self, sim: SimulationState, dt: float) -> float:
+        torque_wanted, g, r0, R1, m0, m1, motor_tau = sim.params
+        x, x_d, θ1, θ1_d, torque = sim.state
+ 
+        delta_speed = θ1_d * r0 * dt
+        est_speed = x_d + delta_speed
+        delta_angle = np.pi/2 - float(self.speed_pid(est_speed, dt)) 
+
+        return delta_angle
+
+class Regulator_Long:
+    def __init__(
+        self,
+        long_pid: PIDController,
+    ):
+        self.long_pid = long_pid
+
+
+    def __call__(self, sim: SimulationState, dt: float) -> float:
+        torque_wanted, g, r0, R1, m0, m1, motor_tau = sim.params
+        x, x_d, θ1, θ1_d, torque = sim.state
+ 
+        est_long = x_d * np.cos(θ1) * dt 
+        
+
+        delta_long = est_long + x 
+         
+
+        return self.long_pid(delta_long, dt)
+
+
+
 
 DEFAULT_SIM = SimulationState(
     np.array([
@@ -118,6 +158,27 @@ DEFAULT_REGULATOR = Regulator(
     )
 )
 
+#Regulator for speed controll, setpoint is m/s 
+DEFAULT_REGULATOR_SPEED = Regulator_Speed(
+    speed_pid=PIDController(
+        0.008, #Kp
+        0.02, #Ki
+        0.000002, #Kd
+        0.0,
+    )
+)
+
+#Regulator for speed controll, setpoint is m/s 
+DEFAULT_REGULATOR_LONG = Regulator_Long(
+    long_pid=PIDController(
+        1, #Kp
+        0.9, #Ki
+        0.0000001, #Kd
+        0.0,
+    )
+)
+
+
 # Space = switch view mode (follow, free)
 #   right-click drag = pan in free mode
 # Tab = reset simulation
@@ -129,13 +190,18 @@ class Render:
 
         sim: SimulationState,
         integrator: RungeKuttaIntegrator,
-        regulator: Regulator,
+        regulator_angle: Regulator,
+        regulator_speed: Regulator_Speed,
+        regulator_long: Regulator_Long
     ) -> None:
         self.screen = screen
 
         self.sim = sim
         self.integrator = integrator
-        self.regulator = regulator
+        self.regulator_angle = regulator_angle
+        self.regulator_speed = regulator_speed
+        self.regulator_speed.speed_pid.init_limits(5.0,-5.0)
+        self.regulator_long = regulator_long
         self.done = False
 
         self.space = ScreenSpaceTranslator(200, np.array([0., 0.,]), self.screen.get_size())
@@ -206,15 +272,32 @@ class Render:
 
 
     def step(self, dt: float) -> None:
+
+
+
         if pygame.key.get_pressed()[pygame.K_LEFT]:
-            self.regulator.angle_pid.setpoint += dt * 0.3
+            self.regulator_long.long_pid.setpoint -= 5 *dt #m
         elif pygame.key.get_pressed()[pygame.K_RIGHT]:
-            self.regulator.angle_pid.setpoint -= dt * 0.3
+            self.regulator_long.long_pid.setpoint += 5 *dt #m
+        #if pygame.key.get_pressed()[pygame.K_DOWN]:
+        #    self.regulator_speed.speed_pid.setpoint += 2 * dt
+        #elif pygame.key.get_pressed()[pygame.K_UP]:
+        #    self.regulator_speed.speed_pid.setpoint -= 2 * dt
+
+
 
         noise = np.zeros_like(self.sim.state)
-        # noise[2] = random.gauss(0,0.1) * dt ** 0.5 # Apply sensor noise to angle
+        # noise[2] = random.gauss(0,0.1) * dt ** 0.5 # Apply sensor noise to angle¨
 
-        applied_torque = self.regulator(self.sim.apply_velocities(noise), dt)
+
+        applied_speed = self.regulator_long(self.sim.apply_velocities(noise),dt)
+        self.regulator_speed.speed_pid.setpoint = applied_speed
+
+        applied_angle = self.regulator_speed(self.sim.apply_velocities(noise),dt)  
+        self.regulator_angle.angle_pid.setpoint = applied_angle 
+
+        applied_torque  = self.regulator_angle(self.sim.apply_velocities(noise), dt)
+
         self.sim.params[0] = applied_torque
 
         self.sim = self.integrator.step(self.sim, dt * self.speed_mult).limit()
@@ -323,7 +406,7 @@ class Render:
 
         # draw angle setpoint
 
-        angle_setpoint_center = wheel_center + R1 * np.array([np.cos(self.regulator.angle_pid.setpoint), np.sin(self.regulator.angle_pid.setpoint)])
+        angle_setpoint_center = wheel_center + R1 * np.array([np.cos(self.regulator_angle.angle_pid.setpoint), np.sin(self.regulator_angle.angle_pid.setpoint)])
         pygame.draw.line(
             surf,
             SETPOINT_COLOR,
@@ -355,6 +438,9 @@ class Render:
     def draw_info(self, surf: pygame.surface.Surface) -> None:
         torque_wanted, g, r0, R1, m0, m1, motor_tau = self.sim.params
         x, x_d, θ1, θ1_d, torque = self.sim.state
+        set_speed = self.regulator_speed.speed_pid.setpoint
+        set_angle = self.regulator_angle.angle_pid.setpoint
+        set_long = self.regulator_long.long_pid.setpoint
 
         surf.fill((20, 20, 20))
 
@@ -366,6 +452,9 @@ class Render:
             ("Speed", x_d * 3600, "m/h"),
             ("Angle", 90 - θ1 / np.pi * 180, "deg"),
             ("Motor torque", torque, "Nm"),
+            ("Setpoint speed", set_speed * 3600 , "m/h"),
+            ("Setpoint angle", 90 - set_angle / np.pi * 180 , "deg"),
+            ("Setpoint long", set_long, "m")
         ]:
             text = f"{name}: {fmt_unit(val, unit)}"
 
@@ -376,10 +465,10 @@ class Render:
 
 pygame.init()
 pygame.font.init()
-screen = pygame.display.set_mode((1000, 800), pygame.RESIZABLE)
+screen = pygame.display.set_mode((1000, 1100), pygame.RESIZABLE)
 pygame.display.set_caption("Autonomous Unicycle")
 
-r = Render(screen, DEFAULT_SIM, RungeKuttaIntegrator(), DEFAULT_REGULATOR)
+r = Render(screen, DEFAULT_SIM, RungeKuttaIntegrator(), DEFAULT_REGULATOR, DEFAULT_REGULATOR_SPEED, DEFAULT_REGULATOR_LONG)
 
 
 r.run()
