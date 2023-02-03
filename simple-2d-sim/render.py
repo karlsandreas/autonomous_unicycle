@@ -104,7 +104,7 @@ class Render:
         self.done = False
         self.space = ScreenSpaceTranslator(200, np.array([0., 0.,]), self.screen.get_size())
         self.mode = "follow" # "follow" follows the vehicle, "free_cam" allows for scrolling around with right-click
-        self.speed_mult = 1
+        self.speed_mult = 0.3
 
         self.font = pygame.font.Font(*INFO_FONT)
         self.info_height = 300
@@ -171,10 +171,10 @@ class Render:
 
         if pygame.key.get_pressed()[pygame.K_LEFT]:
             mult = 1 if pygame.key.get_pressed()[pygame.K_LSHIFT] else 3
-            control_signal.motor_torque_signal += mult
+            control_signal.motor_torque_signal -= mult
         elif pygame.key.get_pressed()[pygame.K_RIGHT]:
             mult = 1 if pygame.key.get_pressed()[pygame.K_LSHIFT] else 3
-            control_signal.motor_torque_signal -= mult
+            control_signal.motor_torque_signal += mult
 
 
         self.state = self.sim.step(self.state, control_signal, dt)
@@ -267,7 +267,7 @@ class Render:
 
         # draw top
         top_angle = self.state.top_angle
-        top_center = wheel_center + self.sim.params.top_height * np.array([-np.sin(top_angle), np.cos(top_angle)])
+        top_center = wheel_center + self.sim.params.top_height * np.array([np.sin(top_angle), np.cos(top_angle)])
         pygame.draw.circle(
             surf,
             WHEEL_COLOR,

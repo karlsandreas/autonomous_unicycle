@@ -81,7 +81,7 @@ class Simulator:
 
         wheel_inertia = self.params.wheel_mass * self.params.wheel_rad ** 2
         # Ignoring the indirect static force on wheel center from top
-        wheel_angle_dd = -state.motor_torque / wheel_inertia
+        wheel_angle_dd = state.motor_torque / wheel_inertia
 
         # Inertia around wheel center
         top_inertia = self.params.top_mass * self.params.top_height ** 2
