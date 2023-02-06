@@ -110,6 +110,9 @@ class LookaheadRegulator:
         return x + t * x_d + t**2 / 2 * (self.E * theta + self.B * delta_tau) + t**3/6 * (self.E * theta_d) + t**4 / 24 * (self.E * self.D * delta_tau)
 
     def __call__(self, st: SimulationState, dt: float) -> float:
+        distance = abs(st.wheel_position - self.setpoint_x)
+        self.settle_time_x = 2 + distance / 10
+
         theta = st.top_angle
         theta_d = st.top_angle_d
         x = st.wheel_position
@@ -148,9 +151,9 @@ DEFAULT_PARAMETERS = SimulationParameters(
 
 DEFAULT_REG = LookaheadRegulator(
     params=DEFAULT_PARAMETERS,
-    setpoint_x=0.,
+    setpoint_x=100.,
     settle_time_theta=2.0,
-    settle_time_x=3.0,
+    settle_time_x=2.0,
 )
 
 # Space = switch view mode (follow, free)
