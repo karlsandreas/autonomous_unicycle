@@ -174,8 +174,10 @@ class Render:
 
         self.done = False
         self.space = ScreenSpaceTranslator(200, np.array([0., 0.,]), self.screen.get_size())
+        self.wanted_zoom = self.space.pixels_per_unit
+
         self.mode = "follow" # "follow" follows the vehicle, "free_cam" allows for scrolling around with right-click
-        self.speed_mult = 0.3
+        self.speed_mult = 1.0
 
         self.font = pygame.font.Font(*INFO_FONT)
         self.info_height = 300
@@ -204,7 +206,7 @@ class Render:
                         self.space.view_center -= np.array([relx, -rely]) / self.space.pixels_per_unit
 
                 if event.type == pygame.MOUSEWHEEL:
-                    self.space.pixels_per_unit *= 1.01 ** event.y
+                    self.wanted_zoom *= 1.01 ** event.y
 
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_SPACE:
@@ -253,6 +255,7 @@ class Render:
 
         self.state = self.sim.step(self.state, control_signal, dt * self.speed_mult)
 
+        self.space.pixels_per_unit = self.space.pixels_per_unit + (self.wanted_zoom - self.space.pixels_per_unit) * dt / ZOOM_TAU
         if self.mode == "follow":
             pos = np.array([self.state.wheel_position, self.sim.params.wheel_rad])
 
@@ -335,7 +338,7 @@ class Render:
             surf,
             TORQUE_COLOR,
             self.space.units2rect(torque_rect_top_left, torque_rect_bottom_right),
-            start, end,
+            start - self.state.top_angle, end - self.state.top_angle,
             int(self.sim.params.wheel_rad * TORQUE_SIZE * 0.3 * self.space.pixels_per_unit), # this is incredibly ugly for some reason
         )
 
@@ -397,7 +400,7 @@ class Render:
                 LINE_COL if x != 0 else LINE_COL0,
                 self.space.unit2screen_(x, y0),
                 self.space.unit2screen_(x, y1),
-                1 if x != 0 else 2
+                2 if x != 0 else 3
             )
 
         for y in range(int(y1), int(y0 + 1)):
@@ -406,7 +409,7 @@ class Render:
                 LINE_COL if y != 0 else LINE_COL0,
                 self.space.unit2screen_(x0, y),
                 self.space.unit2screen_(x1, y),
-                1 if y != 0 else 2
+                2 if y != 0 else 3
             )
 
     def draw_info(self, surf: pygame.surface.Surface) -> None:
@@ -414,13 +417,12 @@ class Render:
 
         y = 10
         for name, val, unit in [
-            ("Frame rate", self.current_fps, "FPS"),
-            ("Tick time", self.avg_tick_time, "s"),
             ("Position", self.state.wheel_position, "m"),
             ("Speed", self.state.wheel_position_d * 3600, "m/h"),
-            # ("Acceleration", x_dd, "m/s²"),
             ("Angle", self.state.top_angle / np.pi * 180, "deg"),
             ("Motor torque", self.state.motor_torque, "Nm"),
+
+            ("Distance to setpoint", self.state.wheel_position - self.reg.setpoint_x, "m"),
         ]:
             text = f"{name}: {fmt_unit(val, unit)}"
 
@@ -428,10 +430,22 @@ class Render:
             surf.blit(rendered, (10, y))
             y += self.font.get_linesize()
 
+        y = 10
+        for name, val, unit in [
+            ("Speed", self.speed_mult, "s/s"),
+            ("Frame rate", self.current_fps, "FPS"),
+            ("Tick time", self.avg_tick_time, "s"),
+        ]:
+            text = f"{fmt_unit(val, unit)}: {name}"
+
+            rendered = self.font.render(text, True, (255, 255, 255))
+            surf.blit(rendered, (surf.get_width() - 10 - rendered.get_width(), y))
+            y += self.font.get_linesize()
+
 
 pygame.init()
 pygame.font.init()
-screen = pygame.display.set_mode((1000, 600), pygame.RESIZABLE)
+screen = pygame.display.set_mode((1000, 600), pygame.RESIZABLE, vsync=1)
 pygame.display.set_caption("Autonomous Unicycle")
 
 r = Render(
@@ -440,6 +454,5 @@ r = Render(
     INIT_STATE,
     DEFAULT_REG,
 )
-
 
 r.run()
