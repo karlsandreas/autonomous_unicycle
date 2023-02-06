@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Tuple
 
 import numpy as np
 import math
@@ -30,6 +31,13 @@ class SimulationParameters:
         self.top_mass = top_mass
         self.motor_reaction_speed = motor_reaction_speed
         self.g = g
+
+    def abcd(self) -> Tuple[float, float, float, float]:
+        A = -self.g * self.top_mass / self.wheel_mass
+        B = -1 / (self.wheel_rad * self.wheel_mass)
+        C = self.g / self.top_height
+        D = 1 / (self.top_height ** 2 * self.top_mass)
+        return A, B, C, D
 
 # Grouping all control signals
 class ControlSignals:
