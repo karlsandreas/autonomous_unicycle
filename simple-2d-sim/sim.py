@@ -31,6 +31,43 @@ class SimulationParameters:
         self.motor_reaction_speed = motor_reaction_speed
         self.g = g
 
+
+        m_w = wheel_mass
+        r = wheel_rad
+        m_c = top_mass
+        l = top_height
+
+
+        self.I_c = top_mass * top_height ** 2 #top inertia
+        self.I_w = wheel_mass * wheel_rad**2 #Wheel inertia
+
+        #X = [phi, phi_d, theta, theta_d]
+        #u = torque 
+        E = np.array([
+            [self.I_w + (m_w + m_c)*r**2, m_c*r*l],
+            [m_c*r*l, self.I_c + m_c*l**2]
+            ])
+        
+        G = np.array([0, -m_c*g*l])
+        F = np.array([])
+        A_1 = np.dot(- np.linalg.inv(E), G)
+    
+
+        self.A = np.array([
+            [1, 0, 0, 0],
+            [0, A_1[0], 0, 0],
+            [0, 0, 1, 0 ],
+            [0, 0, 0, A_1[1]]])
+
+        H = np.array([1, -1])
+        B_1 = np.dot(- np.linalg.inv(E), H.T)
+        self.B = np.array([0, B_1[0], 0, B_1[1]]).T
+        self.C = [[r, 0, 0, 0],
+             [0, 0, 1, 0]] 
+
+
+
+
 # Grouping all control signals
 class ControlSignals:
     def __init__(
@@ -74,32 +111,32 @@ class Simulator:
 
     # Returns a new SimulationState where each parameter has the value of it's derivative
     def state_derivative(self, state: SimulationState, signals: ControlSignals) -> SimulationState:
-        gravity_top = self.params.g * self.params.top_mass # F_g = mg
-        gravity_top_norm = gravity_top * np.sin(state.top_angle)
-        gravity_top_parallel = gravity_top * np.cos(state.top_angle) # Positive = towards wheel
-        force_on_wheel_center = -gravity_top_parallel * np.sin(state.top_angle) # Positive = rightwards
+        I_c = self.params.I_c #top inertia
+        I_w = self.params.I_w #Wheel inertia
 
-        wheel_inertia = self.params.wheel_mass * self.params.wheel_rad ** 2
-        # Ignoring the indirect static force on wheel center from top
-        wheel_angle_dd = -state.motor_torque / wheel_inertia
+        M = state.motor_torque
+        m_c = self.params.top_mass
+        r = self.params.wheel_rad
+        l = self.params.top_height
+        o1 = state.top_angle
+        g = self.params.g
+        do1 = state.top_angle_d
+        m_w = self.params.wheel_mass
 
-        # Inertia around wheel center
-        top_inertia = self.params.top_mass * self.params.top_height ** 2
-        top_angle_dd = \
-            gravity_top_norm * self.params.top_height / top_inertia \
-            + state.motor_torque / top_inertia
+        
+        wheel_angle_dd = (-M - (m_c*r*l*np.cos(o1) * (M + l*m_c*g*np.sin(o1))/(m_c*(l**2)+I_c)) + m_c*r*l*np.sin(o1)*(do1**2)) / \
+               (m_c*r**2 - ((r*l*m_c*np.cos(o1))**2)/(m_c*l**2 + I_c) + m_w*r**2 + I_w)
 
+        top_angle_dd = (M - m_c*r*wheel_angle_dd*l*np.cos(o1) + m_c*g*l*np.sin(o1))/(m_c*l**2 + I_c)
+        
+        wheel_position_dd = r*wheel_angle_dd
 
         # All entries are derivatives
         return SimulationState(
             wheel_position = state.wheel_position_d,
-            wheel_position_d = \
-                force_on_wheel_center / self.params.wheel_mass \
-                - wheel_angle_dd * self.params.wheel_rad,
-
+            wheel_position_d = wheel_position_dd,
             top_angle = state.top_angle_d,
             top_angle_d = top_angle_dd,
-
             motor_torque = (signals.motor_torque_signal - state.motor_torque) / self.params.motor_reaction_speed,
         )
 
