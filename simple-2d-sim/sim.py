@@ -51,13 +51,14 @@ class SimulationParameters:
         G = np.array([0, -m_c*g*l])
         F = np.array([])
         A_1 = np.dot(- np.linalg.inv(E), G)
+        
     
 
         self.A = np.array([
-            [1, 0, 0, 0],
-            [0, A_1[0], 0, 0],
-            [0, 0, 1, 0 ],
-            [0, 0, 0, A_1[1]]])
+            [0, 1, 0, 0],
+            [A_1[0], 0, 0, 0],
+            [0, 0, 0, 1],
+            [0, A_1[1], 0,0]])
 
         H = np.array([1, -1])
         B_1 = np.dot(- np.linalg.inv(E), H.T)
