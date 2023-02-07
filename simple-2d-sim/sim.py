@@ -114,7 +114,7 @@ class Simulator:
         I_c = self.params.I_c #top inertia
         I_w = self.params.I_w #Wheel inertia
 
-        M = state.motor_torque
+        M = signals.motor_torque_signal / self.params.motor_reaction_speed
         m_c = self.params.top_mass
         r = self.params.wheel_rad
         l = self.params.top_height
@@ -137,8 +137,9 @@ class Simulator:
             wheel_position_d = wheel_position_dd,
             top_angle = state.top_angle_d,
             top_angle_d = top_angle_dd,
-            motor_torque = (signals.motor_torque_signal - state.motor_torque) / self.params.motor_reaction_speed,
+            motor_torque= (signals.motor_torque_signal - state.motor_torque) / self.params.motor_reaction_speed
         )
+            
 
     # Enforces limit conditions (i.e. top bouncing on floor)
     # Modifies state in-place

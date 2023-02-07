@@ -9,7 +9,6 @@ from pidcontroller import PIDController
 import time
 
 from sim import SimulationState, SimulationParameters, ControlSignals, Simulator
-from sim_old import Simulator as Simulator_old
 from fmt import fmt_unit
 
 # Parameters for rendering
@@ -20,14 +19,10 @@ LINE_COL0 = (100, 100, 100)
 WHEEL_COLOR = (200, 200, 200)
 SPOKE_COLOR = (150, 150, 150)
 
-LINE_COL_2 = (50, 50, 50)
-LINE_COL0_2 = (80, 80, 80)
-WHEEL_COLOR_2 = (50, 200, 100)
-SPOKE_COLOR_2 = (200, 200, 200)
-
-
 TORQUE_COLOR = (255, 0, 0)
 SETPOINT_COLOR = (0, 255, 0)
+DRAW_EXPECTED = False
+EXPECTED_COLOR = (0, 255, 255)
 
 INFO_FONT = "ShareTech.ttf", 30 # path, size
 
@@ -41,6 +36,7 @@ SPOKE_SIZE = 0.1
 TORQUE_SIZE = 0.5
 
 CAMERA_TAU = 0.1
+ZOOM_TAU = 0.05
 
 MIN_DT = 0.001
 
@@ -75,21 +71,52 @@ class ScreenSpaceTranslator:
         x2, y2 = self.unit2screen(c2)
         return pygame.Rect(x1, y1, x2 - x1, y2 - y1)
 
+class Regulator:
+    def __init__(
+        self,
+        setpoint,
+    ):
+        self.setpoint = setpoint
+        self.lasterror = 0
+    # Returns motor torque to apply
+    def __call__(self, sim: SimulationState, params: SimulationParameters, dt) -> float:
+        r = params.wheel_rad
+        x = sim.wheel_position
+        x_d = sim.wheel_position_d
+        theta = sim.top_angle
+        theta_d = sim.top_angle_d
+        
+        K2 = 32
+        KD2 = 0.8
+        
+        error = self.setpoint - theta
+        
+        delta_e = (error - self.lasterror) / dt
+        self.lasterror = error
+
+        m =  K2 * error  + KD2 * (delta_e - theta_d)
+        return m
+
+DEFAULT_REGULATOR = Regulator(
+    setpoint= 0
+    )
+
 INIT_STATE = SimulationState(
     wheel_position = 0,
     wheel_position_d = 0,
     top_angle = 0,
     top_angle_d = 0,
-    motor_torque = 0,
+    motor_torque= 0
 )
 
 DEFAULT_PARAMETERS = SimulationParameters(
     wheel_rad = 0.28,
     wheel_mass = 5,
     top_height = 0.8,
-    top_mass = 5,
+    top_mass = 4,
     motor_reaction_speed = 0.1,
 )
+
 
 # Space = switch view mode (follow, free)
 #   right-click drag = pan in free mode
@@ -99,21 +126,23 @@ class Render:
     def __init__(
         self,
         screen: pygame.surface.Surface,
+
         simulator: Simulator,
-        simulator_old : Simulator_old,
         init_state: SimulationState,
+        reg: Regulator,
     ) -> None:
         self.screen = screen
 
         self.sim = simulator
-        self.sim_2 = simulator_old
         self.init_state = self.state = init_state
-        self.init_state_2 = self.state_2 = init_state
+        self.reg = reg
 
         self.done = False
         self.space = ScreenSpaceTranslator(200, np.array([0., 0.,]), self.screen.get_size())
+        self.wanted_zoom = self.space.pixels_per_unit
+
         self.mode = "follow" # "follow" follows the vehicle, "free_cam" allows for scrolling around with right-click
-        self.speed_mult = 1
+        self.speed_mult = 1.0
 
         self.font = pygame.font.Font(*INFO_FONT)
         self.info_height = 300
@@ -142,7 +171,7 @@ class Render:
                         self.space.view_center -= np.array([relx, -rely]) / self.space.pixels_per_unit
 
                 if event.type == pygame.MOUSEWHEEL:
-                    self.space.pixels_per_unit *= 1.01 ** event.y
+                    self.wanted_zoom *= 1.01 ** event.y
 
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_SPACE:
@@ -152,7 +181,6 @@ class Render:
                             self.mode = "free_cam"
                     if event.key == pygame.K_TAB:
                         self.state = self.init_state
-                        self.state_2 = self.init_state_2
 
             self.draw()
 
@@ -177,19 +205,23 @@ class Render:
 
 
     def step(self, dt: float) -> None:
-        control_signal = ControlSignals(motor_torque_signal=0.0)
+        tau = self.reg(self.state, self.sim.params, dt)
+        
+        control_signal = ControlSignals(motor_torque_signal=tau)
 
-        if pygame.key.get_pressed()[pygame.K_LEFT]:
-            mult = 1 if pygame.key.get_pressed()[pygame.K_LSHIFT] else 6
-            control_signal.motor_torque_signal += mult
-        elif pygame.key.get_pressed()[pygame.K_RIGHT]:
-            mult = 1 if pygame.key.get_pressed()[pygame.K_LSHIFT] else 6
-            control_signal.motor_torque_signal -= mult
+        mult = 3. if pygame.key.get_pressed()[pygame.K_LALT] else 0.3 if pygame.key.get_pressed()[pygame.K_LSHIFT] else 1.0
+        val = mult if pygame.key.get_pressed()[pygame.K_RIGHT] else -mult if pygame.key.get_pressed()[pygame.K_LEFT] else 0
 
+        if pygame.key.get_pressed()[pygame.K_p]:
+            self.reg.setpoint_x += val * dt * 3
+        if pygame.key.get_pressed()[pygame.K_s]:
+            self.speed_mult *= 2. ** (val * dt)
+        else:
+            self.reg.setpoint += val * 0.001
 
-        self.state = self.sim.step(self.state, control_signal, dt)
-        self.state_2 = self.sim_2.step(self.state_2, control_signal, dt)
+        self.state = self.sim.step(self.state, control_signal, dt * self.speed_mult)
 
+        self.space.pixels_per_unit = self.space.pixels_per_unit + (self.wanted_zoom - self.space.pixels_per_unit) * dt / ZOOM_TAU
         if self.mode == "follow":
             pos = np.array([self.state.wheel_position, self.sim.params.wheel_rad])
 
@@ -220,7 +252,6 @@ class Render:
         self.draw_grid(surf)
 
         wheel_center = np.array([self.state.wheel_position, self.sim.params.wheel_rad])
-        wheel_center_2 = np.array([self.state_2.wheel_position, self.sim_2.params.wheel_rad])
         wx, wy = self.space.unit2screen(wheel_center)
         if wx < -surf.get_width() or wx > surf.get_width() * 2 or wy < -surf.get_height() or wy > surf.get_height() * 2:
             return
@@ -229,16 +260,12 @@ class Render:
         for spoke in range(N_SPOKES):
             inherit_angle = 2 * np.pi * spoke / N_SPOKES
             angle = inherit_angle - self.state.wheel_position / self.sim.params.wheel_rad
-            angle_2 = inherit_angle - self.state_2.wheel_position / self.sim_2.params.wheel_rad
 
             r_out = self.sim.params.wheel_rad * (1 - OUTSIDE_THICKNESS * 0.5)
             r_in = self.sim.params.wheel_rad * INNER_SIZE * (1 - INNER_THICKNESS * 0.5)
 
-                
             rot = np.array([np.cos(angle), np.sin(angle)])
-            rot_2 = np.array([np.cos(angle_2), np.sin(angle_2)])
 
-            #First sim    
             pygame.draw.line(
                 surf,
                 SPOKE_COLOR,
@@ -246,17 +273,8 @@ class Render:
                 self.space.unit2screen(wheel_center + r_in * rot),
                 int(self.sim.params.wheel_rad * SPOKE_SIZE * self.space.pixels_per_unit + 0.5),
             )
-            #Second sim
-            pygame.draw.line(
-                surf,
-                SPOKE_COLOR_2,
-                self.space.unit2screen(wheel_center_2 + r_out * rot_2),
-                self.space.unit2screen(wheel_center_2 + r_in * rot_2),
-                int(self.sim_2.params.wheel_rad * SPOKE_SIZE * self.space.pixels_per_unit + 0.5),
-            )
 
-
-        #First outer
+        # outer
         pygame.draw.circle(
             surf,
             WHEEL_COLOR,
@@ -264,16 +282,8 @@ class Render:
             self.sim.params.wheel_rad * self.space.pixels_per_unit,
             int(self.sim.params.wheel_rad * OUTSIDE_THICKNESS * self.space.pixels_per_unit + 0.5),
         )
-        #Second outer
-        pygame.draw.circle(
-            surf,
-            WHEEL_COLOR_2,
-            self.space.unit2screen(wheel_center_2),
-            self.sim_2.params.wheel_rad * self.space.pixels_per_unit,
-            int(self.sim_2.params.wheel_rad * OUTSIDE_THICKNESS * self.space.pixels_per_unit + 0.5),
-        )
 
-        #First inner
+        # inner
         pygame.draw.circle(
             surf,
             WHEEL_COLOR,
@@ -281,20 +291,12 @@ class Render:
             self.sim.params.wheel_rad * INNER_SIZE * self.space.pixels_per_unit,
             int(self.sim.params.wheel_rad * INNER_SIZE * INNER_THICKNESS * self.space.pixels_per_unit + 0.5),
         )
-        #Second inner
-        pygame.draw.circle(
-            surf,
-            WHEEL_COLOR_2,
-            self.space.unit2screen(wheel_center_2),
-            self.sim_2.params.wheel_rad * INNER_SIZE * self.space.pixels_per_unit,
-            int(self.sim_2.params.wheel_rad * INNER_SIZE * INNER_THICKNESS * self.space.pixels_per_unit + 0.5),
-        )
 
         # torque
         torque_rect_top_left = wheel_center - self.sim.params.wheel_rad * TORQUE_SIZE * np.array([0.5, -0.5])
         torque_rect_bottom_right = wheel_center + self.sim.params.wheel_rad * TORQUE_SIZE * np.array([0.5, -0.5])
 
-        angle = self.state.motor_torque
+        angle = -self.state.motor_torque
 
         start, end = (np.pi / 2, np.pi / 2 + angle) if angle > 0 else (np.pi/2 + angle, np.pi / 2)
 
@@ -302,29 +304,19 @@ class Render:
             surf,
             TORQUE_COLOR,
             self.space.units2rect(torque_rect_top_left, torque_rect_bottom_right),
-            start, end,
+            start - self.state.top_angle, end - self.state.top_angle,
             int(self.sim.params.wheel_rad * TORQUE_SIZE * 0.3 * self.space.pixels_per_unit), # this is incredibly ugly for some reason
         )
 
-        #First top
-        top_angle = -self.state.top_angle
-        top_center = wheel_center + self.sim.params.top_height * np.array([-np.sin(top_angle), np.cos(top_angle)])
+        # draw top
+        top_angle = self.state.top_angle
+        top_center = wheel_center + self.sim.params.top_height * np.array([np.sin(top_angle), np.cos(top_angle)])
         pygame.draw.circle(
             surf,
             WHEEL_COLOR,
             self.space.unit2screen(top_center),
             0.1 * self.space.pixels_per_unit,
         )
-        #Second top
-        top_angle_2 = -self.state_2.top_angle
-        top_center_2 = wheel_center_2 + self.sim_2.params.top_height * np.array([-np.sin(top_angle_2), np.cos(top_angle_2)])
-        pygame.draw.circle(
-            surf,
-            WHEEL_COLOR_2,
-            self.space.unit2screen(top_center_2),
-            0.1 * self.space.pixels_per_unit,
-        )
-
 
         pygame.draw.line(
             surf,
@@ -333,27 +325,10 @@ class Render:
             self.space.unit2screen(wheel_center),
             3,
         )
-        # second 
-        pygame.draw.line(
-            surf,
-            SPOKE_COLOR_2,
-            self.space.unit2screen(top_center_2),
-            self.space.unit2screen(wheel_center_2),
-            3,
-        )
 
-        # draw angle setpoint
-
-        # angle_setpoint_center = wheel_center + R1 * np.array([np.cos(self.regulator.angle_pid.setpoint), np.sin(self.regulator.angle_pid.setpoint)])
-        # pygame.draw.line(
-        #     surf,
-        #     SETPOINT_COLOR,
-        #     self.space.unit2screen(wheel_center),
-        #     self.space.unit2screen(angle_setpoint_center),
-        #     2,
-        # )
-
-        # position_setpoint_x, _ = self.space.unit2screen(np.array([self.regulator.position_setpoint, 0]))
+        # Draw position setpoint
+        # pos = self.reg.setpoint_x
+        # position_setpoint_x, _ = self.space.unit2screen(np.array([pos, 0]))
         # pygame.draw.line(
         #     surf,
         #     SETPOINT_COLOR,
@@ -362,15 +337,26 @@ class Render:
         #     2,
         # )
 
-        # if self.regulator.xi != None:
-        #     position_setpoint_x, _ = self.space.unit2screen(np.array([self.regulator.xi, 0]))
-        #     pygame.draw.line(
-        #         surf,
-        #         (255, 255, 255),
-        #         (position_setpoint_x, 0),
-        #         (position_setpoint_x, surf.get_height()),
-        #         2,
-        #     )
+        if DRAW_EXPECTED:
+            pos_expected = self.reg.expected_x_after(self.state, self.reg.settle_time_x)
+            position_expected_x, _ = self.space.unit2screen(np.array([pos_expected, 0]))
+            pygame.draw.line(
+                surf,
+                EXPECTED_COLOR,
+                (position_expected_x, 0),
+                (position_expected_x, surf.get_height()),
+                2,
+            )
+
+            angle_expected = self.reg.expected_theta_after(self.state, self.reg.settle_time_theta)
+            angle_center = wheel_center + self.sim.params.top_height * np.array([np.sin(angle_expected), np.cos(angle_expected)])
+            pygame.draw.line(
+                surf,
+                EXPECTED_COLOR,
+                self.space.unit2screen(wheel_center),
+                self.space.unit2screen(angle_center),
+                2,
+            )
 
     def draw_grid(self, surf: pygame.surface.Surface) -> None:
         (x0, y0), (x1, y1) = self.space.screen2unit((0, 0)), self.space.screen2unit(surf.get_size())
@@ -380,7 +366,7 @@ class Render:
                 LINE_COL if x != 0 else LINE_COL0,
                 self.space.unit2screen_(x, y0),
                 self.space.unit2screen_(x, y1),
-                1 if x != 0 else 2
+                2 if x != 0 else 3
             )
 
         for y in range(int(y1), int(y0 + 1)):
@@ -389,7 +375,7 @@ class Render:
                 LINE_COL if y != 0 else LINE_COL0,
                 self.space.unit2screen_(x0, y),
                 self.space.unit2screen_(x1, y),
-                1 if y != 0 else 2
+                2 if y != 0 else 3
             )
 
     def draw_info(self, surf: pygame.surface.Surface) -> None:
@@ -397,13 +383,13 @@ class Render:
 
         y = 10
         for name, val, unit in [
-            ("Frame rate", self.current_fps, "FPS"),
-            ("Tick time", self.avg_tick_time, "s"),
             ("Position", self.state.wheel_position, "m"),
             ("Speed", self.state.wheel_position_d * 3600, "m/h"),
-            # ("Acceleration", x_dd, "m/s²"),
             ("Angle", self.state.top_angle / np.pi * 180, "deg"),
             ("Motor torque", self.state.motor_torque, "Nm"),
+            ("Setpoint", self.reg.setpoint / np.pi * 180, "deg"),
+    
+            #("Distance to setpoint", self.state.wheel_position - self.reg.setpoint_x, "m"),
         ]:
             text = f"{name}: {fmt_unit(val, unit)}"
 
@@ -411,18 +397,29 @@ class Render:
             surf.blit(rendered, (10, y))
             y += self.font.get_linesize()
 
+        y = 10
+        for name, val, unit in [
+            ("Speed", self.speed_mult, "s/s"),
+            ("Frame rate", self.current_fps, "FPS"),
+            ("Tick time", self.avg_tick_time, "s"),
+        ]:
+            text = f"{fmt_unit(val, unit)}: {name}"
+
+            rendered = self.font.render(text, True, (255, 255, 255))
+            surf.blit(rendered, (surf.get_width() - 10 - rendered.get_width(), y))
+            y += self.font.get_linesize()
+
 
 pygame.init()
 pygame.font.init()
-screen = pygame.display.set_mode((1000, 600), pygame.RESIZABLE)
+screen = pygame.display.set_mode((1000, 600), pygame.RESIZABLE, vsync=1)
 pygame.display.set_caption("Autonomous Unicycle")
 
 r = Render(
     screen,
     Simulator(DEFAULT_PARAMETERS),
-    Simulator_old(DEFAULT_PARAMETERS),
     INIT_STATE,
+    DEFAULT_REGULATOR,
 )
-
 
 r.run()
