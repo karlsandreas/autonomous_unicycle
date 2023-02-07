@@ -75,17 +75,14 @@ class LookaheadRegulator:
     def __init__(
         self,
         params: SimulationParameters,
-        setpoint_x: float,
+        setpoint_x_d: float,
         settle_time_theta: float = 0.5,
-        settle_time_x: float = 2.,
+        settle_time_x_d: float = 2.,
     ):
         self.A, self.B, self.C, self.D = params.abcd()
         self.E = self.A - self.C * self.B / self.D
 
-        self.setpoint_x = setpoint_x
-
-        self.settle_time_theta = settle_time_theta
-        self.settle_time_x = settle_time_x
+        self.setpoint_x_d = setpoint_x_d
 
         self.last_delta_tau = 0.
 
@@ -109,25 +106,47 @@ class LookaheadRegulator:
 
         return x + t * x_d + t**2 / 2 * (self.E * theta + self.B * delta_tau) + t**3/6 * (self.E * theta_d) + t**4 / 24 * (self.E * self.D * delta_tau)
 
-    def __call__(self, st: SimulationState, dt: float) -> float:
-        distance = abs(st.wheel_position - self.setpoint_x)
-        self.settle_time_x = 2 + distance / 10
-
+    def expected_x_d_after(self, st: SimulationState, t: float) -> float:
         theta = st.top_angle
         theta_d = st.top_angle_d
         x = st.wheel_position
         x_d = st.wheel_position_d
 
+        delta_tau = self.last_delta_tau # st.motor_torque + self.C / self.D * theta
+
+        return x_d + t * (self.E * theta + self.B * delta_tau) + t**2/2 * (self.E * theta_d) + t**3 / 6 * (self.E * self.D * delta_tau)
+
+    def stop_time_theta(self, st: SimulationState) -> float:
+        return 2.0
+
+    def stop_time_x_d(self, st: SimulationState) -> float:
+        theta = st.top_angle
+        theta_d = st.top_angle_d
+        x = st.wheel_position
+        x_d = st.wheel_position_d
+
+        x_d_diff = abs(x_d - self.setpoint_x_d)
+        return x_d_diff * 0.6 + 1.0
+
+    def __call__(self, st: SimulationState, dt: float) -> float:
+        theta = st.top_angle
+        theta_d = st.top_angle_d
+        x = st.wheel_position
+        x_d = st.wheel_position_d
+
+        t_theta = self.stop_time_theta(st)
+        t_x_d = self.stop_time_x_d(st)
+
         # Want to zero theta
-        delta_tau_theta = 1 / (self.settle_time_theta ** 2 / 2 * self.D) * \
-            (0 - theta - theta_d * self.settle_time_theta)
+        delta_tau_theta = 1 / (t_theta ** 2 / 2 * self.D) * \
+            (0 - theta - theta_d * t_theta)
 
-        delta_tau_theta_d = 1 / (self.settle_time_theta * self.D) * -theta_d
+        delta_tau_theta_d = 1 / (t_theta * self.D) * -theta_d
 
-        delta_tau_x = 1 / (self.settle_time_x ** 2 / 2 * self.B + self.settle_time_x ** 4 / 24 * self.E * self.D) * \
-                (self.setpoint_x - x - self.settle_time_x * x_d - self.settle_time_x ** 2 / 2 * self.E * theta - self.settle_time_x ** 3 / 6 * self.E * theta_d)
+        delta_tau_x_d = 1 / (t_x_d * self.B + t_x_d ** 3 / 6 * self.E * self.D) * \
+            (self.setpoint_x_d - x_d - t_x_d * self.E * theta - t_x_d ** 2 / 2 * self.E * theta_d)
 
-        self.last_delta_tau = delta_tau_theta + delta_tau_theta_d + delta_tau_x
+        self.last_delta_tau = delta_tau_theta + delta_tau_theta_d + delta_tau_x_d
 
         tau = -self.C / self.D * theta + self.last_delta_tau
 
@@ -151,9 +170,7 @@ DEFAULT_PARAMETERS = SimulationParameters(
 
 DEFAULT_REG = LookaheadRegulator(
     params=DEFAULT_PARAMETERS,
-    setpoint_x=100.,
-    settle_time_theta=2.0,
-    settle_time_x=2.0,
+    setpoint_x_d=5.,
 )
 
 # Space = switch view mode (follow, free)
@@ -250,7 +267,7 @@ class Render:
         val = mult if pygame.key.get_pressed()[pygame.K_RIGHT] else -mult if pygame.key.get_pressed()[pygame.K_LEFT] else 0
 
         if pygame.key.get_pressed()[pygame.K_p]:
-            self.reg.setpoint_x += val * dt * 3
+            self.reg.setpoint_x_d += val * dt * 3
         if pygame.key.get_pressed()[pygame.K_s]:
             self.speed_mult *= 2. ** (val * dt)
         else:
@@ -364,36 +381,36 @@ class Render:
         )
 
         # Draw position setpoint
-        pos = self.reg.setpoint_x
-        position_setpoint_x, _ = self.space.unit2screen(np.array([pos, 0]))
-        pygame.draw.line(
-            surf,
-            SETPOINT_COLOR,
-            (position_setpoint_x, 0),
-            (position_setpoint_x, surf.get_height()),
-            2,
-        )
+        # pos = self.reg.setpoint_x
+        # position_setpoint_x, _ = self.space.unit2screen(np.array([pos, 0]))
+        # pygame.draw.line(
+        #     surf,
+        #     SETPOINT_COLOR,
+        #     (position_setpoint_x, 0),
+        #     (position_setpoint_x, surf.get_height()),
+        #     2,
+        # )
 
-        if DRAW_EXPECTED:
-            pos_expected = self.reg.expected_x_after(self.state, self.reg.settle_time_x)
-            position_expected_x, _ = self.space.unit2screen(np.array([pos_expected, 0]))
-            pygame.draw.line(
-                surf,
-                EXPECTED_COLOR,
-                (position_expected_x, 0),
-                (position_expected_x, surf.get_height()),
-                2,
-            )
+        # if DRAW_EXPECTED:
+        #     pos_expected = self.reg.expected_x_after(self.state, self.reg.settle_time_x)
+        #     position_expected_x, _ = self.space.unit2screen(np.array([pos_expected, 0]))
+        #     pygame.draw.line(
+        #         surf,
+        #         EXPECTED_COLOR,
+        #         (position_expected_x, 0),
+        #         (position_expected_x, surf.get_height()),
+        #         2,
+        #     )
 
-            angle_expected = self.reg.expected_theta_after(self.state, self.reg.settle_time_theta)
-            angle_center = wheel_center + self.sim.params.top_height * np.array([np.sin(angle_expected), np.cos(angle_expected)])
-            pygame.draw.line(
-                surf,
-                EXPECTED_COLOR,
-                self.space.unit2screen(wheel_center),
-                self.space.unit2screen(angle_center),
-                2,
-            )
+        #     angle_expected = self.reg.expected_theta_after(self.state, self.reg.settle_time_theta)
+        #     angle_center = wheel_center + self.sim.params.top_height * np.array([np.sin(angle_expected), np.cos(angle_expected)])
+        #     pygame.draw.line(
+        #         surf,
+        #         EXPECTED_COLOR,
+        #         self.space.unit2screen(wheel_center),
+        #         self.space.unit2screen(angle_center),
+        #         2,
+        #     )
 
     def draw_grid(self, surf: pygame.surface.Surface) -> None:
         (x0, y0), (x1, y1) = self.space.screen2unit((0, 0)), self.space.screen2unit(surf.get_size())
@@ -425,7 +442,8 @@ class Render:
             ("Angle", self.state.top_angle / np.pi * 180, "deg"),
             ("Motor torque", self.state.motor_torque, "Nm"),
 
-            ("Distance to setpoint", self.state.wheel_position - self.reg.setpoint_x, "m"),
+            # ("Distance to setpoint", self.state.wheel_position - self.reg.setpoint_x, "m"),
+            ("Speed setpoint", self.reg.setpoint_x_d * 3600, "m/h"),
         ]:
             text = f"{name}: {fmt_unit(val, unit)}"
 
