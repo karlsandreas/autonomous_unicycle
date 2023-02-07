@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Tuple
 
 import numpy as np
 import math
@@ -41,32 +42,24 @@ class SimulationParameters:
         self.I_c = top_mass * top_height ** 2 #top inertia
         self.I_w = wheel_mass * wheel_rad**2 #Wheel inertia
 
-        #X = [phi, phi_d, theta, theta_d]
-        #u = torque 
-        E = np.array([
-            [self.I_w + (m_w + m_c)*r**2, m_c*r*l],
-            [m_c*r*l, self.I_c + m_c*l**2]
-            ])
-        
-        G = np.array([0, -m_c*g*l])
-        F = np.array([])
-        A_1 = np.dot(- np.linalg.inv(E), G)
-        
-    
 
-        self.A = np.array([
-            [0, 1, 0, 0],
-            [A_1[0], 0, 0, 0],
-            [0, 0, 0, 1],
-            [0, A_1[1], 0,0]])
+    def abcd(self) -> Tuple[float, float, float, float]:
+        m_w = self.wheel_mass
+        r = self.wheel_rad
+        m_c = self.top_mass
+        l = self.top_height
 
-        H = np.array([1, -1])
-        B_1 = np.dot(- np.linalg.inv(E), H.T)
-        self.B = np.array([0, B_1[0], 0, B_1[1]]).T
-        self.C = [[r, 0, 0, 0],
-             [0, 0, 1, 0]] 
+        X = self.I_w + (m_w + m_c) * r**2
+        Y = U = m_c*r*l
+        V = self.I_c + m_c * l**2
+        Å = m_c * self.g * l
+        d = X*V - U*Y
 
-
+        A = r/d * (-Å*Y)
+        B = r/d * (-V-Y)
+        C = 1/d * (Å*X)
+        D = 1/d * (U+X)
+        return A, B, C, D
 
 
 # Grouping all control signals
@@ -115,7 +108,7 @@ class Simulator:
         I_c = self.params.I_c #top inertia
         I_w = self.params.I_w #Wheel inertia
 
-        M = signals.motor_torque_signal / self.params.motor_reaction_speed
+        M = signals.motor_torque_signal
         m_c = self.params.top_mass
         r = self.params.wheel_rad
         l = self.params.top_height
@@ -123,21 +116,37 @@ class Simulator:
         g = self.params.g
         do1 = state.top_angle_d
         m_w = self.params.wheel_mass
+        phi_dot = state.wheel_position_d / r
 
         
-        wheel_angle_dd = (-M - (m_c*r*l*np.cos(o1) * (M + l*m_c*g*np.sin(o1))/(m_c*(l**2)+I_c)) + m_c*r*l*np.sin(o1)*(do1**2)) / \
-               (m_c*r**2 - ((r*l*m_c*np.cos(o1))**2)/(m_c*l**2 + I_c) + m_w*r**2 + I_w)
+        # wheel_angle_dd = (-M - (m_c*r*l*np.cos(o1) * (M + l*m_c*g*np.sin(o1))/(m_c*(l**2)+I_c)) + m_c*r*l*np.sin(o1)*(do1**2)) / \
+        #        (m_c*r**2 - ((r*l*m_c*np.cos(o1))**2)/(m_c*l**2 + I_c) + m_w*r**2 + I_w)
 
-        top_angle_dd = (M - m_c*r*wheel_angle_dd*l*np.cos(o1) + m_c*g*l*np.sin(o1))/(m_c*l**2 + I_c)
-        
-        wheel_position_dd = r*wheel_angle_dd
+        # top_angle_dd = (M - m_c*r*wheel_angle_dd*l*np.cos(o1) + m_c*g*l*np.sin(o1))/(m_c*l**2 + I_c)
+
+        # We have two equations
+        # X φ'' + Y θ'' = Z
+        # U φ'' + V θ'' = W
+        X, Y = I_w + (m_w+m_c)*r**2, m_c*r*l*np.cos(o1)
+        Z = -M + m_c*r*l*np.sin(o1)*do1*phi_dot
+        U, V = m_c*r*l*np.cos(o1), I_c + m_c*l**2
+        W = M + m_c*g*l*np.sin(o1)
+
+        # Determinant D
+        D = X * V - U * Y
+
+        # Solve
+        phi_dd   = 1/D * ( V * Z - Y * W)
+        theta_dd = 1/D * (-U * Z + X * W)
+
+        wheel_position_dd = r*phi_dd
 
         # All entries are derivatives
         return SimulationState(
             wheel_position = state.wheel_position_d,
             wheel_position_d = wheel_position_dd,
             top_angle = state.top_angle_d,
-            top_angle_d = top_angle_dd,
+            top_angle_d = theta_dd,
             motor_torque= (signals.motor_torque_signal - state.motor_torque) / self.params.motor_reaction_speed
         )
             
