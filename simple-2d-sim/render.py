@@ -9,6 +9,8 @@ from pidcontroller import PIDController
 import time
 
 from sim import SimulationState, SimulationParameters, ControlSignals, Simulator
+from regulator import Regulator, LookaheadSpeedRegulator, NullRegulator
+
 from fmt import fmt_unit
 
 # Parameters for rendering
@@ -71,87 +73,6 @@ class ScreenSpaceTranslator:
         x2, y2 = self.unit2screen(c2)
         return pygame.Rect(x1, y1, x2 - x1, y2 - y1)
 
-class LookaheadRegulator:
-    def __init__(
-        self,
-        params: SimulationParameters,
-        setpoint_x_d: float,
-        settle_time_theta: float = 0.5,
-        settle_time_x_d: float = 2.,
-    ):
-        self.A, self.B, self.C, self.D = params.abcd()
-        self.E = self.A - self.C * self.B / self.D
-
-        self.setpoint_x_d = setpoint_x_d
-
-        self.last_delta_tau = 0.
-
-    def expected_theta_after(self, st: SimulationState, t: float) -> float:
-        theta = st.top_angle
-        theta_d = st.top_angle_d
-        x = st.wheel_position
-        x_d = st.wheel_position_d
-
-        delta_tau = st.motor_torque + self.C / self.D * theta
-
-        return theta + t * theta_d + t ** 2 / 2 * self.D * delta_tau
-
-    def expected_x_after(self, st: SimulationState, t: float) -> float:
-        theta = st.top_angle
-        theta_d = st.top_angle_d
-        x = st.wheel_position
-        x_d = st.wheel_position_d
-
-        delta_tau = st.motor_torque + self.C / self.D * theta
-
-        return x + t * x_d + t**2 / 2 * (self.E * theta + self.B * delta_tau) + t**3/6 * (self.E * theta_d) + t**4 / 24 * (self.E * self.D * delta_tau)
-
-    def expected_x_d_after(self, st: SimulationState, t: float) -> float:
-        theta = st.top_angle
-        theta_d = st.top_angle_d
-        x = st.wheel_position
-        x_d = st.wheel_position_d
-
-        delta_tau = self.last_delta_tau # st.motor_torque + self.C / self.D * theta
-
-        return x_d + t * (self.E * theta + self.B * delta_tau) + t**2/2 * (self.E * theta_d) + t**3 / 6 * (self.E * self.D * delta_tau)
-
-    def stop_time_theta(self, st: SimulationState) -> float:
-        return 2.0
-
-    def stop_time_x_d(self, st: SimulationState) -> float:
-        theta = st.top_angle
-        theta_d = st.top_angle_d
-        x = st.wheel_position
-        x_d = st.wheel_position_d
-
-        x_d_diff = abs(x_d - self.setpoint_x_d)
-        return x_d_diff * 0.6 + 1.0
-
-    def __call__(self, st: SimulationState, dt: float) -> float:
-        theta = st.top_angle
-        theta_d = st.top_angle_d
-        x = st.wheel_position
-        x_d = st.wheel_position_d
-
-        t_theta = self.stop_time_theta(st)
-        t_x_d = self.stop_time_x_d(st)
-
-        # Want to zero theta
-        delta_tau_theta = 1 / (t_theta ** 2 / 2 * self.D) * \
-            (0 - theta - theta_d * t_theta)
-
-        delta_tau_theta_d = 1 / (t_theta * self.D) * -theta_d
-
-        delta_tau_x_d = 1 / (t_x_d * self.B + t_x_d ** 3 / 6 * self.E * self.D) * \
-            (self.setpoint_x_d - x_d - t_x_d * self.E * theta - t_x_d ** 2 / 2 * self.E * theta_d)
-
-        self.last_delta_tau = delta_tau_theta + delta_tau_theta_d + delta_tau_x_d
-
-        tau = -self.C / self.D * theta + self.last_delta_tau
-
-        return tau
-
 INIT_STATE = SimulationState(
     wheel_position = 0,
     wheel_position_d = 0,
@@ -168,7 +89,8 @@ DEFAULT_PARAMETERS = SimulationParameters(
     motor_reaction_speed = 0.1,
 )
 
-DEFAULT_REG = LookaheadRegulator(
+# DEFAULT_REG = NullRegulator(params=DEFAULT_PARAMETERS)
+DEFAULT_REG = LookaheadSpeedRegulator(
     params=DEFAULT_PARAMETERS,
     setpoint_x_d=5.,
 )
@@ -184,7 +106,7 @@ class Render:
 
         simulator: Simulator,
         init_state: SimulationState,
-        reg: LookaheadRegulator,
+        reg: Regulator,
     ) -> None:
         self.screen = screen
 
@@ -260,18 +182,18 @@ class Render:
 
 
     def step(self, dt: float) -> None:
-        tau = self.reg(self.state, dt * self.speed_mult)
-        control_signal = ControlSignals(motor_torque_signal=tau)
+        control_signal = self.reg(self.state, dt * self.speed_mult)
 
         mult = 3. if pygame.key.get_pressed()[pygame.K_LALT] else 0.3 if pygame.key.get_pressed()[pygame.K_LSHIFT] else 1.0
         val = mult if pygame.key.get_pressed()[pygame.K_RIGHT] else -mult if pygame.key.get_pressed()[pygame.K_LEFT] else 0
 
         if pygame.key.get_pressed()[pygame.K_p]:
-            self.reg.setpoint_x_d += val * dt * 3
+            if isinstance(self.reg, LookaheadSpeedRegulator):
+                self.reg.setpoint_x_d += val * dt * 3
         if pygame.key.get_pressed()[pygame.K_s]:
             self.speed_mult *= 2. ** (val * dt)
         else:
-            control_signal.motor_torque_signal += val * 3
+            control_signal.motor_torque_signal += val * 30
 
         self.state = self.sim.step(self.state, control_signal, dt * self.speed_mult)
 
@@ -350,7 +272,7 @@ class Render:
         torque_rect_top_left = wheel_center - self.sim.params.wheel_rad * TORQUE_SIZE * np.array([0.5, -0.5])
         torque_rect_bottom_right = wheel_center + self.sim.params.wheel_rad * TORQUE_SIZE * np.array([0.5, -0.5])
 
-        angle = -self.state.motor_torque
+        angle = -self.state.motor_torque / 10
 
         start, end = (np.pi / 2, np.pi / 2 + angle) if angle > 0 else (np.pi/2 + angle, np.pi / 2)
 
@@ -435,16 +357,20 @@ class Render:
     def draw_info(self, surf: pygame.surface.Surface) -> None:
         surf.fill((20, 20, 20))
 
-        y = 10
-        for name, val, unit in [
+        left_col = [
             ("Position", self.state.wheel_position, "m"),
             ("Speed", self.state.wheel_position_d * 3600, "m/h"),
             ("Angle", self.state.top_angle / np.pi * 180, "deg"),
             ("Motor torque", self.state.motor_torque, "Nm"),
 
-            # ("Distance to setpoint", self.state.wheel_position - self.reg.setpoint_x, "m"),
-            ("Speed setpoint", self.reg.setpoint_x_d * 3600, "m/h"),
-        ]:
+        ]
+        if isinstance(self.reg, LookaheadSpeedRegulator):
+            left_col.extend([
+                ("Speed setpoint", self.reg.setpoint_x_d * 3600, "m/h"),
+            ])
+
+        y = 10
+        for name, val, unit in left_col:
             text = f"{name}: {fmt_unit(val, unit)}"
 
             rendered = self.font.render(text, True, (255, 255, 255))
