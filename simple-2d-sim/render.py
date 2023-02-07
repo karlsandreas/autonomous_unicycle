@@ -180,10 +180,10 @@ class Render:
         control_signal = ControlSignals(motor_torque_signal=0.0)
 
         if pygame.key.get_pressed()[pygame.K_LEFT]:
-            mult = 1 if pygame.key.get_pressed()[pygame.K_LSHIFT] else 6
+            mult = 0.2 if pygame.key.get_pressed()[pygame.K_LSHIFT] else 6
             control_signal.motor_torque_signal += mult
         elif pygame.key.get_pressed()[pygame.K_RIGHT]:
-            mult = 1 if pygame.key.get_pressed()[pygame.K_LSHIFT] else 6
+            mult = 0.2 if pygame.key.get_pressed()[pygame.K_LSHIFT] else 6
             control_signal.motor_torque_signal -= mult
 
 
@@ -414,7 +414,7 @@ class Render:
 
 pygame.init()
 pygame.font.init()
-screen = pygame.display.set_mode((1000, 600), pygame.RESIZABLE)
+screen = pygame.display.set_mode((1000, 800), pygame.RESIZABLE)
 pygame.display.set_caption("Autonomous Unicycle")
 
 r = Render(
