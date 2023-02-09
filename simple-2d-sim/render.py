@@ -190,7 +190,7 @@ class Render:
         if pygame.key.get_pressed()[pygame.K_p]:
             if isinstance(self.reg, LookaheadSpeedRegulator):
                 self.reg.setpoint_x_d += val * dt * 3
-        if pygame.key.get_pressed()[pygame.K_s]:
+        elif pygame.key.get_pressed()[pygame.K_s]:
             self.speed_mult *= 2. ** (val * dt)
         else:
             control_signal.motor_torque_signal += val * 30
