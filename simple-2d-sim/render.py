@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Optional
 
 import pygame
 import numpy as np
@@ -18,27 +18,53 @@ BORDER = 4
 
 LINE_COL = (64, 64, 64)
 LINE_COL0 = (100, 100, 100)
-WHEEL_COLOR = (200, 200, 200)
-SPOKE_COLOR = (150, 150, 150)
 
-TORQUE_COLOR = (255, 0, 0)
-SETPOINT_COLOR = (0, 255, 0)
-DRAW_EXPECTED = False
-EXPECTED_COLOR = (0, 255, 255)
+Color = Tuple[int, int, int]
 
-SENSOR_COLOR = (255, 0, 128)
-SENSOR_MEASURE_COLOR = (255, 0, 255)
+class SimRenderOptions:
+    def __init__(
+        self,
+        wheel_color: Color = (200, 200, 200),
+        spoke_color: Color = (150, 150, 150),
+
+        torque_color: Color = (255, 0, 0),
+        setpoint_color: Color = (0, 255, 0),
+        expected_color: Color = (0, 255, 255),
+
+        sensor_color: Color = (255, 0, 128),
+        sensor_measure_color: Color = (255, 0, 255),
+
+        outside_thickness: float = 0.2,
+        inner_size: float = 0.6,
+        inner_thickness: float = 0.2,
+        n_spokes: int = 20,
+        spoke_size: float = 0.1,
+
+        torque_size: float = 0.5,
+
+        draw_sensor: bool = True,
+        draw_torque: bool = True,
+    ):
+        self.wheel_color = wheel_color
+        self.spoke_color = spoke_color
+        self.torque_color = torque_color
+        self.setpoint_color = setpoint_color
+        self.expected_color = expected_color
+        self.sensor_color = sensor_color
+        self.sensor_measure_color = sensor_measure_color
+        self.outside_thickness = outside_thickness
+        self.inner_size = inner_size
+        self.inner_thickness = inner_thickness
+        self.n_spokes = n_spokes
+        self.spoke_size = spoke_size
+        self.torque_size = torque_size
+
+        self.draw_sensor = draw_sensor
+        self.draw_torque = draw_torque
 
 INFO_FONT = "ShareTech.ttf", 30 # path, size
 
 # all relative to wheel diameter
-OUTSIDE_THICKNESS = 0.2
-INNER_SIZE = 0.6
-INNER_THICKNESS = 0.2
-N_SPOKES = 20
-SPOKE_SIZE = 0.1
-
-TORQUE_SIZE = 0.5
 
 CAMERA_TAU = 0.1
 ZOOM_TAU = 0.05
@@ -219,157 +245,130 @@ class Render:
         if self.surf_info.get_size() != info_size:
             self.surf_info = pygame.surface.Surface(info_size)
 
-        self.render(self.surf_render)
+        self.space.set_screen_size(self.surf_render.get_size())
+
+        self.surf_render.fill((0, 0, 0))
+        self.draw_grid(self.surf_render)
+
+        self.render_sim(self.surf_render, SimRenderOptions())
+
         self.draw_info(self.surf_info)
 
         self.screen.fill((255, 0, 255))
         self.screen.blit(self.surf_render, (0, 0))
         self.screen.blit(self.surf_info, (0, self.screen.get_height() - info_size[1]))
 
-    def render(self, surf: pygame.surface.Surface) -> None:
-        self.space.set_screen_size(surf.get_size())
+    def render_sim(self, surf: pygame.surface.Surface, render_options: SimRenderOptions, state: Optional[SimulationState] = None, sim: Optional[Simulator] = None) -> None:
+        if state is None:
+            state = self.state
 
-        surf.fill((0, 0, 0))
-        self.draw_grid(surf)
+        if sim is None:
+            sim = self.sim
 
-        wheel_center = np.array([self.state.wheel_position, self.sim.params.wheel_rad])
+        wheel_center = np.array([state.wheel_position, sim.params.wheel_rad])
         wx, wy = self.space.unit2screen(wheel_center)
         if wx < -surf.get_width() or wx > surf.get_width() * 2 or wy < -surf.get_height() or wy > surf.get_height() * 2:
             return
 
         # spokes
-        for spoke in range(N_SPOKES):
-            inherit_angle = 2 * np.pi * spoke / N_SPOKES
-            angle = inherit_angle - self.state.wheel_position / self.sim.params.wheel_rad
+        for spoke in range(render_options.n_spokes):
+            inherit_angle = 2 * np.pi * spoke / render_options.n_spokes
+            angle = inherit_angle - state.wheel_position / sim.params.wheel_rad
 
-            r_out = self.sim.params.wheel_rad * (1 - OUTSIDE_THICKNESS * 0.5)
-            r_in = self.sim.params.wheel_rad * INNER_SIZE * (1 - INNER_THICKNESS * 0.5)
+            r_out = sim.params.wheel_rad * (1 - render_options.outside_thickness * 0.5)
+            r_in = sim.params.wheel_rad * render_options.inner_size * (1 - render_options.inner_thickness * 0.5)
 
             rot = np.array([np.cos(angle), np.sin(angle)])
 
             pygame.draw.line(
                 surf,
-                SPOKE_COLOR,
+                render_options.spoke_color,
                 self.space.unit2screen(wheel_center + r_out * rot),
                 self.space.unit2screen(wheel_center + r_in * rot),
-                int(self.sim.params.wheel_rad * SPOKE_SIZE * self.space.pixels_per_unit + 0.5),
+                int(sim.params.wheel_rad * render_options.spoke_size * self.space.pixels_per_unit + 0.5),
             )
 
         # outer
         pygame.draw.circle(
             surf,
-            WHEEL_COLOR,
+            render_options.wheel_color,
             self.space.unit2screen(wheel_center),
-            self.sim.params.wheel_rad * self.space.pixels_per_unit,
-            int(self.sim.params.wheel_rad * OUTSIDE_THICKNESS * self.space.pixels_per_unit + 0.5),
+            sim.params.wheel_rad * self.space.pixels_per_unit,
+            int(sim.params.wheel_rad * render_options.outside_thickness * self.space.pixels_per_unit + 0.5),
         )
 
         # inner
         pygame.draw.circle(
             surf,
-            WHEEL_COLOR,
+            render_options.wheel_color,
             self.space.unit2screen(wheel_center),
-            self.sim.params.wheel_rad * INNER_SIZE * self.space.pixels_per_unit,
-            int(self.sim.params.wheel_rad * INNER_SIZE * INNER_THICKNESS * self.space.pixels_per_unit + 0.5),
+            sim.params.wheel_rad * render_options.inner_size * self.space.pixels_per_unit,
+            int(sim.params.wheel_rad * render_options.inner_size * render_options.inner_thickness * self.space.pixels_per_unit + 0.5),
         )
 
-        # torque
-        torque_rect_top_left = wheel_center - self.sim.params.wheel_rad * TORQUE_SIZE * np.array([0.5, -0.5])
-        torque_rect_bottom_right = wheel_center + self.sim.params.wheel_rad * TORQUE_SIZE * np.array([0.5, -0.5])
+        if render_options.draw_torque:
+            torque_rect_top_left = wheel_center - sim.params.wheel_rad * render_options.torque_size * np.array([0.5, -0.5])
+            torque_rect_bottom_right = wheel_center + sim.params.wheel_rad * render_options.torque_size * np.array([0.5, -0.5])
 
-        angle = -self.state.motor_torque / 10
+            angle = -state.motor_torque / 10
 
-        start, end = (np.pi / 2, np.pi / 2 + angle) if angle > 0 else (np.pi/2 + angle, np.pi / 2)
+            start, end = (np.pi / 2, np.pi / 2 + angle) if angle > 0 else (np.pi/2 + angle, np.pi / 2)
 
-        pygame.draw.arc(
-            surf,
-            TORQUE_COLOR,
-            self.space.units2rect(torque_rect_top_left, torque_rect_bottom_right),
-            start - self.state.top_angle, end - self.state.top_angle,
-            int(self.sim.params.wheel_rad * TORQUE_SIZE * 0.3 * self.space.pixels_per_unit), # this is incredibly ugly for some reason
-        )
+            pygame.draw.arc(
+                surf,
+                render_options.torque_color,
+                self.space.units2rect(torque_rect_top_left, torque_rect_bottom_right),
+                start - state.top_angle, end - state.top_angle,
+                int(sim.params.wheel_rad * render_options.torque_size * 0.3 * self.space.pixels_per_unit), # this is incredibly ugly for some reason
+            )
 
         # draw top
-        top_angle = self.state.top_angle
-        top_center = wheel_center + self.sim.params.top_height * np.array([np.sin(top_angle), np.cos(top_angle)])
+        top_angle = state.top_angle
+        top_center = wheel_center + sim.params.top_height * np.array([np.sin(top_angle), np.cos(top_angle)])
         pygame.draw.circle(
             surf,
-            WHEEL_COLOR,
+            render_options.wheel_color,
             self.space.unit2screen(top_center),
             0.1 * self.space.pixels_per_unit,
         )
 
         pygame.draw.line(
             surf,
-            SPOKE_COLOR,
+            render_options.spoke_color,
             self.space.unit2screen(top_center),
             self.space.unit2screen(wheel_center),
             3,
         )
 
-        # draw sensor
-        sensor_center = wheel_center + self.sim.params.sensor_position * np.array([np.sin(top_angle), np.cos(top_angle)])
+        if render_options.draw_sensor:
+            sensor_center = wheel_center + sim.params.sensor_position * np.array([np.sin(top_angle), np.cos(top_angle)])
 
-        pygame.draw.circle(
-            surf,
-            SENSOR_COLOR,
-            self.space.unit2screen(sensor_center),
-            0.03 * self.space.pixels_per_unit,
-        )
+            pygame.draw.circle(
+                surf,
+                render_options.sensor_color,
+                self.space.unit2screen(sensor_center),
+                0.03 * self.space.pixels_per_unit,
+            )
 
-        x_hat, z_hat = np.array(self.sim.sensor_axes(self.state)) # type: ignore
-        a_x, a_z = self.sim.sensor_reading(self.state, self.current_signals)
-        x_vec, z_vec = a_x * x_hat, a_z * z_hat
+            x_hat, z_hat = np.array(sim.sensor_axes(state)) # type: ignore
+            a_x, a_z = sim.sensor_reading(state, self.current_signals)
+            x_vec, z_vec = a_x * x_hat, a_z * z_hat
 
-        pygame.draw.line(
-            surf,
-            SENSOR_MEASURE_COLOR,
-            self.space.unit2screen(sensor_center),
-            self.space.unit2screen(sensor_center + x_vec),
-            3
-        )
+            pygame.draw.line(
+                surf,
+                render_options.sensor_measure_color,
+                self.space.unit2screen(sensor_center),
+                self.space.unit2screen(sensor_center + x_vec),
+                3
+            )
 
-        pygame.draw.line(
-            surf,
-            SENSOR_MEASURE_COLOR,
-            self.space.unit2screen(sensor_center),
-            self.space.unit2screen(sensor_center + z_vec),
-            3
-        )
-
-
-
-        # Draw position setpoint
-        # pos = self.reg.setpoint_x
-        # position_setpoint_x, _ = self.space.unit2screen(np.array([pos, 0]))
-        # pygame.draw.line(
-        #     surf,
-        #     SETPOINT_COLOR,
-        #     (position_setpoint_x, 0),
-        #     (position_setpoint_x, surf.get_height()),
-        #     2,
-        # )
-
-        # if DRAW_EXPECTED:
-        #     pos_expected = self.reg.expected_x_after(self.state, self.reg.settle_time_x)
-        #     position_expected_x, _ = self.space.unit2screen(np.array([pos_expected, 0]))
-        #     pygame.draw.line(
-        #         surf,
-        #         EXPECTED_COLOR,
-        #         (position_expected_x, 0),
-        #         (position_expected_x, surf.get_height()),
-        #         2,
-        #     )
-
-        #     angle_expected = self.reg.expected_theta_after(self.state, self.reg.settle_time_theta)
-        #     angle_center = wheel_center + self.sim.params.top_height * np.array([np.sin(angle_expected), np.cos(angle_expected)])
-        #     pygame.draw.line(
-        #         surf,
-        #         EXPECTED_COLOR,
-        #         self.space.unit2screen(wheel_center),
-        #         self.space.unit2screen(angle_center),
-        #         2,
-        #     )
+            pygame.draw.line(
+                surf,
+                render_options.sensor_measure_color,
+                self.space.unit2screen(sensor_center),
+                self.space.unit2screen(sensor_center + z_vec),
+                3
+            )
 
     def draw_grid(self, surf: pygame.surface.Surface) -> None:
         (x0, y0), (x1, y1) = self.space.screen2unit((0, 0)), self.space.screen2unit(surf.get_size())
