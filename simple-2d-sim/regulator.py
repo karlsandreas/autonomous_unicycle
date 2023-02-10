@@ -72,7 +72,7 @@ class LookaheadSpeedRegulator(Regulator):
         x_d = st.wheel_position_d
 
         x_d_diff = abs(x_d - self.setpoint_x_d)
-        return x_d_diff * 0.3 + 1.5
+        return x_d_diff * 0.5 + 1.2
 
     def __call__(self, st: SimulationState, dt: float) -> ControlSignals:
         theta = st.top_angle

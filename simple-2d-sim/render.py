@@ -398,6 +398,7 @@ class Render:
             ("Position", self.state.wheel_position, "m"),
             ("Speed", self.state.wheel_position_d * 3600, "m/h"),
             ("Angle", self.state.top_angle / np.pi * 180, "deg"),
+            # ("Linearity", np.sin(self.state.top_angle) / self.state.top_angle * 100, "%"),
             ("Motor torque", self.state.motor_torque, "Nm"),
 
         ]
