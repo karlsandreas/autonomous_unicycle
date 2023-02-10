@@ -1,6 +1,13 @@
 import math
 
 def fmt_unit(val: float, base_unit: str) -> str:
+    if math.isnan(val):
+        return "(NaN) " + base_unit
+    if math.isinf(val):
+        if val > 0:
+            return "(∞) " + base_unit
+        else:
+            return "(-∞) " + base_unit
     if val == 0:
         return "0" + base_unit
     exp = math.log(abs(val)) / math.log(10)
