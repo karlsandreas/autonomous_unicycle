@@ -26,6 +26,9 @@ SETPOINT_COLOR = (0, 255, 0)
 DRAW_EXPECTED = False
 EXPECTED_COLOR = (0, 255, 255)
 
+SENSOR_COLOR = (255, 0, 128)
+SENSOR_MEASURE_COLOR = (255, 0, 255)
+
 INFO_FONT = "ShareTech.ttf", 30 # path, size
 
 # all relative to wheel diameter
@@ -87,6 +90,7 @@ DEFAULT_PARAMETERS = SimulationParameters(
     top_height = 0.8,
     top_mass = 4,
     motor_reaction_speed = 0.1,
+    sensor_position=1.0,
 )
 
 # DEFAULT_REG = NullRegulator(params=DEFAULT_PARAMETERS)
@@ -113,6 +117,7 @@ class Render:
         self.sim = simulator
         self.init_state = self.state = init_state
         self.reg = reg
+        self.current_signals = ControlSignals()
 
         self.done = False
         self.space = ScreenSpaceTranslator(200, np.array([0., 0.,]), self.screen.get_size())
@@ -182,7 +187,7 @@ class Render:
 
 
     def step(self, dt: float) -> None:
-        control_signal = self.reg(self.state, dt * self.speed_mult)
+        self.current_signals = self.reg(self.state, dt * self.speed_mult)
 
         mult = 3. if pygame.key.get_pressed()[pygame.K_LALT] else 0.3 if pygame.key.get_pressed()[pygame.K_LSHIFT] else 1.0
         val = mult if pygame.key.get_pressed()[pygame.K_RIGHT] else -mult if pygame.key.get_pressed()[pygame.K_LEFT] else 0
@@ -193,13 +198,13 @@ class Render:
         elif pygame.key.get_pressed()[pygame.K_s]:
             self.speed_mult *= 2. ** (val * dt)
         else:
-            control_signal.motor_torque_signal += val * 30
+            self.current_signals.motor_torque_signal += val * 30
 
-        self.state = self.sim.step(self.state, control_signal, dt * self.speed_mult)
+        self.state = self.sim.step(self.state, self.current_signals, dt * self.speed_mult)
 
         self.space.pixels_per_unit = self.space.pixels_per_unit + (self.wanted_zoom - self.space.pixels_per_unit) * dt / ZOOM_TAU
         if self.mode == "follow":
-            pos = np.array([self.state.wheel_position, self.sim.params.wheel_rad])
+            pos = np.array([self.state.wheel_position, self.sim.params.wheel_rad + 0.5])
 
             expected = pos + CAMERA_TAU * 0.8 * np.array([self.state.wheel_position_d, 0])
             self.space.view_center = self.space.view_center + (expected - self.space.view_center) * dt / CAMERA_TAU
@@ -301,6 +306,38 @@ class Render:
             self.space.unit2screen(wheel_center),
             3,
         )
+
+        # draw sensor
+        sensor_center = wheel_center + self.sim.params.sensor_position * np.array([np.sin(top_angle), np.cos(top_angle)])
+
+        pygame.draw.circle(
+            surf,
+            SENSOR_COLOR,
+            self.space.unit2screen(sensor_center),
+            0.03 * self.space.pixels_per_unit,
+        )
+
+        x_hat, z_hat = np.array(self.sim.sensor_axes(self.state)) # type: ignore
+        a_x, a_z = self.sim.sensor_reading(self.state, self.current_signals)
+        x_vec, z_vec = a_x * x_hat, a_z * z_hat
+
+        pygame.draw.line(
+            surf,
+            SENSOR_MEASURE_COLOR,
+            self.space.unit2screen(sensor_center),
+            self.space.unit2screen(sensor_center + x_vec),
+            3
+        )
+
+        pygame.draw.line(
+            surf,
+            SENSOR_MEASURE_COLOR,
+            self.space.unit2screen(sensor_center),
+            self.space.unit2screen(sensor_center + z_vec),
+            3
+        )
+
+
 
         # Draw position setpoint
         # pos = self.reg.setpoint_x

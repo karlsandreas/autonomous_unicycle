@@ -23,6 +23,8 @@ class SimulationParameters:
         top_mass: float, # [kg] Mass of top
         motor_reaction_speed: float, # [s] Motor reaction speed
 
+        sensor_position: float, # [m] distance from wheel on top-axis
+
         g: float = 9.82, # Gravity
     ):
         self.wheel_rad = wheel_rad
@@ -30,6 +32,7 @@ class SimulationParameters:
         self.top_height = top_height
         self.top_mass = top_mass
         self.motor_reaction_speed = motor_reaction_speed
+        self.sensor_position = sensor_position
         self.g = g
 
 
@@ -149,7 +152,7 @@ class Simulator:
             top_angle_d = theta_dd,
             motor_torque= (signals.motor_torque_signal - state.motor_torque) / self.params.motor_reaction_speed
         )
-            
+
 
     # Enforces limit conditions (i.e. top bouncing on floor)
     # Modifies state in-place
@@ -165,6 +168,24 @@ class Simulator:
             state.top_angle = -max_angle
             state.top_angle_d *= -BOUNCE_FACTOR
             state.wheel_position_d *= BOUNCE_FACTOR
+
+    # Returns (a_x, a_z) in sensor's frame of reference
+    # z = "up", x = "right" when upright
+    def sensor_reading(self, state: SimulationState, signals: ControlSignals) -> Tuple[float, float]:
+        deriv = self.state_derivative(state, signals)
+        wheel_position_dd = deriv.wheel_position_d
+        top_angle_dd = deriv.top_angle_d
+
+        a_x = wheel_position_dd + self.params.sensor_position * top_angle_dd
+        a_z = wheel_position_dd * math.sin(state.top_angle) - self.params.sensor_position * state.top_angle_d ** 2
+
+        return a_x, a_z
+
+    # Returns (a_hat_x, a_hat_z), basis vectors for the sensor's frame of reference
+    def sensor_axes(self, state: SimulationState) -> Tuple[Tuple[float, float], Tuple[float, float]]:
+        a_hat_x = (math.cos(state.top_angle), -math.sin(state.top_angle))
+        a_hat_z = (math.sin(state.top_angle), math.cos(state.top_angle))
+        return a_hat_x, a_hat_z
 
     # Runs one step of Runge-Kutta 4 (classic)
     # Does not modify in-place, instead returns next state
