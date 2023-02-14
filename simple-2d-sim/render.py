@@ -10,6 +10,7 @@ import time
 
 from sim import SimulationState, SimulationParameters, ControlSignals, Simulator
 from regulator import Regulator, LookaheadSpeedRegulator, NullRegulator
+from kalman import KalmanFilter
 
 from fmt import fmt_unit
 
@@ -122,8 +123,10 @@ DEFAULT_PARAMETERS = SimulationParameters(
 # DEFAULT_REG = NullRegulator(params=DEFAULT_PARAMETERS)
 DEFAULT_REG = LookaheadSpeedRegulator(
     params=DEFAULT_PARAMETERS,
-    setpoint_x_d=5.,
+    setpoint_x_d=1.,
 )
+
+DEFAULT_KALMAN_GAIN = 0.5
 
 # Space = switch view mode (follow, free)
 #   right-click drag = pan in free mode
@@ -144,6 +147,13 @@ class Render:
         self.init_state = self.state = init_state
         self.reg = reg
         self.current_signals = ControlSignals()
+
+        self.filter = KalmanFilter(
+            self.sim,
+            init_state,
+            SimulationState(),
+            DEFAULT_KALMAN_GAIN,
+        )
 
         self.done = False
         self.space = ScreenSpaceTranslator(200, np.array([0., 0.,]), self.screen.get_size())
@@ -189,6 +199,12 @@ class Render:
                             self.mode = "free_cam"
                     if event.key == pygame.K_TAB:
                         self.state = self.init_state
+                        self.filter = KalmanFilter(
+                            self.sim,
+                            self.init_state,
+                            SimulationState(),
+                            DEFAULT_KALMAN_GAIN,
+                        )
 
             self.draw()
 
@@ -226,7 +242,15 @@ class Render:
         else:
             self.current_signals.motor_torque_signal += val * 30
 
-        self.state = self.sim.step(self.state, self.current_signals, dt * self.speed_mult)
+        sim_dt = dt * self.speed_mult
+
+        self.state = self.sim.step(self.state, self.current_signals, sim_dt)
+        self.filter.step(sim_dt, self.current_signals)
+
+        var_x, var_z = 0.5, 0.5
+        noise_x, noise_z = random.gauss(0, var_x**0.5), random.gauss(0, var_z**0.5)
+        ax, az = self.sim.sensor_reading(self.state, self.current_signals)
+        self.filter.read_sensor((ax + noise_x, az + noise_z), (var_x, var_z), self.current_signals, sim_dt)
 
         self.space.pixels_per_unit = self.space.pixels_per_unit + (self.wanted_zoom - self.space.pixels_per_unit) * dt / ZOOM_TAU
         if self.mode == "follow":
@@ -251,6 +275,7 @@ class Render:
         self.draw_grid(self.surf_render)
 
         self.render_sim(self.surf_render, SimRenderOptions())
+        self.render_sim(self.surf_render, SimRenderOptions(), self.filter.state)
 
         self.draw_info(self.surf_info)
 

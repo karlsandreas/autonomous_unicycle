@@ -77,13 +77,13 @@ class ControlSignals:
 class SimulationState:
     def __init__(
         self,
-        wheel_position: float, # [m] Position of the wheel
-        wheel_position_d: float, # [ms^-1] Velocity of the wheel
+        wheel_position: float = 0., # [m] Position of the wheel
+        wheel_position_d: float = 0., # [ms^-1] Velocity of the wheel
 
-        top_angle: float, # [rad] Angle of the top with repsect to the center of the wheel, zero being straight upwards
-        top_angle_d: float, # [rad s^-1] Rotational velocity of the top with respect to the wheel
+        top_angle: float = 0., # [rad] Angle of the top with repsect to the center of the wheel, zero being straight upwards
+        top_angle_d: float = 0., # [rad s^-1] Rotational velocity of the top with respect to the wheel
 
-        motor_torque: float, # [Nm] Instantaneous of the motor
+        motor_torque: float = 0., # [Nm] Instantaneous of the motor
     ):
 
         self.wheel_position = wheel_position
