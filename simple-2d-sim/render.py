@@ -2,13 +2,13 @@ from typing import Tuple
 
 import pygame
 import numpy as np
-import random
+import math
 
 from pidcontroller import PIDController
 
 import time
 
-from sim import SimulationState, SimulationParameters, ControlSignals, Simulator
+from sim_roll import SimulationState, SimulationParameters, ControlSignals, Simulator
 from regulator import Regulator, LookaheadSpeedRegulator, NullRegulator
 
 from fmt import fmt_unit
@@ -26,8 +26,8 @@ SETPOINT_COLOR = (0, 255, 0)
 DRAW_EXPECTED = False
 EXPECTED_COLOR = (0, 255, 255)
 
-INFO_FONT = "ShareTech.ttf", 30 # path, size
-
+INFO_FONT = "autonomous_unicycle\simple-2d-sim\ShareTech.ttf", 30 # path, size
+#INFO_FONT = "ShareTech.ttf", 30 # path, size
 # all relative to wheel diameter
 OUTSIDE_THICKNESS = 0.2
 INNER_SIZE = 0.6
@@ -73,26 +73,27 @@ class ScreenSpaceTranslator:
         x2, y2 = self.unit2screen(c2)
         return pygame.Rect(x1, y1, x2 - x1, y2 - y1)
 
+
+
+DEFAULT_PARAMETERS = SimulationParameters(
+    wheel_rad = 0.1,
+    wheel_mass = 1,
+    height = 0.8,
+    chassi_mass = 10,
+    motor_reaction_speed = 1.1,
+)
 INIT_STATE = SimulationState(
-    wheel_position = 0,
-    wheel_position_d = 0,
-    top_angle = 0,
+    top_angle = 0.01,
     top_angle_d = 0,
     motor_torque = 0,
 )
 
-DEFAULT_PARAMETERS = SimulationParameters(
-    wheel_rad = 0.28,
-    wheel_mass = 20,
-    top_height = 0.8,
-    top_mass = 4,
-    motor_reaction_speed = 0.1,
-)
-
 # DEFAULT_REG = NullRegulator(params=DEFAULT_PARAMETERS)
-DEFAULT_REG = LookaheadSpeedRegulator(
-    params=DEFAULT_PARAMETERS,
-    setpoint_x_d=5.,
+DEFAULT_REG = PIDController(
+    kp= 120.0,
+    ki= 0.0,
+    kd= 5.0,
+    setpoint=0,
 )
 
 # Space = switch view mode (follow, free)
@@ -103,16 +104,16 @@ class Render:
     def __init__(
         self,
         screen: pygame.surface.Surface,
-
         simulator: Simulator,
         init_state: SimulationState,
-        reg: Regulator,
+        reg: PIDController,
     ) -> None:
         self.screen = screen
 
         self.sim = simulator
         self.init_state = self.state = init_state
         self.reg = reg
+        self.pos = simulator.get_pos_vel(self.state)
 
         self.done = False
         self.space = ScreenSpaceTranslator(200, np.array([0., 0.,]), self.screen.get_size())
@@ -182,26 +183,41 @@ class Render:
 
 
     def step(self, dt: float) -> None:
-        control_signal = self.reg(self.state, dt * self.speed_mult)
+        noise = np.random.uniform(-0.09, 0.09, 1)[0] #0.09 rad is apporx 5 deg 
+        
+        control_signal = -self.reg(self.state.top_angle + noise , dt * self.speed_mult)
 
-        mult = 3. if pygame.key.get_pressed()[pygame.K_LALT] else 0.3 if pygame.key.get_pressed()[pygame.K_LSHIFT] else 1.0
-        val = mult if pygame.key.get_pressed()[pygame.K_RIGHT] else -mult if pygame.key.get_pressed()[pygame.K_LEFT] else 0
+        #mult = 3. if pygame.key.get_pressed()[pygame.K_LALT] else 0.3 if pygame.key.get_pressed()[pygame.K_LSHIFT] else 1.0
+        #val = mult if pygame.key.get_pressed()[pygame.K_RIGHT] else -mult if pygame.key.get_pressed()[pygame.K_LEFT] else 0
+        
+        noise = np.random.normal(0, 0.0001, 1)
+        #self.state.top_angle += noise[0]
+        #self.state.top_angle_d += noise[0]
 
-        if pygame.key.get_pressed()[pygame.K_p]:
-            if isinstance(self.reg, LookaheadSpeedRegulator):
-                self.reg.setpoint_x_d += val * dt * 3
-        if pygame.key.get_pressed()[pygame.K_s]:
-            self.speed_mult *= 2. ** (val * dt)
-        else:
-            control_signal.motor_torque_signal += val * 30
+        if pygame.key.get_pressed()[pygame.K_RIGHT]: 
+            control_signal = 10
+        elif pygame.key.get_pressed()[pygame.K_LEFT]:
+            control_signal = -10
+        #else:
+            #control_signal = 0
+
+        # if pygame.key.get_pressed()[pygame.K_p]:
+        #     if isinstance(self.reg, LookaheadSpeedRegulator):
+        #         self.reg.setpoint_x_d += val * dt * 3
+        
+        #if pygame.key.get_pressed()[pygame.K_s]:
+        #    self.speed_mult *= 2. ** (val * dt)
+        #else:
+        #    control_signal.motor_torque_signal += val * 30
 
         self.state = self.sim.step(self.state, control_signal, dt * self.speed_mult)
+        self.pos = self.sim.get_pos_vel(self.state)
 
         self.space.pixels_per_unit = self.space.pixels_per_unit + (self.wanted_zoom - self.space.pixels_per_unit) * dt / ZOOM_TAU
         if self.mode == "follow":
-            pos = np.array([self.state.wheel_position, self.sim.params.wheel_rad])
+            pos = np.array([self.pos.top_center_pos_x, self.sim.params.wheel_rad])
 
-            expected = pos + CAMERA_TAU * 0.8 * np.array([self.state.wheel_position_d, 0])
+            expected = pos + CAMERA_TAU * 0.8 * np.array([self.pos.top_center_pos_x_d, 0])
             self.space.view_center = self.space.view_center + (expected - self.space.view_center) * dt / CAMERA_TAU
 
     def draw(self) -> None:
@@ -227,7 +243,7 @@ class Render:
         surf.fill((0, 0, 0))
         self.draw_grid(surf)
 
-        wheel_center = np.array([self.state.wheel_position, self.sim.params.wheel_rad])
+        wheel_center = np.array([self.pos.top_center_pos_x, self.pos.top_center_pos_z ])
         wx, wy = self.space.unit2screen(wheel_center)
         if wx < -surf.get_width() or wx > surf.get_width() * 2 or wy < -surf.get_height() or wy > surf.get_height() * 2:
             return
@@ -235,7 +251,7 @@ class Render:
         # spokes
         for spoke in range(N_SPOKES):
             inherit_angle = 2 * np.pi * spoke / N_SPOKES
-            angle = inherit_angle - self.state.wheel_position / self.sim.params.wheel_rad
+            angle = inherit_angle - (self.pos.top_center_pos_x) / self.sim.params.wheel_rad
 
             r_out = self.sim.params.wheel_rad * (1 - OUTSIDE_THICKNESS * 0.5)
             r_in = self.sim.params.wheel_rad * INNER_SIZE * (1 - INNER_THICKNESS * 0.5)
@@ -286,18 +302,18 @@ class Render:
 
         # draw top
         top_angle = self.state.top_angle
-        top_center = wheel_center + self.sim.params.top_height * np.array([np.sin(top_angle), np.cos(top_angle)])
+        base_center = np.array([0,0])
         pygame.draw.circle(
             surf,
             WHEEL_COLOR,
-            self.space.unit2screen(top_center),
-            0.1 * self.space.pixels_per_unit,
+            self.space.unit2screen(base_center),
+            0.01 * self.space.pixels_per_unit,
         )
 
         pygame.draw.line(
             surf,
             SPOKE_COLOR,
-            self.space.unit2screen(top_center),
+            self.space.unit2screen(base_center),
             self.space.unit2screen(wheel_center),
             3,
         )
@@ -335,7 +351,10 @@ class Render:
         #     )
 
     def draw_grid(self, surf: pygame.surface.Surface) -> None:
-        (x0, y0), (x1, y1) = self.space.screen2unit((0, 0)), self.space.screen2unit(surf.get_size())
+        (x0 , y0), (x1, y1) = self.space.screen2unit((0, 0)), self.space.screen2unit(surf.get_size())
+        if (math.isnan(x0) or math.isnan(x1)):
+            x0 = 0.0
+            x1 = 0.0
         for x in range(int(x0), int(x1 + 1)):
             pygame.draw.line(
                 surf,
@@ -358,8 +377,8 @@ class Render:
         surf.fill((20, 20, 20))
 
         left_col = [
-            ("Position", self.state.wheel_position, "m"),
-            ("Speed", self.state.wheel_position_d * 3600, "m/h"),
+            ("Position X", self.pos.top_center_pos_x, "m"),
+            ("Speed X", self.pos.top_center_pos_x_d * 3600, "m/h"),
             ("Angle", self.state.top_angle / np.pi * 180, "deg"),
             ("Motor torque", self.state.motor_torque, "Nm"),
 
@@ -371,6 +390,8 @@ class Render:
 
         y = 10
         for name, val, unit in left_col:
+            if math.isnan(val):
+                val = 0.0
             text = f"{name}: {fmt_unit(val, unit)}"
 
             rendered = self.font.render(text, True, (255, 255, 255))

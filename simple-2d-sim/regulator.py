@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from sim import SimulationParameters, SimulationState, ControlSignals
+from sim_roll import SimulationParameters, SimulationState, ControlSignals
 
 # Base class for all regulators.
 # Should support a __call__, taking the simulation state and the dt, optionally changing the state of the regulator, giving a ControlSignals
@@ -35,8 +35,8 @@ class LookaheadSpeedRegulator(Regulator):
     def expected_theta_after(self, st: SimulationState, t: float) -> float:
         theta = st.top_angle
         theta_d = st.top_angle_d
-        x = st.wheel_position
-        x_d = st.wheel_position_d
+        x = st.top_center_pos
+        x_d = st.top_center_pos_d
 
         delta_tau = st.motor_torque + self.C / self.D * theta
 
@@ -45,8 +45,8 @@ class LookaheadSpeedRegulator(Regulator):
     def expected_x_after(self, st: SimulationState, t: float) -> float:
         theta = st.top_angle
         theta_d = st.top_angle_d
-        x = st.wheel_position
-        x_d = st.wheel_position_d
+        x = st.top_center_pos
+        x_d = st.top_center_pos_d
 
         delta_tau = st.motor_torque + self.C / self.D * theta
 
@@ -55,8 +55,8 @@ class LookaheadSpeedRegulator(Regulator):
     def expected_x_d_after(self, st: SimulationState, t: float) -> float:
         theta = st.top_angle
         theta_d = st.top_angle_d
-        x = st.wheel_position
-        x_d = st.wheel_position_d
+        x = st.top_center_pos
+        x_d = st.top_center_pos_d
 
         delta_tau = self.last_delta_tau # st.motor_torque + self.C / self.D * theta
 
@@ -68,8 +68,8 @@ class LookaheadSpeedRegulator(Regulator):
     def stop_time_x_d(self, st: SimulationState) -> float:
         theta = st.top_angle
         theta_d = st.top_angle_d
-        x = st.wheel_position
-        x_d = st.wheel_position_d
+        x = st.top_center_pos
+        x_d = st.top_center_pos_d
 
         x_d_diff = abs(x_d - self.setpoint_x_d)
         return x_d_diff * 0.3 + 1.5
@@ -77,8 +77,8 @@ class LookaheadSpeedRegulator(Regulator):
     def __call__(self, st: SimulationState, dt: float) -> ControlSignals:
         theta = st.top_angle
         theta_d = st.top_angle_d
-        x = st.wheel_position
-        x_d = st.wheel_position_d
+        x = st.top_center_pos
+        x_d = st.top_center_pos_d
 
         t_theta = self.stop_time_theta(st)
         t_x_d = self.stop_time_x_d(st)
