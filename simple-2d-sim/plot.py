@@ -1,12 +1,9 @@
 import numpy as np
 import random
 
-from pidcontroller import PIDController
 
 import matplotlib.pyplot as plt
-import matplotlib.animation as animation
 
-import time
 
 from sim import SimulationState, SimulationParameters, ControlSignals, Simulator
 from regulator import Regulator, LookaheadSpeedRegulator, NullRegulator
@@ -122,7 +119,6 @@ class plotter:
 
 
         # Format plot
-        #fig.ylabel('Top angle')
         fig.legend()
         plt.show()
 

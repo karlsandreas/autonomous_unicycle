@@ -203,7 +203,6 @@ class Simulator:
             motor_torque= (signals.motor_torque_signal - state.motor_torque) / self.params.motor_reaction_speed
         )
 
-
     # Enforces limit conditions (i.e. top bouncing on floor)
     # Modifies state in-place
     def limit(self, state: SimulationState, signals: ControlSignals):
@@ -235,10 +234,6 @@ class Simulator:
         top_angle_d = state.top_angle_d
 
         return np.array([top_angle_d, a_x , a_z])
-
-    def sensor_reading_angle(self, state: SimulationState):
-
-        return state.top_angle_d
 
     # Returns (a_hat_x, a_hat_z), basis vectors for the sensor's frame of reference
     def sensor_axes(self, state: SimulationState) -> Tuple[Tuple[float, float], Tuple[float, float]]:
