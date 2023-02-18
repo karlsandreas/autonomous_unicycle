@@ -58,12 +58,15 @@ class SimulationParameters:
         Å = m_c * self.g * l
         d = X*V - U*Y
 
+        # A φ'' + Y θ'' = Z
+        # U φ'' + V θ'' = W
+
         A = r/d * (-Å*Y)
         B = r/d * (-V-Y)
         C = 1/d * (Å*X)
         D = 1/d * (U+X)
         return A, B, C, D
-
+    
 
 # Grouping all control signals
 class ControlSignals:
@@ -171,15 +174,21 @@ class Simulator:
 
     # Returns (a_x, a_z) in sensor's frame of reference
     # z = "up", x = "right" when upright
-    def sensor_reading(self, state: SimulationState, signals: ControlSignals) -> Tuple[float, float]:
+    def sensor_reading(self, state: SimulationState, signals: ControlSignals) -> np.array([float, float, float]):
         deriv = self.state_derivative(state, signals)
         wheel_position_dd = deriv.wheel_position_d
         top_angle_dd = deriv.top_angle_d
 
-        a_x = wheel_position_dd + self.params.sensor_position * top_angle_dd
-        a_z = wheel_position_dd * math.sin(state.top_angle) - self.params.sensor_position * state.top_angle_d ** 2
+        a = self.params.sensor_position * top_angle_dd
 
-        return a_x, a_z
+        a_x = wheel_position_dd + self.params.sensor_position * top_angle_dd
+        #a_x = wheel_position_dd + a * np.cos(state.top_angle)
+        #a_z = a * np.sin(state.top_angle)
+        a_z = wheel_position_dd * math.sin(state.top_angle) - self.params.sensor_position * state.top_angle_d ** 2
+        top_angle_d = state.top_angle_d
+
+        return np.array([top_angle_d, a_x , a_z])
+
 
     # Returns (a_hat_x, a_hat_z), basis vectors for the sensor's frame of reference
     def sensor_axes(self, state: SimulationState) -> Tuple[Tuple[float, float], Tuple[float, float]]:

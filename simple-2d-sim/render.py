@@ -13,6 +13,7 @@ from regulator import Regulator, LookaheadSpeedRegulator, NullRegulator
 from kalman import KalmanFilter
 
 from fmt import fmt_unit
+import initials as init
 
 # Parameters for rendering
 BORDER = 4
@@ -103,30 +104,11 @@ class ScreenSpaceTranslator:
         x2, y2 = self.unit2screen(c2)
         return pygame.Rect(x1, y1, x2 - x1, y2 - y1)
 
-INIT_STATE = SimulationState(
-    wheel_position = 0,
-    wheel_position_d = 0,
-    top_angle = 0,
-    top_angle_d = 0,
-    motor_torque = 0,
-)
-
-DEFAULT_PARAMETERS = SimulationParameters(
-    wheel_rad = 0.28,
-    wheel_mass = 20,
-    top_height = 0.8,
-    top_mass = 4,
-    motor_reaction_speed = 0.1,
-    sensor_position=1.0,
-)
-
+INIT_STATE = init.INIT_STATE
+DEFAULT_PARAMETERS = init.DEFAULT_PARAMETERS
 # DEFAULT_REG = NullRegulator(params=DEFAULT_PARAMETERS)
-DEFAULT_REG = LookaheadSpeedRegulator(
-    params=DEFAULT_PARAMETERS,
-    setpoint_x_d=1.,
-)
-
-DEFAULT_KALMAN_GAIN = 0.5
+DEFAULT_REG = init.DEFAULT_REG
+DEFAULT_KALMAN_GAIN = init.DEFAULT_KALMAN_GAIN
 
 # Space = switch view mode (follow, free)
 #   right-click drag = pan in free mode
@@ -249,7 +231,13 @@ class Render:
 
         var_x, var_z = 0.5, 0.5
         noise_x, noise_z = random.gauss(0, var_x**0.5), random.gauss(0, var_z**0.5)
-        ax, az = self.sim.sensor_reading(self.state, self.current_signals)
+        
+        sensor_reading = self.sim.sensor_reading(self.state, self.current_signals)
+        
+        top_angle_d = sensor_reading[0]
+        ax = sensor_reading[1]
+        az = sensor_reading[2]
+
         self.filter.read_sensor((ax + noise_x, az + noise_z), (var_x, var_z), self.current_signals, sim_dt)
 
         self.space.pixels_per_unit = self.space.pixels_per_unit + (self.wanted_zoom - self.space.pixels_per_unit) * dt / ZOOM_TAU
@@ -376,7 +364,9 @@ class Render:
             )
 
             x_hat, z_hat = np.array(sim.sensor_axes(state)) # type: ignore
-            a_x, a_z = sim.sensor_reading(state, self.current_signals)
+            sensor_reading = sim.sensor_reading(state, self.current_signals)
+            a_x = sensor_reading[1]
+            a_z = sensor_reading[2]
             x_vec, z_vec = a_x * x_hat, a_z * z_hat
 
             pygame.draw.line(
@@ -422,6 +412,7 @@ class Render:
             ("Position", self.state.wheel_position, "m"),
             ("Speed", self.state.wheel_position_d * 3600, "m/h"),
             ("Angle", self.state.top_angle / np.pi * 180, "deg"),
+            ("Angle kalman", self.filter.state.top_angle_d / np.pi * 180, "deg/s"),
             # ("Linearity", np.sin(self.state.top_angle) / self.state.top_angle * 100, "%"),
             ("Motor torque", self.state.motor_torque, "Nm"),
 
