@@ -6,6 +6,10 @@ import random
 
 from pidcontroller import PIDController
 
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+import math
+
 import time
 
 from sim import SimulationState, SimulationParameters, ControlSignals, Simulator
@@ -13,6 +17,8 @@ from regulator import Regulator, LookaheadSpeedRegulator, NullRegulator
 from kalman import KalmanFilter
 
 from fmt import fmt_unit
+
+import initials as init
 
 # Parameters for rendering
 BORDER = 4
@@ -103,30 +109,18 @@ class ScreenSpaceTranslator:
         x2, y2 = self.unit2screen(c2)
         return pygame.Rect(x1, y1, x2 - x1, y2 - y1)
 
-INIT_STATE = SimulationState(
-    wheel_position = 0,
-    wheel_position_d = 0,
-    top_angle = 0,
-    top_angle_d = 0,
-    motor_torque = 0,
-)
 
-DEFAULT_PARAMETERS = SimulationParameters(
-    wheel_rad = 0.28,
-    wheel_mass = 20,
-    top_height = 0.8,
-    top_mass = 4,
-    motor_reaction_speed = 0.1,
-    sensor_position=1.0,
-)
+
+INIT_STATE = init.INIT_STATE
+DEFAULT_KALMAN = init.DEFAULT_KALMAN
+
+
+DEFAULT_PARAMETERS = init.DEFAULT_PARAMETERS
 
 # DEFAULT_REG = NullRegulator(params=DEFAULT_PARAMETERS)
-DEFAULT_REG = LookaheadSpeedRegulator(
-    params=DEFAULT_PARAMETERS,
-    setpoint_x_d=1.,
-)
+DEFAULT_REG = init.DEFAULT_REG
 
-DEFAULT_KALMAN_GAIN = 0.5
+DEFAULT_KALMAN_GAIN = init.DEFAULT_KALMAN_GAIN
 
 # Space = switch view mode (follow, free)
 #   right-click drag = pan in free mode
@@ -136,24 +130,24 @@ class Render:
     def __init__(
         self,
         screen: pygame.surface.Surface,
-
         simulator: Simulator,
         init_state: SimulationState,
         reg: Regulator,
+        kalman_filter: KalmanFilter,
     ) -> None:
         self.screen = screen
 
         self.sim = simulator
         self.init_state = self.state = init_state
+        
         self.reg = reg
+        self.filter_reg = reg
         self.current_signals = ControlSignals()
+        self.filter_sig = ControlSignals()
 
-        self.filter = KalmanFilter(
-            self.sim,
-            init_state,
-            SimulationState(),
-            DEFAULT_KALMAN_GAIN,
-        )
+        self.init_kalman = kalman_filter
+        self.filter = kalman_filter
+        self.filter_state = init_state
 
         self.done = False
         self.space = ScreenSpaceTranslator(200, np.array([0., 0.,]), self.screen.get_size())
@@ -171,9 +165,10 @@ class Render:
         self.current_fps = 0.
         self.avg_tick_time = 0.
 
+        self.sensor_reading = 0.0
+
     def run(self) -> None:
         last_t = time.time()
-
         frames_last_second = []
         tick_times = []
 
@@ -199,12 +194,8 @@ class Render:
                             self.mode = "free_cam"
                     if event.key == pygame.K_TAB:
                         self.state = self.init_state
-                        self.filter = KalmanFilter(
-                            self.sim,
-                            self.init_state,
-                            SimulationState(),
-                            DEFAULT_KALMAN_GAIN,
-                        )
+                        self.filter_state = self.init_state
+                        self.filter = self.init_kalman
 
             self.draw()
 
@@ -229,7 +220,9 @@ class Render:
 
 
     def step(self, dt: float) -> None:
-        self.current_signals = self.reg(self.state, dt * self.speed_mult)
+
+        #self.filter_sig = self.filter_reg(self.filter_state, dt* self.speed_mult)
+        self.current_signals = self.reg(self.filter_state, dt * self.speed_mult)
 
         mult = 3. if pygame.key.get_pressed()[pygame.K_LALT] else 0.3 if pygame.key.get_pressed()[pygame.K_LSHIFT] else 1.0
         val = mult if pygame.key.get_pressed()[pygame.K_RIGHT] else -mult if pygame.key.get_pressed()[pygame.K_LEFT] else 0
@@ -241,16 +234,41 @@ class Render:
             self.speed_mult *= 2. ** (val * dt)
         else:
             self.current_signals.motor_torque_signal += val * 30
+            self.filter_sig.motor_torque_signal += val * 30
 
         sim_dt = dt * self.speed_mult
 
-        self.state = self.sim.step(self.state, self.current_signals, sim_dt)
-        self.filter.step(sim_dt, self.current_signals)
+        sensor_reading = self.sim.sensor_reading(self.state, self.current_signals)
+        
+        var_x = 0.5 #m/s^2
+        var_z = 0.5 #m/s^2
+        var_angle = 0.005 #rad/s 
+        noise_x, noise_z, noise_angle = random.gauss(0, var_x**0.5), random.gauss(0, var_z**0.5), random.gauss(0, var_angle**0.5)
 
-        var_x, var_z = 0.5, 0.5
-        noise_x, noise_z = random.gauss(0, var_x**0.5), random.gauss(0, var_z**0.5)
-        ax, az = self.sim.sensor_reading(self.state, self.current_signals)
-        self.filter.read_sensor((ax + noise_x, az + noise_z), (var_x, var_z), self.current_signals, sim_dt)
+        a_x = sensor_reading[1] + noise_x
+        a_z = sensor_reading[2] + noise_z
+        a = (a_x**2 + a_z**2)**0.5
+
+        top_angle_d = sensor_reading[0] + noise_angle
+
+        self.sensor_reading = top_angle_d
+
+        kalman_out = self.filter.predict(a)
+        self.filter_state.top_angle = kalman_out[0][0]  
+        self.filter_state.top_angle_d = kalman_out[1][0]  
+
+        self.state = self.sim.step(self.state, self.current_signals, sim_dt)
+        #self.filter.step(sim_dt, self.current_signals)
+        self.filter_state = self.sim.step(self.filter_state, self.current_signals, sim_dt)        
+
+        F = np.array([[1, dt],
+                           [0, 1]])
+        Q = 0.05 * np.array([[dt**2, dt],
+                           [dt, 1]])
+        R = self.sim.params.sensor_position
+        G = np.array([(0.5*dt**2)*R,dt*R]).reshape(2,1)
+
+        self.filter.update(top_angle_d, F = F, Q = Q, G = G)
 
         self.space.pixels_per_unit = self.space.pixels_per_unit + (self.wanted_zoom - self.space.pixels_per_unit) * dt / ZOOM_TAU
         if self.mode == "follow":
@@ -275,7 +293,7 @@ class Render:
         self.draw_grid(self.surf_render)
 
         self.render_sim(self.surf_render, SimRenderOptions())
-        self.render_sim(self.surf_render, SimRenderOptions(), self.filter.state)
+        self.render_sim(self.surf_render, SimRenderOptions(), self.filter_state)
 
         self.draw_info(self.surf_info)
 
@@ -376,7 +394,10 @@ class Render:
             )
 
             x_hat, z_hat = np.array(sim.sensor_axes(state)) # type: ignore
-            a_x, a_z = sim.sensor_reading(state, self.current_signals)
+            sensor_reding = sim.sensor_reading(state, self.current_signals)
+            a_x = sensor_reding[1]
+            a_z = sensor_reding[2]
+
             x_vec, z_vec = a_x * x_hat, a_z * z_hat
 
             pygame.draw.line(
@@ -397,6 +418,9 @@ class Render:
 
     def draw_grid(self, surf: pygame.surface.Surface) -> None:
         (x0, y0), (x1, y1) = self.space.screen2unit((0, 0)), self.space.screen2unit(surf.get_size())
+        if (math.isnan(x0) or math.isnan(x1)):
+            x0 = 0.0
+            x1 = 0.0
         for x in range(int(x0), int(x1 + 1)):
             pygame.draw.line(
                 surf,
@@ -421,7 +445,9 @@ class Render:
         left_col = [
             ("Position", self.state.wheel_position, "m"),
             ("Speed", self.state.wheel_position_d * 3600, "m/h"),
+            ("Speed kalman", self.filter_state.wheel_position_d * 3600, "m/h"),
             ("Angle", self.state.top_angle / np.pi * 180, "deg"),
+            ("Sensor reading", self.sensor_reading / np.pi * 180, "deg/s"),
             # ("Linearity", np.sin(self.state.top_angle) / self.state.top_angle * 100, "%"),
             ("Motor torque", self.state.motor_torque, "Nm"),
 
@@ -452,9 +478,14 @@ class Render:
             y += self.font.get_linesize()
 
 
+        
+
+
+
+
 pygame.init()
 pygame.font.init()
-screen = pygame.display.set_mode((1000, 600), pygame.RESIZABLE, vsync=1)
+screen = pygame.display.set_mode((1000, 1000), pygame.RESIZABLE, vsync=1)
 pygame.display.set_caption("Autonomous Unicycle")
 
 r = Render(
@@ -462,6 +493,7 @@ r = Render(
     Simulator(DEFAULT_PARAMETERS),
     INIT_STATE,
     DEFAULT_REG,
+    DEFAULT_KALMAN
 )
 
 r.run()

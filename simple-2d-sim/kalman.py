@@ -1,83 +1,53 @@
-from typing import Tuple
+import numpy as np
 
-from sim import Simulator, SimulationState, ControlSignals
-
-# Assumes linear model, instant motor torque
-# var = variance
 class KalmanFilter:
-    def __init__(
-        self,
-        sim: Simulator,
-        state: SimulationState,
-        probs: SimulationState,
-        gain: float, # per second
-    ):
-        self.sim = sim
-        self.state = state
-        self.var = probs
-        self.gain = gain
+    def __init__(self, F = None, G = None, H = None, Q = None, R = None, P = None, x0 = None):
+        self.n = F.shape[1]
+        self.m = H.shape[1]
 
-    def step(self, dt: float, sig: ControlSignals, sig_prob=ControlSignals()):
-        A, B, C, D = self.sim.params.abcd()
+        self.F = F #State transition model
+        self.H = H  #Observation matrix
+        self.G = 0 if G is None else G #Control input model
+        self.Q = np.eye(self.n) if Q is None else Q #Covariance process 
+        self.R = np.eye(self.n) if R is None else R #Covariance observation
+        self.P = np.eye(self.n) if P is None else P #Covariacne matrix
+        self.x = np.zeros((self.n, 1)) if x0 is None else x0 #Init state
 
-        wheel_position_dd = A * self.state.top_angle + B * sig.motor_torque_signal
-        wheel_position_var_dd = A * self.var.top_angle + B * sig_prob.motor_torque_signal
 
-        top_angle_dd = C * self.state.top_angle + D * sig.motor_torque_signal
-        top_angle_var_dd = C * self.var.top_angle + D * sig_prob.motor_torque_signal
+    def predict(self, u = 0,):
+        #Control input
+        U = np.dot(self.G, u)
+        #State transition
+        X = np.dot(self.F, self.x)
+        #State extrapolation
+        self.x = X + U
+        #Covariance P_n+1 = F P_n_n F^T + Q
+        FPFt = np.dot(np.dot(self.F, self.P), self.F.T)
+        #Covariance extrapolaiton
+        self.P = FPFt + self.Q
+        return self.x  #Return the states
 
-        new_state = SimulationState(
-            wheel_position=self.state.wheel_position + dt * self.state.wheel_position_d,
-            wheel_position_d=self.state.wheel_position_d + dt * wheel_position_dd,
-            top_angle=self.state.top_angle + dt * self.state.top_angle_d,
-            top_angle_d=self.state.top_angle_d + dt * top_angle_dd,
-            motor_torque=sig.motor_torque_signal,
-        )
+    def update(self, z, F = None, Q = None, G = None):
+        #Update F,Q,G if we have non fixed step time
+        self.F = self.F if F is None else F 
+        self.Q = self.Q if Q is None else Q
+        self.G = self.G if G is None else G
+        #Diff between measurement and last state
+        diff = z - np.dot(self.H, self.x)
+        #Gain calculation
+        #P_n_n-1 H^T (H P_n_n-1 H^T + R)^-1
+        HPHt = np.dot(self.H, np.dot(self.P, self.H.T))
+        inv = np.linalg.inv(self.R + HPHt)
+        #Gain = P_n_n-1 * H^T * inv
+        K = np.dot(np.dot(self.P, self.H.T), inv)
+        #State update 
+        # X_n_n-1 + K diff
+        self.x = self.x + np.dot(K, diff)
+        #Covariance update
+        # (I - K H) P_n_n-1 (I - K H)^T + K R K^T
+        #Idenetity matrix
+        I = np.eye(self.n)
 
-        new_var = SimulationState(
-            wheel_position=self.var.wheel_position + dt * self.var.wheel_position_d,
-            wheel_position_d=self.var.wheel_position_d + dt * wheel_position_var_dd,
-            top_angle=self.var.top_angle + dt * self.var.top_angle_d,
-            top_angle_d=self.var.top_angle_d + dt * top_angle_var_dd,
-            motor_torque=sig_prob.motor_torque_signal,
-        )
+        self.P = np.dot(np.dot(I - np.dot(K, self.H), self.P), 
+        	(I - np.dot(K, self.H)).T) + np.dot(np.dot(K, self.R), K.T)
 
-        self.state = new_state
-        self.var = new_var
-
-    def read_sensor(
-        self,
-        sensor_reading: Tuple[float, float],
-        sensor_variance: Tuple[float, float],
-        sig: ControlSignals,
-
-        reading_time: float,
-    ):
-        A, B, C, D = self.sim.params.abcd()
-        R = self.sim.params.sensor_position
-
-        expected_reading = (
-            (A + R * C) * self.state.top_angle + (B + D * R) * sig.motor_torque_signal,
-            (A * self.state.top_angle) * self.state.top_angle - (R * self.state.top_angle_d) * self.state.top_angle_d
-        )
-
-        diff = sensor_reading[0] - expected_reading[0], sensor_reading[1] - expected_reading[1]
-
-        gain = self.gain * reading_time
-
-        state_delta = SimulationState(
-            wheel_position=self.state.wheel_position,
-            wheel_position_d=self.state.wheel_position_d,
-            top_angle=(A + R * C) * diff[0] + (A * self.state.top_angle) * diff[1],
-            top_angle_d=-R * self.state.top_angle_d * diff[1],
-        )
-
-        var_delta = SimulationState(
-            wheel_position=self.var.wheel_position,
-            wheel_position_d=self.var.wheel_position_d,
-            top_angle=(A + R * C) * sensor_variance[0] + (A * self.state.top_angle) * sensor_variance[1],
-            top_angle_d=-R * self.state.top_angle_d * sensor_variance[1],
-        )
-
-        self.state = SimulationState().apply_velocities(self.state, 1 - gain).apply_velocities(state_delta, gain)
-        self.var = SimulationState().apply_velocities(self.var, 1 - gain).apply_velocities(var_delta, gain)
