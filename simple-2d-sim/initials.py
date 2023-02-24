@@ -1,6 +1,6 @@
 from sim import SimulationState, SimulationParameters, ControlSignals, Simulator
 from regulator import Regulator, LookaheadSpeedRegulator, NullRegulator
-from kalman import KalmanFilter
+from kalman import KalmanFilter 
 
 import numpy as np
 
@@ -15,11 +15,13 @@ INIT_STATE = SimulationState(
 
 DEFAULT_PARAMETERS = SimulationParameters(
     wheel_rad = 0.28,
-    wheel_mass = 20,
-    top_height = 0.8,
-    top_mass = 4,
+    wheel_mass = 9.292,
+    top_height = 0.4,
+    top_mass = 2.5,
     motor_reaction_speed = 0.1,
-    sensor_position=1.0,
+    sensor_position= 0.4,
+    wheel_inertia= 0.114,
+    top_inertia=0.125, 
 )
 
 # DEFAULT_REG = NullRegulator(params=DEFAULT_PARAMETERS)
@@ -36,10 +38,10 @@ F = np.array([[1, dt],
 #Observation matrix
 H = np.array([0,1]).reshape(1,2)  
 #Process noise uncertainty, the uncertainty in how the unicycle is moving
-Q = 0.5 * np.array([[(dt**4)/4, (dt**3)/2],
+Q = 0.25 * np.array([[(dt**4)/4, (dt**3)/2],
                             [(dt**3)/2, dt**2]])
 #Measurement uncertainty, sensor uncertainty
-R = np.array([[0.5]]).reshape(1,1) 
+R = np.array([[0.25]]).reshape(1,1) 
 #Sensor distance from wheel center
 R = DEFAULT_PARAMETERS.sensor_position
 #Contoll matrix

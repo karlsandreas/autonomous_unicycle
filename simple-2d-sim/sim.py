@@ -22,8 +22,9 @@ class SimulationParameters:
         top_height: float, # [m], Distance from wheel center to top
         top_mass: float, # [kg] Mass of top
         motor_reaction_speed: float, # [s] Motor reaction speed
-
         sensor_position: float, # [m] distance from wheel on top-axis
+        wheel_inertia: float,
+        top_inertia: float,
 
         g: float = 9.82, # Gravity
     ):
@@ -42,8 +43,8 @@ class SimulationParameters:
         l = top_height
 
 
-        self.I_c = top_mass * top_height ** 2 #top inertia
-        self.I_w = wheel_mass * wheel_rad**2 #Wheel inertia
+        self.I_c = top_inertia #top inertia
+        self.I_w = wheel_inertia #Wheel inertia
 
 
     def abcd(self) -> Tuple[float, float, float, float]:
@@ -67,53 +68,6 @@ class SimulationParameters:
         D = 1/d * (U+X)
         return A, B, C, D
     
-
-    def get_state_space(self):
-        # State space model
-        # p'          p
-        # p''   = A * p'   + B * u
-        # o'          o
-        # o''         o' 
-        #   
-        #           p     
-        # y = C *   o
-        #           p'
-        #           o'
-        # X = [p o p' o']
-
-        m_w = self.wheel_mass
-        r = self.wheel_rad
-        m_c = self.top_mass
-        l = self.top_height
-        g = self.g
-        
-        E = np.array([
-            [self.I_w + (m_w + m_c)*r**2, m_c*r*l],
-            [m_c*r*l, self.I_c + m_c*l**2]
-            ])
-        
-        G = np.array([0, -m_c*g*l])
-        F = np.array([])
-        A_1 = np.dot(- np.linalg.inv(E), G)
-        
-    
-
-        A = np.array([
-            [0, 1     , 0, 0],
-            [0, A_1[0], 0, 0],
-            [0, 0     , 0, 1],
-            [0, A_1[1], 0,0]])
-
-        H = np.array([1, -1])
-        B_1 = np.dot(- np.linalg.inv(E), H.T)
-        B = np.array([0, B_1[0], 0, B_1[1]]).T
-        C = [[r, 0, 0, 0],
-             [0, 0, 1, 0]] 
-        
-        return (A,B,C)
-
-
-
 
 # Grouping all control signals
 class ControlSignals:
@@ -203,6 +157,7 @@ class Simulator:
             motor_torque= (signals.motor_torque_signal - state.motor_torque) / self.params.motor_reaction_speed
         )
 
+
     # Enforces limit conditions (i.e. top bouncing on floor)
     # Modifies state in-place
     def limit(self, state: SimulationState, signals: ControlSignals):
@@ -234,6 +189,7 @@ class Simulator:
         top_angle_d = state.top_angle_d
 
         return np.array([top_angle_d, a_x , a_z])
+
 
     # Returns (a_hat_x, a_hat_z), basis vectors for the sensor's frame of reference
     def sensor_axes(self, state: SimulationState) -> Tuple[Tuple[float, float], Tuple[float, float]]:

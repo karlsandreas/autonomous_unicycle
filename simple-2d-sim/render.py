@@ -70,6 +70,7 @@ class SimRenderOptions:
         self.draw_torque = draw_torque
 
 INFO_FONT = "ShareTech.ttf", 30 # path, size
+INFO_FONT = "./simple-2d-sim/ShareTech.ttf", 30
 
 # all relative to wheel diameter
 
