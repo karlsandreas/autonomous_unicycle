@@ -15,11 +15,13 @@ INIT_STATE = SimulationState(
 
 DEFAULT_PARAMETERS = SimulationParameters(
     wheel_rad = 0.28,
-    wheel_mass = 20,
-    top_height = 0.8,
-    top_mass = 4,
+    wheel_mass = 9.292,
+    top_height = 0.4,
+    top_mass = 2.5,
     motor_reaction_speed = 0.1,
-    sensor_position=1.0,
+    sensor_position= 1.0,
+    wheel_inertia= 0.114,
+    top_inertia=0.125, 
 )
 
 # DEFAULT_REG = NullRegulator(params=DEFAULT_PARAMETERS)
