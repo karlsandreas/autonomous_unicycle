@@ -18,11 +18,11 @@ struct matrix
 
 typedef struct matrix Matrix;
 
-#define SENSOR_POS_Z (0.4F)
-#define F11 (1.0F)
+#define SENSOR_POS_Z (0.4)
+#define F11 (1.0)
 /* F1_2 = dt*/
-#define F21 (0.0F)
-#define F22 (1.0F)
+#define F21 (0.0)
+#define F22 (1.0)
 
-#define KALMAN_R (0.25F)
+#define KALMAN_R (0.25)
 

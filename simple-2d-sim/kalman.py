@@ -34,14 +34,17 @@ class KalmanFilter:
         self.G = self.G if G is None else G
         #Diff between measurement and last state
         diff = z - np.dot(self.H, self.x)
+        #print("Diff python: ", diff[0])
         #Gain calculation
         #P_n_n-1 H^T (H P_n_n-1 H^T + R)^-1
         HPHt = np.dot(self.H, np.dot(self.P, self.H.T))
+        
         inv = np.linalg.inv(self.R + HPHt)
         #Gain = P_n_n-1 * H^T * inv
         K = np.dot(np.dot(self.P, self.H.T), inv)
         #State update 
         # X_n_n-1 + K diff
+        #print("Gain1: ", K[0][0], " Gain2: ", K[1][0])
         self.x = self.x + np.dot(K, diff)
         #Covariance update
         # (I - K H) P_n_n-1 (I - K H)^T + K R K^T

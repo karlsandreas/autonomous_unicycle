@@ -27,7 +27,7 @@ DEFAULT_PARAMETERS = SimulationParameters(
 # DEFAULT_REG = NullRegulator(params=DEFAULT_PARAMETERS)
 DEFAULT_REG = LookaheadSpeedRegulator(
     params=DEFAULT_PARAMETERS,
-    setpoint_x_d=-1.,
+    setpoint_x_d=1.,
 )
 
 dt = 0.001
