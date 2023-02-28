@@ -1,6 +1,8 @@
 from sim import SimulationState, SimulationParameters, ControlSignals, Simulator
 from regulator import Regulator, LookaheadSpeedRegulator, NullRegulator
+
 from kalman import KalmanFilter 
+
 
 import numpy as np
 
@@ -27,7 +29,7 @@ DEFAULT_PARAMETERS = SimulationParameters(
 # DEFAULT_REG = NullRegulator(params=DEFAULT_PARAMETERS)
 DEFAULT_REG = LookaheadSpeedRegulator(
     params=DEFAULT_PARAMETERS,
-    setpoint_x_d=1.,
+    setpoint_x_d=-1.,
 )
 
 dt = 0.001
@@ -50,6 +52,7 @@ G = np.array([(0.5*dt**2)*R,dt*R]).reshape(2,1)
 #Inital states for kalman filter
 x0 = np.array([INIT_STATE.top_angle,
                INIT_STATE.top_angle_d]).reshape(2,1)
+
 
 DEFAULT_KALMAN = KalmanFilter(
                     F = F,

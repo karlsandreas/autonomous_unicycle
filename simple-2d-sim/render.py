@@ -17,6 +17,7 @@ from regulator import Regulator, LookaheadSpeedRegulator, NullRegulator
 from kalman import KalmanFilter
 
 from fmt import fmt_unit
+import initials as init
 
 import initials as init
 
@@ -174,7 +175,6 @@ class ScreenSpaceTranslator:
         return pygame.Rect(x1, y1, x2 - x1, y2 - y1)
 
 
-
 INIT_STATE = init.INIT_STATE
 DEFAULT_KALMAN = init.DEFAULT_KALMAN
 
@@ -184,7 +184,6 @@ DEFAULT_PARAMETERS = init.DEFAULT_PARAMETERS
 # DEFAULT_REG = NullRegulator(params=DEFAULT_PARAMETERS)
 DEFAULT_REG = init.DEFAULT_REG
 
-DEFAULT_KALMAN_GAIN = init.DEFAULT_KALMAN_GAIN
 
 # Space = switch view mode (follow, free)
 #   right-click drag = pan in free mode
@@ -378,6 +377,7 @@ class Render:
         c_kalman.kalman_filter_update(c_float(top_angle_d), c_float(dt), self.c_state, self.c_Qs)
         ###########################
 
+
         self.space.pixels_per_unit = self.space.pixels_per_unit + (self.wanted_zoom - self.space.pixels_per_unit) * dt / ZOOM_TAU
         if self.mode == "follow":
             pos = np.array([self.state.wheel_position, self.sim.params.wheel_rad + 0.5])
@@ -502,10 +502,9 @@ class Render:
             )
 
             x_hat, z_hat = np.array(sim.sensor_axes(state)) # type: ignore
-            sensor_reding = sim.sensor_reading(state, self.current_signals)
-            a_x = sensor_reding[1]
-            a_z = sensor_reding[2]
-
+            sensor_reading = sim.sensor_reading(state, self.current_signals)
+            a_x = sensor_reading[1]
+            a_z = sensor_reading[2]
             x_vec, z_vec = a_x * x_hat, a_z * z_hat
 
             pygame.draw.line(

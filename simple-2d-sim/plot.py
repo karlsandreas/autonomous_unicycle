@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 from sim import SimulationState, SimulationParameters, ControlSignals, Simulator
 from regulator import Regulator, LookaheadSpeedRegulator, NullRegulator
-from kalman import KalmanFilter
+from kalman_A import KalmanFilterA
 import initials as init
 
 INIT_STATE = init.INIT_STATE
@@ -32,7 +32,8 @@ class plotter:
         self.reg = reg
         self.current_signals = ControlSignals()
         
-        self.filter = kalman_filter
+        self.filter = kalman_filter 
+        
         self.filter_state = init_state
 
         
