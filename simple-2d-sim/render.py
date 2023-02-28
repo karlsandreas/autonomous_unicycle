@@ -6,6 +6,10 @@ import random
 
 from pidcontroller import PIDController
 
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+import math
+
 import time
 
 from sim import SimulationState, SimulationParameters, ControlSignals, Simulator
@@ -15,6 +19,16 @@ from kalman import KalmanFilter
 from fmt import fmt_unit
 import initials as init
 
+import initials as init
+
+#Imports for c code
+from ctypes import *
+so_file = "./STM32/regulator.so"
+reg = CDLL(so_file)
+
+so_file_filter = "./STM32/kalman_filter.so"
+c_kalman = CDLL(so_file_filter)
+
 # Parameters for rendering
 BORDER = 4
 
@@ -22,6 +36,19 @@ LINE_COL = (64, 64, 64)
 LINE_COL0 = (100, 100, 100)
 
 Color = Tuple[int, int, int]
+
+
+class States(Structure):
+    _fields_ = [("x1", c_float),
+                ("x2", c_float),
+                ("x3", c_float),
+                ("x4", c_float)]
+
+class Matrix(Structure):
+    _fields_ = [("m11", c_float),
+                ("m12", c_float),
+                ("m21", c_float),
+                ("m22", c_float)]
 
 class SimRenderOptions:
     def __init__(
@@ -64,7 +91,50 @@ class SimRenderOptions:
         self.draw_sensor = draw_sensor
         self.draw_torque = draw_torque
 
-INFO_FONT = "ShareTech.ttf", 30 # path, size
+class SimRenderOptions_2:
+    def __init__(
+        self,
+        wheel_color: Color = (100, 100, 200),
+        spoke_color: Color = (100, 100, 150),
+
+        torque_color: Color = (0, 255, 0),
+        setpoint_color: Color = (0, 0, 255),
+        expected_color: Color = (0, 255, 0),
+
+        sensor_color: Color = (255, 0, 128),
+        sensor_measure_color: Color = (255, 0, 255),
+
+        outside_thickness: float = 0.2,
+        inner_size: float = 0.6,
+        inner_thickness: float = 0.2,
+        n_spokes: int = 20,
+        spoke_size: float = 0.1,
+
+        torque_size: float = 0.5,
+
+        draw_sensor: bool = True,
+        draw_torque: bool = True,
+    ):
+        self.wheel_color = wheel_color
+        self.spoke_color = spoke_color
+        self.torque_color = torque_color
+        self.setpoint_color = setpoint_color
+        self.expected_color = expected_color
+        self.sensor_color = sensor_color
+        self.sensor_measure_color = sensor_measure_color
+        self.outside_thickness = outside_thickness
+        self.inner_size = inner_size
+        self.inner_thickness = inner_thickness
+        self.n_spokes = n_spokes
+        self.spoke_size = spoke_size
+        self.torque_size = torque_size
+
+        self.draw_sensor = draw_sensor
+        self.draw_torque = draw_torque
+
+
+#INFO_FONT = "ShareTech.ttf", 30 # path, size
+INFO_FONT = "./simple-2d-sim/ShareTech.ttf", 30
 
 # all relative to wheel diameter
 
@@ -104,38 +174,47 @@ class ScreenSpaceTranslator:
         x2, y2 = self.unit2screen(c2)
         return pygame.Rect(x1, y1, x2 - x1, y2 - y1)
 
+
 INIT_STATE = init.INIT_STATE
+DEFAULT_KALMAN = init.DEFAULT_KALMAN
+
+
 DEFAULT_PARAMETERS = init.DEFAULT_PARAMETERS
+
 # DEFAULT_REG = NullRegulator(params=DEFAULT_PARAMETERS)
 DEFAULT_REG = init.DEFAULT_REG
-DEFAULT_KALMAN_GAIN = init.DEFAULT_KALMAN_GAIN
+
 
 # Space = switch view mode (follow, free)
 #   right-click drag = pan in free mode
 # Tab = reset simulation
 # Left/Right = control motor
+
+
+
 class Render:
     def __init__(
         self,
         screen: pygame.surface.Surface,
-
         simulator: Simulator,
         init_state: SimulationState,
         reg: Regulator,
+        kalman_filter: KalmanFilter,
     ) -> None:
         self.screen = screen
 
+
         self.sim = simulator
         self.init_state = self.state = init_state
+        
         self.reg = reg
+        self.filter_reg = reg
         self.current_signals = ControlSignals()
+        self.filter_sig = ControlSignals()
 
-        self.filter = KalmanFilter(
-            self.sim,
-            init_state,
-            SimulationState(),
-            DEFAULT_KALMAN_GAIN,
-        )
+        self.init_kalman = kalman_filter
+        self.filter = kalman_filter
+        self.filter_state = init_state
 
         self.done = False
         self.space = ScreenSpaceTranslator(200, np.array([0., 0.,]), self.screen.get_size())
@@ -153,9 +232,14 @@ class Render:
         self.current_fps = 0.
         self.avg_tick_time = 0.
 
+        self.sensor_reading = 0.0
+        ### Initializer pointer objects for the c kalman filter
+        self.c_state = pointer(States(0.0, 0.0, 0.0, 0.0))
+        dt = init.dt
+        self.c_Qs = pointer(Matrix(0.05*dt**2, 0.05*dt, 0.05*dt, 0.05))
+
     def run(self) -> None:
         last_t = time.time()
-
         frames_last_second = []
         tick_times = []
 
@@ -181,12 +265,8 @@ class Render:
                             self.mode = "free_cam"
                     if event.key == pygame.K_TAB:
                         self.state = self.init_state
-                        self.filter = KalmanFilter(
-                            self.sim,
-                            self.init_state,
-                            SimulationState(),
-                            DEFAULT_KALMAN_GAIN,
-                        )
+                        self.filter_state = self.init_state
+                        self.filter = self.init_kalman
 
             self.draw()
 
@@ -211,8 +291,22 @@ class Render:
 
 
     def step(self, dt: float) -> None:
-        self.current_signals = self.reg(self.state, dt * self.speed_mult)
+        
+        ############### Regulator in python ########
+        #self.current_signals = self.reg(self.filter_state, dt * self.speed_mult)
+        ############################################
 
+        ############## Regulator in c ##############
+        c_regulator = reg.LookaheadSpeedRegulator
+        c_regulator.restype = c_float  # Set output type from c code 
+        
+        self.current_signals = ControlSignals(c_regulator(c_float(self.reg.setpoint_x_d), 
+                                                c_float(self.filter_state.top_angle), 
+                                                c_float(self.filter_state.top_angle_d),
+                                                c_float(self.filter_state.wheel_position_d),
+                                                c_float(dt)))
+        #############################################
+        
         mult = 3. if pygame.key.get_pressed()[pygame.K_LALT] else 0.3 if pygame.key.get_pressed()[pygame.K_LSHIFT] else 1.0
         val = mult if pygame.key.get_pressed()[pygame.K_RIGHT] else -mult if pygame.key.get_pressed()[pygame.K_LEFT] else 0
 
@@ -223,22 +317,66 @@ class Render:
             self.speed_mult *= 2. ** (val * dt)
         else:
             self.current_signals.motor_torque_signal += val * 30
+            self.filter_sig.motor_torque_signal += val * 30
 
         sim_dt = dt * self.speed_mult
-
-        self.state = self.sim.step(self.state, self.current_signals, sim_dt)
-        self.filter.step(sim_dt, self.current_signals)
-
-        var_x, var_z = 0.5, 0.5
-        noise_x, noise_z = random.gauss(0, var_x**0.5), random.gauss(0, var_z**0.5)
-        
+        ########### Sensor reading and noise #######
         sensor_reading = self.sim.sensor_reading(self.state, self.current_signals)
         
-        top_angle_d = sensor_reading[0]
-        ax = sensor_reading[1]
-        az = sensor_reading[2]
+        var_x = 0.2 #m/s^2
+        var_z = 0.2 #m/s^2
+        var_angle = 0.005 #rad/s 
+        noise_x, noise_z, noise_angle = random.gauss(0, var_x**0.5), random.gauss(0, var_z**0.5), random.gauss(0, var_angle**0.5)
 
-        self.filter.read_sensor((ax + noise_x, az + noise_z), (var_x, var_z), self.current_signals, sim_dt)
+        a_x = sensor_reading[1] + noise_x
+        a_z = sensor_reading[2] + noise_z
+        a = (a_x**2 + a_z**2)**0.5
+
+        top_angle_d = sensor_reading[0] + noise_angle
+
+        self.sensor_reading = top_angle_d #Copy to class for info tab
+        
+        ######## Kalman filter in C ##########
+        #Update the Qs since they depend on dt
+        self.c_Qs.contents.m11 = 0.05 * (dt**2) 
+        self.c_Qs.contents.m12 = 0.05 * dt 
+        self.c_Qs.contents.m21 = 0.05 * dt 
+        self.c_Qs.contents.m22 = 0.05 * 1
+
+        self.c_state.contents.x3 = self.filter_state.wheel_position #Update states in pointer since we are not mesuring them
+        self.c_state.contents.x4 = self.filter_state.wheel_position_d
+
+        c_kalman.pitch_kalman_filter_predict(c_float(a), c_float(dt), self.c_state, self.c_Qs)
+
+        self.filter_state.top_angle = self.c_state.contents.x1
+        self.filter_state.top_angle_d = self.c_state.contents.x2
+
+        ######################################
+
+        ####### Python kalman filter #########
+        #kalman_out = self.filter.predict(a)
+        #self.filter_state.top_angle = kalman_out[0][0]  
+        #self.filter_state.top_angle_d = kalman_out[1][0]  
+        ######################################
+    
+        self.state = self.sim.step(self.state, self.current_signals, sim_dt)
+        self.filter_state = self.sim.step(self.filter_state, self.current_signals, sim_dt)        
+
+        ###### Python kalman filter #########
+        #Update arrays that depend on dt
+        #F = np.array([[1, dt],
+        #                    [0, 1]])
+        #Q = 0.05 * np.array([[dt**2, dt],
+        #                    [dt, 1]])
+        #R = self.sim.params.sensor_position
+        #G = np.array([(0.5*dt**2)*R,dt*R]).reshape(2,1)
+
+        #self.filter.update(top_angle_d, F = F, Q = Q, G = G)
+        ######################################
+        ##### C Kalman filter #####
+        c_kalman.kalman_filter_update(c_float(top_angle_d), c_float(dt), self.c_state, self.c_Qs)
+        ###########################
+
 
         self.space.pixels_per_unit = self.space.pixels_per_unit + (self.wanted_zoom - self.space.pixels_per_unit) * dt / ZOOM_TAU
         if self.mode == "follow":
@@ -263,7 +401,7 @@ class Render:
         self.draw_grid(self.surf_render)
 
         self.render_sim(self.surf_render, SimRenderOptions())
-        self.render_sim(self.surf_render, SimRenderOptions(), self.filter.state)
+        self.render_sim(self.surf_render, SimRenderOptions_2(), self.filter_state)
 
         self.draw_info(self.surf_info)
 
@@ -387,6 +525,9 @@ class Render:
 
     def draw_grid(self, surf: pygame.surface.Surface) -> None:
         (x0, y0), (x1, y1) = self.space.screen2unit((0, 0)), self.space.screen2unit(surf.get_size())
+        if (math.isnan(x0) or math.isnan(x1)):
+            x0 = 0.0
+            x1 = 0.0
         for x in range(int(x0), int(x1 + 1)):
             pygame.draw.line(
                 surf,
@@ -411,8 +552,9 @@ class Render:
         left_col = [
             ("Position", self.state.wheel_position, "m"),
             ("Speed", self.state.wheel_position_d * 3600, "m/h"),
+            ("Speed kalman", self.filter_state.wheel_position_d * 3600, "m/h"),
             ("Angle", self.state.top_angle / np.pi * 180, "deg"),
-            ("Angle kalman", self.filter.state.top_angle_d / np.pi * 180, "deg/s"),
+            ("Sensor reading", self.sensor_reading / np.pi * 180, "deg/s"),
             # ("Linearity", np.sin(self.state.top_angle) / self.state.top_angle * 100, "%"),
             ("Motor torque", self.state.motor_torque, "Nm"),
 
@@ -443,9 +585,14 @@ class Render:
             y += self.font.get_linesize()
 
 
+        
+
+
+
+
 pygame.init()
 pygame.font.init()
-screen = pygame.display.set_mode((1000, 600), pygame.RESIZABLE, vsync=1)
+screen = pygame.display.set_mode((1000, 1000), pygame.RESIZABLE, vsync=1)
 pygame.display.set_caption("Autonomous Unicycle")
 
 r = Render(
@@ -453,6 +600,7 @@ r = Render(
     Simulator(DEFAULT_PARAMETERS),
     INIT_STATE,
     DEFAULT_REG,
+    DEFAULT_KALMAN
 )
 
 r.run()

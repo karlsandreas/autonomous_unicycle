@@ -1,12 +1,7 @@
 import numpy as np
 import random
 
-from pidcontroller import PIDController
-
 import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-
-import time
 
 from sim import SimulationState, SimulationParameters, ControlSignals, Simulator
 from regulator import Regulator, LookaheadSpeedRegulator, NullRegulator
@@ -28,7 +23,7 @@ class plotter:
         simulator: Simulator,
         init_state: SimulationState,
         reg: Regulator,
-        kalman_filter: KalmanFilterA,
+        kalman_filter: KalmanFilter,
         simtime: float, #Seconds of simultaion [S]
         dt: float) -> None: #Delta time in [S]
         
@@ -37,10 +32,8 @@ class plotter:
         self.reg = reg
         self.current_signals = ControlSignals()
         
-        #For Andreas Kalmamfilter
         self.filter = kalman_filter 
         
-
         self.filter_state = init_state
 
         
@@ -125,7 +118,6 @@ class plotter:
 
 
         # Format plot
-        #fig.ylabel('Top angle')
         fig.legend()
         plt.show()
 

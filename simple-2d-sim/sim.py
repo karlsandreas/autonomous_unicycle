@@ -22,8 +22,9 @@ class SimulationParameters:
         top_height: float, # [m], Distance from wheel center to top
         top_mass: float, # [kg] Mass of top
         motor_reaction_speed: float, # [s] Motor reaction speed
-
         sensor_position: float, # [m] distance from wheel on top-axis
+        wheel_inertia: float,
+        top_inertia: float,
 
         g: float = 9.82, # Gravity
     ):
@@ -42,8 +43,8 @@ class SimulationParameters:
         l = top_height
 
 
-        self.I_c = top_mass * top_height ** 2 #top inertia
-        self.I_w = wheel_mass * wheel_rad**2 #Wheel inertia
+        self.I_c = top_inertia #top inertia
+        self.I_w = wheel_inertia #Wheel inertia
 
 
     def abcd(self) -> Tuple[float, float, float, float]:
