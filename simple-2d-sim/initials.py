@@ -43,7 +43,7 @@ Q = 0.25 * np.array([[(dt**4)/4, (dt**3)/2],
 #Measurement uncertainty, sensor uncertainty
 R = np.array([[0.25]]).reshape(1,1) 
 #Sensor distance from wheel center
-R = DEFAULT_PARAMETERS.sensor_position
+R_s = DEFAULT_PARAMETERS.sensor_position
 #Contoll matrix
 G = np.array([(0.5*dt**2)*R,dt*R]).reshape(2,1)
 

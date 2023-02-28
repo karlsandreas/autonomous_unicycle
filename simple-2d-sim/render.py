@@ -20,6 +20,12 @@ from fmt import fmt_unit
 
 import initials as init
 
+#Imports for c code
+from ctypes import *
+so_file = "C:/Users/ante_/Documents/Kandidatarbete/autonomous_unicycle/algo-c/regulator.so"
+reg = CDLL(so_file)
+
+
 # Parameters for rendering
 BORDER = 4
 
@@ -27,6 +33,19 @@ LINE_COL = (64, 64, 64)
 LINE_COL0 = (100, 100, 100)
 
 Color = Tuple[int, int, int]
+
+
+class States(Structure):
+    _fields_ = [("x1", c_float),
+                ("x2", c_float),
+                ("x3", c_float),
+                ("x4", c_float)]
+
+class Matrix(Structure):
+    _fields_ = [("m11", c_float),
+                ("m12", c_float),
+                ("m21", c_float),
+                ("m22", c_float)]
 
 class SimRenderOptions:
     def __init__(
@@ -69,7 +88,7 @@ class SimRenderOptions:
         self.draw_sensor = draw_sensor
         self.draw_torque = draw_torque
 
-INFO_FONT = "ShareTech.ttf", 30 # path, size
+#INFO_FONT = "ShareTech.ttf", 30 # path, size
 INFO_FONT = "./simple-2d-sim/ShareTech.ttf", 30
 
 # all relative to wheel diameter
@@ -137,6 +156,7 @@ class Render:
         kalman_filter: KalmanFilter,
     ) -> None:
         self.screen = screen
+
 
         self.sim = simulator
         self.init_state = self.state = init_state
@@ -223,7 +243,15 @@ class Render:
     def step(self, dt: float) -> None:
 
         #self.filter_sig = self.filter_reg(self.filter_state, dt* self.speed_mult)
-        self.current_signals = self.reg(self.filter_state, dt * self.speed_mult)
+        #self.current_signals = self.reg(self.filter_state, dt * self.speed_mult)
+        c_regulator = reg.LookaheadSpeedRegulator
+        c_regulator.restype = c_float  # Set output type from c code 
+        
+        self.current_signals = ControlSignals(c_regulator(c_float(self.reg.setpoint_x_d), 
+                                                c_float(self.filter_state.top_angle), 
+                                                c_float(self.filter_state.top_angle_d),
+                                                c_float(self.filter_state.wheel_position_d),
+                                                c_float(dt)))
 
         mult = 3. if pygame.key.get_pressed()[pygame.K_LALT] else 0.3 if pygame.key.get_pressed()[pygame.K_LSHIFT] else 1.0
         val = mult if pygame.key.get_pressed()[pygame.K_RIGHT] else -mult if pygame.key.get_pressed()[pygame.K_LEFT] else 0
@@ -250,11 +278,15 @@ class Render:
         a_z = sensor_reading[2] + noise_z
         a = (a_x**2 + a_z**2)**0.5
 
+        c_state = States(self.state.top_angle, self.state.top_angle_d, self.state.wheel_position, self.state.wheel_position_d)
+        c_cov = Matrix()
+
         top_angle_d = sensor_reading[0] + noise_angle
 
-        self.sensor_reading = top_angle_d
-
+        self.sensor_reading = top_angle_d   
+        pitch_kalman_filter_predict_wrapper()
         kalman_out = self.filter.predict(a)
+
         self.filter_state.top_angle = kalman_out[0][0]  
         self.filter_state.top_angle_d = kalman_out[1][0]  
 
