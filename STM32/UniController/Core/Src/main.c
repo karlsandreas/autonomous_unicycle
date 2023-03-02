@@ -17,7 +17,6 @@
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
-#include "queue.h"
 #include "main.h"
 #include "string.h"
 
@@ -27,6 +26,7 @@
 #include <stdio.h>
 
 #include "vesc_com.h"
+#include "queue.h"
 
 /* USER CODE END Includes */
 
@@ -74,6 +74,7 @@ ETH_HandleTypeDef heth;
 
 I2C_HandleTypeDef hi2c2;
 
+TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim4;
 
 UART_HandleTypeDef huart2;
@@ -94,6 +95,7 @@ static void MX_USART2_UART_Init(void);
 static void MX_TIM4_Init(void);
 static void MX_I2C2_Init(void);
 static void MX_USART3_UART_Init(void);
+static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -103,8 +105,38 @@ static void MX_USART3_UART_Init(void);
 
 static Queue MAIN_QUEUE;
 
+uint16_t MPU_ADDR = 0x68;
 
-_Bool dead_mans_switch_activated() {
+uint32_t ms_counter;
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+	if (htim == &htim3) { // htim3 ticks once every us, elapses once every ms
+		ms_counter++;
+	}
+	if (htim == &htim4 ) {
+		// TODO: Put these on different timers?
+		queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_SEND_DEBUG });
+		queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_TIME_STEP });
+	}
+}
+// This will overflow after 2^32/10^6s ≈ 4300s ≈ 1h11m
+// Overflow should be handled by the get_dt and reset_dt
+uint32_t us_since_startup() {
+	uint32_t us_counter = ms_counter * 1000;
+	uint32_t us_timer = htim3.Instance->CNT;
+	return us_counter + us_timer;
+}
+
+uint32_t last_step = 0;
+uint32_t get_and_reset_dt_us() {
+	uint32_t now = us_since_startup();
+	uint32_t dt = now - last_step; // If now < last_step, then we have overflowed. This should still get the right value
+	last_step = now;
+	return dt;
+}
+
+// Checks if the dead man's switch is both connected and pressed
+bool dead_mans_switch_activated() {
 	if (HAL_GPIO_ReadPin(BTN1_T_GPIO_Port, BTN1_T_Pin) == GPIO_PIN_RESET) {
 		return false;
 	}
@@ -114,78 +146,48 @@ _Bool dead_mans_switch_activated() {
 	return true;
 }
 
-volatile _Bool should_send = true;
-int current_speed = 0;
-
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-{
-  // Check which version of the timer triggered this callback and toggle LED
-  if (htim == &htim4 )
-  {
-    queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_SEND_DEBUG });
-  }
-}
-
-const uint8_t SETRPM_2000[] = { 0x02, 0x05, 0x08, 0x00, 0x00, 0x07, 0xd0, 0x50, 0xc7, 0x03 };
-const uint8_t SETRPM_0[]    = { 0x02, 0x05, 0x08, 0x00, 0x00, 0x00, 0x00, 0x02, 0x2d, 0x03 };
-
-char *hex_u8(uint8_t x, char *dest) {
-	uint8_t high = x >> 4;
-	uint8_t low = x & 0xf;
-	if (high < 10) {
-		dest[0] = (char) (high + '0');
-	} else {
-		dest[0] = (char) (high - 10 + 'A');
-	}
-	if (low < 10) {
-		dest[1] = (char) (low + '0');
-	} else {
-		dest[1] = (char) (low - 10 + 'A');
-	}
-	return dest + 2;
-}
-
-// Writes 8 bytes to dest. LE
-char *hex_float(float f, char *dest) {
-	uint32_t x = *(uint32_t *) (&f);
-	dest = hex_u8(x & 0xff, dest);
-	dest = hex_u8((x >> 8) & 0xff, dest);
-	dest = hex_u8((x >> 16) & 0xff, dest);
-	dest = hex_u8((x >> 24) & 0xff, dest);
-	return dest;
-}
-
-#define GYRO_FS_CFG 3
-// GYRO_FS is in rad/s^2
-#if GYRO_FS_CFG == 0
- #define GYRO_FS 2000
-#elif GYRO_FS_CFG == 3
- #define GYRO_FS 2000
-#endif
-
-#define GYRO_FS 2000
-#define GYRO_FS_CFG 3
-
+// Puts the MPU6050 into active mode, with the appropriate CFGs from main.h set
 void setup_mpu(I2C_HandleTypeDef *i2c, uint16_t acc_addr) {
-  uint8_t pwr_mgnt_data[1] = {0x00}; // sleep = 0, cycle = 0
-  HAL_I2C_Mem_Write(i2c, acc_addr << 1, 0x6b, 1, pwr_mgnt_data, 1, 200000); // Disable sleep
+	uint8_t pwr_mgnt_data[1] = {0x00}; // sleep = 0, cycle = 0
+	HAL_I2C_Mem_Write(i2c, acc_addr << 1, 0x6b, 1, pwr_mgnt_data, 1, 200000); // Disable sleep
 
-  uint8_t config[1] = {(0x0 << 3) | 0x6}; // fsync = 0, dlpf = 6 (5Hz)
-  HAL_I2C_Mem_Write(i2c, acc_addr << 1, 0x1a, 1, config, 1, 200000);
+	uint8_t config[1] = {(0x0 << 3) | DLPF_CFG}; // fsync = 0, dlpf = 6 (5Hz)
+	HAL_I2C_Mem_Write(i2c, acc_addr << 1, 0x1a, 1, config, 1, 200000);
 
-  float GYRO_FS = 2000.0; // deg/s'
-  int GYRO_FS_CFG = 3;
+	uint8_t gyro_config[1] = {(0x0 << 5) | (GYRO_FS_CFG << 3)}; // no self-test
+	HAL_I2C_Mem_Write(i2c, acc_addr << 1, 0x1b, 1, gyro_config, 1, 200000);
 
-  uint8_t gyro_config[1] = {(0x0 << 5) | (GYRO_FS_CFG << 3)}; // no self-test
-  HAL_I2C_Mem_Write(i2c, acc_addr << 1, 0x1b, 1, gyro_config, 1, 200000);
-
-  float ACC_FS = 16.0 * 9.82; // m/s^2
-  int ACC_FS_CFG = 3;
-
-  uint8_t acc_config[1] = {(0x0 << 5) | (ACC_FS_CFG << 3)}; // no self-test
-  HAL_I2C_Mem_Write(i2c, acc_addr << 1, 0x1c, 1, acc_config, 1, 200000);
+	uint8_t acc_config[1] = {(0x0 << 5) | (ACC_FS_CFG << 3)}; // no self-test
+	HAL_I2C_Mem_Write(i2c, acc_addr << 1, 0x1c, 1, acc_config, 1, 200000);
 }
 
+// TODO: Do this with interrupt
+AccData get_accelerometer_data(I2C_HandleTypeDef *i2c, uint16_t acc_addr) {
+	// 0x43 = gyro_xout_h
+	// 0x44 = gyro_xout_
+	uint8_t gyro_data[6] = {0x69, 0x69, 0x69, 0x69, 0x69, 0x69};
+	HAL_I2C_Mem_Read(&hi2c2, acc_addr << 1, 0x43, 1, gyro_data, 6, 2000000);
+	int16_t gx_i = (int16_t) ((gyro_data[0] << 8) | gyro_data[1]);
+	int16_t gy_i = (int16_t) ((gyro_data[2] << 8) | gyro_data[3]);
+	int16_t gz_i = (int16_t) ((gyro_data[4] << 8) | gyro_data[5]);
+	float gx = gx_i * (GYRO_FS / (1<<15));
+	float gy = gy_i * (GYRO_FS / (1<<15));
+	float gz = gz_i * (GYRO_FS / (1<<15));
+
+	uint8_t acc_data[6] = {0x69, 0x69, 0x69, 0x69, 0x69, 0x69};
+	HAL_I2C_Mem_Read(&hi2c2, acc_addr << 1, 0x3b, 1, acc_data, 6, 2000000);
+	int16_t ax_i = (int16_t) ((acc_data[0] << 8) | acc_data[1]);
+	int16_t ay_i = (int16_t) ((acc_data[2] << 8) | acc_data[3]);
+	int16_t az_i = (int16_t) ((acc_data[4] << 8) | acc_data[5]);
+	float ax = ax_i * (ACC_FS / (1<<15));
+	float ay = ay_i * (ACC_FS / (1<<15));
+	float az = az_i * (ACC_FS / (1<<15));
+
+	return (AccData) {
+		.gx = gx, .gy = gy, .gz = gz,
+		.ax = ax, .ay = ay, .az = az
+	};
+}
 
 /* USER CODE END 0 */
 
@@ -193,131 +195,128 @@ void setup_mpu(I2C_HandleTypeDef *i2c, uint16_t acc_addr) {
   * @brief  The application entry point.
   * @retval int
   */
-
-#define ACC_ADDR (0x68)
 int main(void)
 {
-  /* USER CODE BEGIN 1 */
+
+	/* USER CODE BEGIN 1 */
 	char dbgbuf[500];
-  /* USER CODE END 1 */
+	/* USER CODE END 1 */
 
-  /* MCU Configuration--------------------------------------------------------*/
+	/* MCU Configuration--------------------------------------------------------*/
 
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+	/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+	HAL_Init();
 
-  /* USER CODE BEGIN Init */
+	/* USER CODE BEGIN Init */
 
-  /* USER CODE END Init */
+	/* USER CODE END Init */
 
-  /* Configure the system clock */
-  SystemClock_Config();
+	/* Configure the system clock */
+	SystemClock_Config();
 
-  /* USER CODE BEGIN SysInit */
+	/* USER CODE BEGIN SysInit */
 
-  /* USER CODE END SysInit */
+	/* USER CODE END SysInit */
 
-  /* Initialize all configured peripherals */
-  MX_GPIO_Init();
-  MX_ETH_Init();
-  MX_USB_OTG_FS_PCD_Init();
-  MX_USART2_UART_Init();
-  MX_TIM4_Init();
-  MX_I2C2_Init();
-  MX_USART3_UART_Init();
-  /* USER CODE BEGIN 2 */
-  HAL_TIM_Base_Start_IT(&htim4);
+	/* Initialize all configured peripherals */
+	MX_GPIO_Init();
+	MX_ETH_Init();
+	MX_USB_OTG_FS_PCD_Init();
+	MX_USART2_UART_Init();
+	MX_TIM4_Init();
+	MX_I2C2_Init();
+	MX_USART3_UART_Init();
+	MX_TIM3_Init();
+	/* USER CODE BEGIN 2 */
 
-  HAL_UART_RegisterCallback(&huart2, HAL_UART_TX_COMPLETE_CB_ID, vesc_uart_cb_txcplt);
+	HAL_TIM_Base_Start_IT(&htim3);
+	HAL_TIM_Base_Start_IT(&htim4);
 
-  /* USER CODE END 2 */
+	HAL_UART_RegisterCallback(&huart2, HAL_UART_TX_COMPLETE_CB_ID, vesc_uart_cb_txcplt);
+	queue_init(&MAIN_QUEUE);
+	setup_mpu(&hi2c2, MPU_ADDR);
 
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
+	struct {
+		float dt;
+		float current;
+		AccData acc_data;
+	} dbg_values;
 
-  setup_mpu(&hi2c2, ACC_ADDR);
-  queue_init(&MAIN_QUEUE);
+	/* USER CODE END 2 */
 
-  // float current_current = 0.0;
+	/* Infinite loop */
+	/* USER CODE BEGIN WHILE */
 
-  while (1)
-  {
-    /* USER CODE END WHILE */
+	while (1)
+	{
+		/* USER CODE END WHILE */
 
-    /* USER CODE BEGIN 3 */
+		/* USER CODE BEGIN 3 */
 
-	if (!queue_has(&MAIN_QUEUE)) {
-		continue;
-	}
-
-	Message msg = queue_read(&MAIN_QUEUE);
-
-	switch (msg.ty) {
-	case MSG_NONE:
-		break;
-	case MSG_SEND_DEBUG: {
-		int dbglen = sprintf(dbgbuf, "DEBUGGGG\r\n");
-
-		HAL_UART_Transmit(&huart3, (uint8_t *) dbgbuf, dbglen, 10000);
-
-		break;
-	}
-	default:
-		// idk
-		break;
-	}
-
-	/*
-	if (should_send) {
-		should_send = false;
-		// 0x43 = gyro_xout_h
-		// 0x44 = gyro_xout_
-		uint8_t gyro_data[6] = {0x69, 0x69, 0x69, 0x69, 0x69, 0x69};
-		HAL_I2C_Mem_Read(&hi2c2, ACC_ADDR << 1, 0x43, 1, gyro_data, 6, 2000000);
-		int16_t gx_i = (int16_t) ((gyro_data[0] << 8) | gyro_data[1]);
-		int16_t gy_i = (int16_t) ((gyro_data[2] << 8) | gyro_data[3]);
-		int16_t gz_i = (int16_t) ((gyro_data[4] << 8) | gyro_data[5]);
-		float gx = gx_i * (GYRO_FS / (1<<15));
-		float gy = gy_i * (GYRO_FS / (1<<15));
-		float gz = gz_i * (GYRO_FS / (1<<15));
-
-		uint8_t acc_data[6] = {0x69, 0x69, 0x69, 0x69, 0x69, 0x69};
-		HAL_I2C_Mem_Read(&hi2c2, ACC_ADDR << 1, 0x3b, 1, acc_data, 6, 2000000);
-		int16_t ax_i = (int16_t) ((acc_data[0] << 8) | acc_data[1]);
-		int16_t ay_i = (int16_t) ((acc_data[2] << 8) | acc_data[3]);
-		int16_t az_i = (int16_t) ((acc_data[4] << 8) | acc_data[5]);
-		float ax = ax_i * (ACC_FS / (1<<15));
-		float ay = ay_i * (ACC_FS / (1<<15));
-		float az = az_i * (ACC_FS / (1<<15));
-
-
-		char hexdata[100];
-		char *current = hexdata;
-		current = hex_float(gx, current);
-		current = hex_float(gy, current);
-		current = hex_float(gz, current);
-		current = hex_float(ax, current);
-		current = hex_float(ay, current);
-		current = hex_float(az, current);
-		*(current++) = ' ';
-		HAL_UART_Transmit(&huart3, (uint8_t *) hexdata, current - hexdata, 2000000);
-
-
-		current_current += 0.001;
-		if (current_current > 2.) { current_current = 0.; }
-		float i = 0;
-		if (current_current < 1) {
-			i = 1;
-		} else {
-			i = -1;
+		if (!queue_has(&MAIN_QUEUE)) {
+			continue;
 		}
 
-		vesc_set_current(10);
-		vesc_transmit(&huart2, &huart3);
+		Message msg = queue_read(&MAIN_QUEUE);
+
+		switch (msg.ty) {
+		case MSG_NONE:
+			break;
+
+		case MSG_SEND_DEBUG: {
+			// TODO: Send state of kalman filter and controller
+
+			int dbglen = sprintf(
+				dbgbuf,
+				"dt = %7.2f, current = %7.2f, ax = %7.2f, ...\r\n",
+				dbg_values.dt, dbg_values.current, dbg_values.acc_data.ax
+			);
+
+			HAL_UART_Transmit(&huart3, (uint8_t *) dbgbuf, dbglen, 10000);
+
+			break;
+		}
+
+		case MSG_TIME_STEP: {
+			uint32_t dt_us = get_and_reset_dt_us();
+			float dt = (float) dt_us / 1000000;
+
+			dbg_values.dt = dt;
+
+			// TODO: Step kalman filter and controller
+			float current = 5;
+
+			dbg_values.current = current;
+
+			vesc_set_current(current);
+			vesc_transmit(&huart3, &huart2);
+
+			break;
+		}
+
+		case MSG_REQ_SENSORS: {
+			vesc_request_data(); // transmit will be called in MSG_TIME_STEP
+
+			AccData acc_data = get_accelerometer_data(&hi2c2, MPU_ADDR);
+			queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_GOT_ACC_DATA, .acc_data = acc_data });
+
+			break;
+		}
+		case MSG_GOT_ACC_DATA: {
+			AccData acc_data = msg.acc_data;
+			// TODO: Feed values to Kalman
+			dbg_values.acc_data = acc_data;
+
+			break;
+		}
+
+		case MSG_GOT_ESC_DATA: {
+			// TODO: Handle
+			break;
+		}
+		}
 	}
-    */
-  }
-  /* USER CODE END 3 */
+	/* USER CODE END 3 */
 }
 
 /**
@@ -467,6 +466,64 @@ static void MX_I2C2_Init(void)
   /* USER CODE BEGIN I2C2_Init 2 */
 
   /* USER CODE END I2C2_Init 2 */
+
+}
+
+/**
+  * @brief TIM3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM3_Init(void)
+{
+
+  /* USER CODE BEGIN TIM3_Init 0 */
+
+  /* USER CODE END TIM3_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_IC_InitTypeDef sConfigIC = {0};
+
+  /* USER CODE BEGIN TIM3_Init 1 */
+
+  /* USER CODE END TIM3_Init 1 */
+  htim3.Instance = TIM3;
+  htim3.Init.Prescaler = 96;
+  htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim3.Init.Period = 1000;
+  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_IC_Init(&htim3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_RISING;
+  sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;
+  sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
+  sConfigIC.ICFilter = 0;
+  if (HAL_TIM_IC_ConfigChannel(&htim3, &sConfigIC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM3_Init 2 */
+
+  /* USER CODE END TIM3_Init 2 */
 
 }
 

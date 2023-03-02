@@ -17,22 +17,24 @@
 #define CLEAR_MESSAGES false
 
 typedef struct {
+	uint8_t acc_id;
+	float gx, gy, gz;
+	float ax, ay, az;
+} AccData;
+
+typedef struct {
 	enum {
 		MSG_NONE = 0, // "Null" message. Cannot be put in the queue. Will only be returned
 		MSG_SEND_DEBUG, // Send state data over UART3 (USB)
 
-		MSG_TIME_STEP, // Update kalman filter, run control system, send current to ESC
+		MSG_TIME_STEP, // Update kalman filter, run control system, send current to ESC. Flushes all messages to the ESC
 
 		MSG_REQ_SENSORS, // Send requests to all sensors to get data, including ESC
 		MSG_GOT_ACC_DATA,
 		MSG_GOT_ESC_DATA,
 	} ty;
 	union {
-		struct {
-			uint8_t acc_id;
-			float gx, gy, gz;
-			float ax, ay, az;
-		} acc_data;
+		AccData acc_data;
 
 		struct {
 			float erpm;

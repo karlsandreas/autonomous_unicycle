@@ -123,12 +123,12 @@ void vesc_transmit(UART_HandleTypeDef *huart, UART_HandleTypeDef *dbghuart) {
 		char *msg = "BLOCK_TX_WAITING\r\n";
 		HAL_UART_Transmit(dbghuart, (uint8_t*) msg, strlen(msg), 1000000);
 
-		HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(LDERROR_GPIO_Port, LDERROR_Pin, GPIO_PIN_SET);
 
 		while (tx_waiting) {
 			__asm("nop");
 		}
-		HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(LDERROR_GPIO_Port, LDERROR_Pin, GPIO_PIN_RESET);
 	}
 
 	char *msg2 = "TXING\r\n";
