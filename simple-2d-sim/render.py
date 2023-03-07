@@ -4,6 +4,8 @@ import pygame
 import numpy as np
 import random
 
+from copy import deepcopy
+
 from pidcontroller import PIDController
 
 import matplotlib.pyplot as plt
@@ -231,6 +233,8 @@ class Render:
 
         self.current_fps = 0.
         self.avg_tick_time = 0.
+        self.avg_dt_sim = 0.
+        self.avg_dt_reg_filter = 0.
 
         self.sensor_reading = 0.0
         ### Initializer pointer objects for the c kalman filter
@@ -238,10 +242,16 @@ class Render:
         dt = init.dt
         self.c_Qs = pointer(Matrix(0.05*dt**2, 0.05*dt, 0.05*dt, 0.05))
 
+        self.a = 0.0
     def run(self) -> None:
         last_t = time.time()
+        last_reg_dt = time.time()
+        i = 0
+        dual_dt = True
         frames_last_second = []
         tick_times = []
+        avg_sim_dt = []
+        avg_reg_dt = []
 
         while not self.done:
             for event in pygame.event.get():
@@ -265,7 +275,7 @@ class Render:
                             self.mode = "free_cam"
                     if event.key == pygame.K_TAB:
                         self.state = self.init_state
-                        self.filter_state = self.init_state
+                        #self.filter_state = self.init_state
                         self.filter = self.init_kalman
 
             self.draw()
@@ -273,14 +283,17 @@ class Render:
             pygame.display.flip()
             frames_last_second.append(time.time())
 
+    
             dt = time.time() - last_t
             while dt > MIN_DT:
                 tick_start = time.time()
                 self.step(MIN_DT)
+                self.step_reg_filter(MIN_DT)
                 tick_times.append(time.time() - tick_start)
 
                 dt -= MIN_DT
             self.step(dt)
+            self.step_reg_filter(MIN_DT)
 
             last_t = time.time()
 
@@ -289,30 +302,17 @@ class Render:
             tick_times = tick_times[-1000:]
             self.avg_tick_time = sum(tick_times) / len(tick_times)
 
+            
 
-    def step(self, dt: float) -> None:
-        
-        ############### Regulator in python ########
-        #self.current_signals = self.reg(self.filter_state, dt * self.speed_mult)
-        ############################################
 
-        ############## Regulator in c ##############
-        c_regulator = reg.LookaheadSpeedRegulator
-        c_regulator.restype = c_float  # Set output type from c code 
-        
-        self.current_signals = ControlSignals(c_regulator(c_float(self.reg.setpoint_x_d), 
-                                                c_float(self.filter_state.top_angle), 
-                                                c_float(self.filter_state.top_angle_d),
-                                                c_float(self.filter_state.wheel_position_d),
-                                                c_float(dt)))
-        #############################################
-        
+    def step_reg_filter(self, dt: float) -> None:
+
         mult = 3. if pygame.key.get_pressed()[pygame.K_LALT] else 0.3 if pygame.key.get_pressed()[pygame.K_LSHIFT] else 1.0
         val = mult if pygame.key.get_pressed()[pygame.K_RIGHT] else -mult if pygame.key.get_pressed()[pygame.K_LEFT] else 0
 
-        if pygame.key.get_pressed()[pygame.K_p]:
+        if pygame.key.get_pressed()[pygame.K_UP]:
             if isinstance(self.reg, LookaheadSpeedRegulator):
-                self.reg.setpoint_x_d += val * dt * 3
+                self.reg.setpoint_x_d += 0.001
         elif pygame.key.get_pressed()[pygame.K_s]:
             self.speed_mult *= 2. ** (val * dt)
         else:
@@ -320,37 +320,28 @@ class Render:
             self.filter_sig.motor_torque_signal += val * 30
 
         sim_dt = dt * self.speed_mult
-        ########### Sensor reading and noise #######
-        sensor_reading = self.sim.sensor_reading(self.state, self.current_signals)
-        
-        var_x = 0.2 #m/s^2
-        var_z = 0.2 #m/s^2
-        var_angle = 0.005 #rad/s 
-        noise_x, noise_z, noise_angle = random.gauss(0, var_x**0.5), random.gauss(0, var_z**0.5), random.gauss(0, var_angle**0.5)
-
-        a_x = sensor_reading[1] + noise_x
-        a_z = sensor_reading[2] + noise_z
-        a = (a_x**2 + a_z**2)**0.5
-
-        top_angle_d = sensor_reading[0] + noise_angle
-
-        self.sensor_reading = top_angle_d #Copy to class for info tab
         
         ######## Kalman filter in C ##########
         #Update the Qs since they depend on dt
-        self.c_Qs.contents.m11 = 0.05 * (dt**2) 
-        self.c_Qs.contents.m12 = 0.05 * dt 
-        self.c_Qs.contents.m21 = 0.05 * dt 
-        self.c_Qs.contents.m22 = 0.05 * 1
+        self.c_Qs.contents.m11 = c_float(2.0 * (dt**4)/4) 
+        self.c_Qs.contents.m12 = c_float(2.0 * (dt**3)/2)
+        self.c_Qs.contents.m21 = c_float(2.0 * (dt**3)/2)
+        self.c_Qs.contents.m22 = c_float(2.0 * dt**2)
 
         self.c_state.contents.x3 = self.filter_state.wheel_position #Update states in pointer since we are not mesuring them
         self.c_state.contents.x4 = self.filter_state.wheel_position_d
+        
 
-        c_kalman.pitch_kalman_filter_predict(c_float(a), c_float(dt), self.c_state, self.c_Qs)
+        c_kalman.pitch_kalman_filter_predict(c_float(self.a), c_float(dt), self.c_state, self.c_Qs)
 
         self.filter_state.top_angle = self.c_state.contents.x1
         self.filter_state.top_angle_d = self.c_state.contents.x2
 
+        #Wheel filter
+        c_kalman_vel = c_kalman.wheel_velocity_kalman_filter_predict
+        c_kalman_vel.restype = c_float  # Set output type from c code
+        self.filter_state.wheel_position_d = c_kalman_vel(c_float(dt))
+        
         ######################################
 
         ####### Python kalman filter #########
@@ -358,9 +349,50 @@ class Render:
         #self.filter_state.top_angle = kalman_out[0][0]  
         #self.filter_state.top_angle_d = kalman_out[1][0]  
         ######################################
+
+        ############### Regulator in python ########
+        #self.current_signals = self.reg(self.filter_state, dt * self.speed_mult)
+        ############################################
+
+        ############## Regulator in c ##############
+        ## Update params in regulator.h if changed in sim
+        c_regulator = reg.LookaheadSpeedRegulator
+        c_regulator.restype = c_float  # Set output type from c code 
+
+        
+        
+        self.current_signals = ControlSignals(c_regulator(c_float(self.reg.setpoint_x_d), 
+                                                c_float(self.filter_state.top_angle), 
+                                                c_float(self.filter_state.top_angle_d),
+                                                c_float(self.filter_state.wheel_position_d),
+                                                c_float(dt)))
+        #############################################
+
+        ############ Integration step ###############
+        self.filter_state = deepcopy(self.state)
+
+        ########### Sensor reading and noise #######
+        sensor_reading = self.sim.sensor_reading(self.filter_state, self.current_signals)
+        #sensor_reading = self.sim.sensor_reading(self.state, self.current_signals)
+        
+        var_x = 0.0004 #m/s^2
+        var_z = 0.0004 #m/s^2
+        var_angle = 0.01 #rad/s 
+        noise_x, noise_z, noise_angle = random.gauss(0, var_x), random.gauss(0, var_z), random.gauss(0, var_angle)
+
+        a_x = sensor_reading[1] + noise_x
+        a_z = sensor_reading[2] + noise_z
+        self.a = (a_x**2 + a_z**2)**0.5
+
+        top_angle_d = sensor_reading[0] + noise_angle
+
+        self.sensor_reading = top_angle_d #Copy to class for info tab
+        
+        x_d = self.filter_state.wheel_position 
+        x_d_noise = random.gauss(0, 0.001)
+        x_d_w_noise = x_d + x_d_noise
     
-        self.state = self.sim.step(self.state, self.current_signals, sim_dt)
-        self.filter_state = self.sim.step(self.filter_state, self.current_signals, sim_dt)        
+
 
         ###### Python kalman filter #########
         #Update arrays that depend on dt
@@ -374,8 +406,21 @@ class Render:
         #self.filter.update(top_angle_d, F = F, Q = Q, G = G)
         ######################################
         ##### C Kalman filter #####
-        c_kalman.kalman_filter_update(c_float(top_angle_d), c_float(dt), self.c_state, self.c_Qs)
+        c_kalman.pitch_kalman_filter_update(c_float(top_angle_d), c_float(dt), self.c_state, self.c_Qs)
+        #c_kalman.wheel_velocity_kalman_filter_update(c_float(x_d_w_noise), c_float(dt));
+        c_kalman_simple = c_kalman.simple_wheel_filter
+        c_kalman_simple.restype = c_float
+
+        self.filter_state.wheel_position_d = c_kalman_simple(c_float(x_d_w_noise), c_float(dt))
         ###########################
+
+
+    def step(self, dt: float) -> None:
+        
+        sim_dt = dt
+        ############ Integration step ###############
+        self.state = self.sim.step(self.state, self.current_signals, sim_dt)
+        #self.filter_state = self.sim.step(self.filter_state, self.current_signals, sim_dt)        
 
 
         self.space.pixels_per_unit = self.space.pixels_per_unit + (self.wanted_zoom - self.space.pixels_per_unit) * dt / ZOOM_TAU
@@ -577,6 +622,8 @@ class Render:
             ("Speed", self.speed_mult, "s/s"),
             ("Frame rate", self.current_fps, "FPS"),
             ("Tick time", self.avg_tick_time, "s"),
+            ("Reg time", self.avg_dt_reg_filter, "s"),
+            ("Sim time", self.avg_dt_sim, "s"),
         ]:
             text = f"{fmt_unit(val, unit)}: {name}"
 

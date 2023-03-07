@@ -24,5 +24,6 @@ typedef struct matrix Matrix;
 #define F21 (0.0)
 #define F22 (1.0)
 
-#define KALMAN_R (0.25)
+#define E_PITCH (0.01F)
+#define E_WHEEL (0.001F)
 
