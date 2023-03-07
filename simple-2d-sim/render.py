@@ -340,7 +340,7 @@ class Render:
         #Wheel filter
         c_kalman_vel = c_kalman.wheel_velocity_kalman_filter_predict
         c_kalman_vel.restype = c_float  # Set output type from c code
-        self.filter_state.wheel_position_d = c_kalman_vel(c_float(dt))
+        #self.filter_state.wheel_position_d = c_kalman_vel(c_float(dt))
         
         ######################################
 
@@ -388,7 +388,7 @@ class Render:
 
         self.sensor_reading = top_angle_d #Copy to class for info tab
         
-        x_d = self.filter_state.wheel_position 
+        x_d = self.filter_state.wheel_position_d 
         x_d_noise = random.gauss(0, 0.001)
         x_d_w_noise = x_d + x_d_noise
     
@@ -412,6 +412,7 @@ class Render:
         c_kalman_simple.restype = c_float
 
         self.filter_state.wheel_position_d = c_kalman_simple(c_float(x_d_w_noise), c_float(dt))
+        #self.filter_state.wheel_position_d = x_d_w_noise
         ###########################
 
 
