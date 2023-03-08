@@ -27,6 +27,10 @@
 
 #include "vesc_com.h"
 #include "queue.h"
+#include "ctrl/common.h"
+#include "ctrl/regulator.h"
+#include "ctrl/kalman_filter.h"
+#include "buf.h"
 
 /* USER CODE END Includes */
 
@@ -208,6 +212,16 @@ AccData get_accelerometer_data(I2C_HandleTypeDef *i2c, uint16_t acc_addr) {
 	};
 }
 
+
+struct {
+	EscData last_esc;
+	AccData last_acc;
+
+	States st;
+	Matrix qs;
+	float a;
+} CTRL;
+
 // #define QUEUE_DEBUG
 
 /* USER CODE END 0 */
@@ -271,9 +285,15 @@ int main(void)
 	struct {
 		float dt;
 		float current;
-		AccData acc_data;
-		EscData esc_data;
 	} dbg_values;
+
+	// For Kalman + control system
+
+	CTRL.a = 0;
+	CTRL.st = (States) { .x1 = 0, .x2 = 0, .x3 = 0, .x4 = 0 };
+	float init_dt = 0.001;
+	CTRL.qs = (Matrix) { .m11 = 0.05 * init_dt * init_dt, .m12 = 0.05 * init_dt * init_dt, .m21 = 0.05 * init_dt * init_dt, .m22 = 0.05 };
+
 
   /* USER CODE END 2 */
 
@@ -299,10 +319,17 @@ int main(void)
 		case MSG_SEND_DEBUG: {
 			// TODO: Send state of kalman filter and controller
 
+			char ctrl_hex[2 * sizeof(CTRL) + 2];
+			char *ctrl_data = (void*) &CTRL;
+			for (int i = 0; i < sizeof(CTRL); i++) {
+				write_hex(&ctrl_hex[2*i], ctrl_data[i]);
+			}
+			ctrl_hex[2 * sizeof(CTRL)] = 0;
+
 			int dbglen = sprintf(
 				dbgbuf,
-				"qsz = %d. t = %lu, dt = %d us, current = %d mA, ax = %d m, ..., erpm = %d, temp_mos = %d mC\r\n",
-				queue_nelem(&MAIN_QUEUE), (uint32_t) us_since_startup(), (uint32_t) (dbg_values.dt * 1000000.0), (uint32_t) (1000 * dbg_values.current), (uint32_t) (1000 * dbg_values.acc_data.ax), (uint32_t) dbg_values.esc_data.erpm, (uint32_t) (1000 * dbg_values.esc_data.temp_mos)
+				"qsz = %d. t = %lu us. current = %ld mA, CTRL = %s\r\n",
+				queue_nelem(&MAIN_QUEUE), (int32_t) us_since_startup(), (int32_t) (1000 * dbg_values.current), ctrl_hex
 			);
 
 			HAL_UART_Transmit_IT(&huart3, (uint8_t *) dbgbuf, dbglen);
@@ -326,8 +353,21 @@ int main(void)
 
 			dbg_values.dt = dt;
 
-			// TODO: Step kalman filter and controller
-			float current = 5;
+			float wheel_pos_d = CTRL.last_esc.erpm / 22.9 * WHEEL_RAD;
+
+			CTRL.qs.m11 = 2 * dt*dt*dt*dt / 4;
+			CTRL.qs.m12 = 2 * dt*dt*dt / 4;
+			CTRL.qs.m21 = 2 * dt*dt / 4;
+			CTRL.qs.m22 = 2 * dt / 4;
+			CTRL.st.x4 = wheel_pos_d;
+			CTRL.st.x3 += wheel_pos_d * dt;
+
+			pitch_kalman_filter_predict(CTRL.a, dt, &CTRL.st, &CTRL.qs);
+			float tau = LookaheadSpeedRegulator(0, CTRL.st.x1, CTRL.st.x2, wheel_pos_d, dt);
+			float current = tau / 0.59; // see notes
+
+			CTRL.a = sqrt((CTRL.last_acc.ax * CTRL.last_acc.ax) + (CTRL.last_acc.ay * CTRL.last_acc.ay));
+			pitch_kalman_filter_update(CTRL.last_acc.gx, dt, &CTRL.st, &CTRL.qs);
 
 			dbg_values.current = current;
 
@@ -378,7 +418,7 @@ int main(void)
 #endif
 			AccData acc_data = msg.acc_data;
 			// TODO: Feed values to Kalman
-			dbg_values.acc_data = acc_data;
+			CTRL.last_acc = acc_data;
 
 			break;
 		}
@@ -394,7 +434,7 @@ int main(void)
 #endif
 			EscData esc_data = msg.esc_data;
 			// TODO: Feed values to Kalman
-			dbg_values.esc_data = esc_data;
+			CTRL.last_esc = esc_data;
 
 			break;
 		}
@@ -633,7 +673,7 @@ static void MX_TIM4_Init(void)
   htim4.Instance = TIM4;
   htim4.Init.Prescaler = 9600;
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim4.Init.Period = 100-1;
+  htim4.Init.Period = 20-1;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim4) != HAL_OK)

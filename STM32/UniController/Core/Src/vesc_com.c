@@ -275,18 +275,18 @@ void vesc_got_data() {
 			uint8_t *pkt_ptr = &packet[1];
 
 			float temp_mos = read_f16(&pkt_ptr, 1e1);
-			float temp_motor = read_f16(&pkt_ptr, 1e1);
+			/*float temp_motor = */read_f16(&pkt_ptr, 1e1);
 			float current_motor = read_f32(&pkt_ptr, 1e2);
-			float current_in = read_f32(&pkt_ptr, 1e2);
-			float id = read_f32(&pkt_ptr, 1e2);
-			float iq = read_f32(&pkt_ptr, 1e2);
-			float duty_now = read_f16(&pkt_ptr, 1e3);
+			/*float current_in = */read_f32(&pkt_ptr, 1e2);
+			/*float id = */read_f32(&pkt_ptr, 1e2);
+			/*float iq = */read_f32(&pkt_ptr, 1e2);
+			/*float duty_now = */read_f16(&pkt_ptr, 1e3);
 			float rpm = read_f32(&pkt_ptr, 1e0);
-			float v_in = read_f16(&pkt_ptr, 1e1);
-			float amp_hours = read_f32(&pkt_ptr, 1e4);
-			float amp_hours_charged = read_f32(&pkt_ptr, 1e4);
-			float watt_hours = read_f32(&pkt_ptr, 1e4);
-			float watt_hours_charged = read_f32(&pkt_ptr, 1e4);
+			/*float v_in = */read_f16(&pkt_ptr, 1e1);
+			/*float amp_hours = */read_f32(&pkt_ptr, 1e4);
+			/*float amp_hours_charged = */read_f32(&pkt_ptr, 1e4);
+			/*float watt_hours = */read_f32(&pkt_ptr, 1e4);
+			/*float watt_hours_charged = */read_f32(&pkt_ptr, 1e4);
 
 			Message msg = (Message) { .ty = MSG_GOT_ESC_DATA, .esc_data = { .temp_mos = temp_mos, .erpm = rpm, .current_motor = current_motor } };
 
