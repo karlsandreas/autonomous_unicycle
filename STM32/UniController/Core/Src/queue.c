@@ -7,6 +7,7 @@
 
 
 #include "queue.h"
+#include "cmsis_gcc.h"
 
 void queue_init(Queue *q) {
 	q->read_idx = 0;
@@ -23,19 +24,23 @@ bool queue_can_put(Queue *q) {
 	return queue_nelem(q) < CHANNEL_SIZE - 1;
 }
 
-// Returns false if value cannot be put (queue is ful)
+// Returns false if value cannot be put (queue is full)
 bool queue_put(Queue *q, Message msg) {
 	if (!queue_can_put(q)) {
 		return false;
 	}
 
 	while (q->is_writing) { }
+	__disable_irq();
+
 	q->is_writing = true;
 
 	q->messages[q->write_idx] = msg;
 	q->write_idx = (q->write_idx + 1) % CHANNEL_SIZE;
 
 	q->is_writing = false;
+	__enable_irq();
+
 	return true;
 }
 
@@ -49,11 +54,15 @@ Message queue_pop(Queue *q) {
 		return (Message) { .ty = MSG_NONE };
 	}
 	while (q->is_reading) { }
+
+	__disable_irq();
 	q->is_reading = true;
 
 	Message msg = q->messages[q->read_idx];
 	q->read_idx = (q->read_idx + 1) % CHANNEL_SIZE;
 
 	q->is_reading = false;
+	__enable_irq();
+
 	return msg;
 }

@@ -7,6 +7,7 @@
 
 #include "vesc_com.h"
 #include "main.h" // for gpio pins
+#include "buf.h"
 #include <string.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -105,24 +106,6 @@ static struct {
 	volatile uint8_t rx_data[RX_DATA_LEN];
 	volatile size_t rx_offset;
 } VESC;
-
-char *write_hex(char *dest, uint8_t val) {
-	uint8_t lo = val & 0xf;
-	uint8_t hi = val >> 4;
-	if (hi < 10) {
-		dest[0] = hi + '0';
-	} else {
-		dest[0] = hi - 10 + 'a';
-	}
-
-	if (lo < 10) {
-		dest[1] = lo + '0';
-	} else {
-		dest[1] = lo - 10 + 'a';
-	}
-
-	return dest + 2;
-}
 
 static inline uint8_t read_u8(uint8_t **data) {
 	uint8_t val = **data;
