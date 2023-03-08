@@ -11,10 +11,17 @@
 #include<stdint.h>
 
 #include "stm32h7xx_hal.h"
+#include "queue.h"
 
-void vesc_uart_cb_txcplt();
-void vesc_queue_packet(uint8_t *content, size_t len);
-void vesc_transmit(UART_HandleTypeDef *huart, UART_HandleTypeDef *dbghuart);
+// Half of the buffer size, what is sent to the queue
+
+void vesc_uart_cb_txcplt(UART_HandleTypeDef *huart);
+void vesc_uart_cb_rxcplt(UART_HandleTypeDef *huart);
+
+void vesc_got_data();
+
+void vesc_init(UART_HandleTypeDef *vesc_uart, UART_HandleTypeDef *debug_uart, Queue *q);
+void vesc_transmit_and_recv();
 void vesc_set_current(float current);
 void vesc_request_data();
 

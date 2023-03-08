@@ -16,7 +16,7 @@ void queue_init(Queue *q) {
 }
 
 size_t queue_nelem(Queue *q) {
-	return (q->read_idx - q->write_idx) % CHANNEL_SIZE;
+	return (q->write_idx - q->read_idx) % CHANNEL_SIZE;
 }
 
 bool queue_can_put(Queue *q) {
@@ -44,7 +44,7 @@ bool queue_has(Queue *q) {
 }
 
 // Returns a MSG_NONE if the queue is empty
-Message queue_read(Queue *q) {
+Message queue_pop(Queue *q) {
 	if (!queue_has(q)) {
 		return (Message) { .ty = MSG_NONE };
 	}
@@ -57,4 +57,3 @@ Message queue_read(Queue *q) {
 	q->is_reading = false;
 	return msg;
 }
-

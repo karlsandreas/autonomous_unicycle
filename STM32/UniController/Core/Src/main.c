@@ -76,6 +76,7 @@ I2C_HandleTypeDef hi2c2;
 
 TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim4;
+TIM_HandleTypeDef htim5;
 
 UART_HandleTypeDef huart2;
 UART_HandleTypeDef huart3;
@@ -96,6 +97,7 @@ static void MX_TIM4_Init(void);
 static void MX_I2C2_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_TIM3_Init(void);
+static void MX_TIM5_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -115,10 +117,27 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	}
 	if (htim == &htim4 ) {
 		// TODO: Put these on different timers?
-		queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_SEND_DEBUG });
+
+		queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_REQ_SENSORS });
 		queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_TIME_STEP });
 	}
+	if (htim == &htim5) {
+		queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_SEND_DEBUG });
+	}
 }
+
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
+	if (huart == &huart2) {
+		vesc_uart_cb_txcplt(huart);
+	}
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
+	if (huart == &huart2) {
+		vesc_uart_cb_rxcplt(huart);
+	}
+}
+
 // This will overflow after 2^32/10^6s ≈ 4300s ≈ 1h11m
 // Overflow should be handled by the get_dt and reset_dt
 uint32_t us_since_startup() {
@@ -189,6 +208,8 @@ AccData get_accelerometer_data(I2C_HandleTypeDef *i2c, uint16_t acc_addr) {
 	};
 }
 
+// #define QUEUE_DEBUG
+
 /* USER CODE END 0 */
 
 /**
@@ -197,67 +218,79 @@ AccData get_accelerometer_data(I2C_HandleTypeDef *i2c, uint16_t acc_addr) {
   */
 int main(void)
 {
-
-	/* USER CODE BEGIN 1 */
+  /* USER CODE BEGIN 1 */
 	char dbgbuf[500];
-	/* USER CODE END 1 */
+  /* USER CODE END 1 */
 
-	/* MCU Configuration--------------------------------------------------------*/
+  /* MCU Configuration--------------------------------------------------------*/
 
-	/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-	HAL_Init();
+  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+  HAL_Init();
 
-	/* USER CODE BEGIN Init */
+  /* USER CODE BEGIN Init */
 
-	/* USER CODE END Init */
+  /* USER CODE END Init */
 
-	/* Configure the system clock */
-	SystemClock_Config();
+  /* Configure the system clock */
+  SystemClock_Config();
 
-	/* USER CODE BEGIN SysInit */
+  /* USER CODE BEGIN SysInit */
 
-	/* USER CODE END SysInit */
+  /* USER CODE END SysInit */
 
-	/* Initialize all configured peripherals */
-	MX_GPIO_Init();
-	MX_ETH_Init();
-	MX_USB_OTG_FS_PCD_Init();
-	MX_USART2_UART_Init();
-	MX_TIM4_Init();
-	MX_I2C2_Init();
-	MX_USART3_UART_Init();
-	MX_TIM3_Init();
-	/* USER CODE BEGIN 2 */
+  /* Initialize all configured peripherals */
+  MX_GPIO_Init();
+  MX_ETH_Init();
+  MX_USB_OTG_FS_PCD_Init();
+  MX_USART2_UART_Init();
+  MX_TIM4_Init();
+  MX_I2C2_Init();
+  MX_USART3_UART_Init();
+  MX_TIM3_Init();
+  MX_TIM5_Init();
+  /* USER CODE BEGIN 2 */
 
 	HAL_TIM_Base_Start_IT(&htim3);
 	HAL_TIM_Base_Start_IT(&htim4);
+	HAL_TIM_Base_Start_IT(&htim5);
 
-	HAL_UART_RegisterCallback(&huart2, HAL_UART_TX_COMPLETE_CB_ID, vesc_uart_cb_txcplt);
 	queue_init(&MAIN_QUEUE);
+
+	char *msg = "\r\n\r\nhewwo hii!!!!\r\n";
+	HAL_UART_Transmit(&huart3, (uint8_t*) msg, strlen(msg), 1000000);
+
+	//vesc_init(&huart2, &huart3, &MAIN_QUEUE);
+	vesc_init(&huart2, &huart3, &MAIN_QUEUE);
+
 	setup_mpu(&hi2c2, MPU_ADDR);
+
+	queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_REQ_SENSORS });
+	queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_TIME_STEP });
+	queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_SEND_DEBUG });
 
 	struct {
 		float dt;
 		float current;
 		AccData acc_data;
+		EscData esc_data;
 	} dbg_values;
 
-	/* USER CODE END 2 */
+  /* USER CODE END 2 */
 
-	/* Infinite loop */
-	/* USER CODE BEGIN WHILE */
+  /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
 
 	while (1)
 	{
-		/* USER CODE END WHILE */
+    /* USER CODE END WHILE */
 
-		/* USER CODE BEGIN 3 */
+    /* USER CODE BEGIN 3 */
 
 		if (!queue_has(&MAIN_QUEUE)) {
 			continue;
 		}
 
-		Message msg = queue_read(&MAIN_QUEUE);
+		Message msg = queue_pop(&MAIN_QUEUE);
 
 		switch (msg.ty) {
 		case MSG_NONE:
@@ -268,18 +301,28 @@ int main(void)
 
 			int dbglen = sprintf(
 				dbgbuf,
-				"dt = %7.2f, current = %7.2f, ax = %7.2f, ...\r\n",
-				dbg_values.dt, dbg_values.current, dbg_values.acc_data.ax
+				"qsz = %d. t = %lu, dt = %d us, current = %d mA, ax = %d m, ..., erpm = %d, temp_mos = %d mC\r\n",
+				queue_nelem(&MAIN_QUEUE), (uint32_t) us_since_startup(), (uint32_t) (dbg_values.dt * 1000000.0), (uint32_t) (1000 * dbg_values.current), (uint32_t) (1000 * dbg_values.acc_data.ax), (uint32_t) dbg_values.esc_data.erpm, (uint32_t) (1000 * dbg_values.esc_data.temp_mos)
 			);
 
-			HAL_UART_Transmit(&huart3, (uint8_t *) dbgbuf, dbglen, 10000);
+			HAL_UART_Transmit_IT(&huart3, (uint8_t *) dbgbuf, dbglen);
 
 			break;
 		}
 
 		case MSG_TIME_STEP: {
 			uint32_t dt_us = get_and_reset_dt_us();
-			float dt = (float) dt_us / 1000000;
+			float dt = (float) dt_us / 1000000.0;
+
+#ifdef QUEUE_DEBUG
+			int dbglen = sprintf(
+				dbgbuf,
+				"{Q: TIME_STEP by %7.5f}\r\n",
+				dt
+			);
+
+			HAL_UART_Transmit(&huart3, (uint8_t *) dbgbuf, dbglen, 10000);
+#endif
 
 			dbg_values.dt = dt;
 
@@ -289,20 +332,50 @@ int main(void)
 			dbg_values.current = current;
 
 			vesc_set_current(current);
-			vesc_transmit(&huart3, &huart2);
+			vesc_transmit_and_recv(&huart2, &huart3);
 
+			break;
+		}
+
+		case MSG_UART_GOT_DATA: {
+#ifdef QUEUE_DEBUG
+			int dbglen = sprintf(
+				dbgbuf,
+				"{Q: UART_GOT_DATA}\r\n"
+			);
+
+			HAL_UART_Transmit(&huart3, (uint8_t *) dbgbuf, dbglen, 10000);
+#endif
+
+			vesc_got_data();
 			break;
 		}
 
 		case MSG_REQ_SENSORS: {
-			vesc_request_data(); // transmit will be called in MSG_TIME_STEP
+#ifdef QUEUE_DEBUG
+			int dbglen = sprintf(
+				dbgbuf,
+				"{Q: REQ_SENSORS}\r\n"
+			);
 
+			HAL_UART_Transmit(&huart3, (uint8_t *) dbgbuf, dbglen, 10000);
+#endif
 			AccData acc_data = get_accelerometer_data(&hi2c2, MPU_ADDR);
 			queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_GOT_ACC_DATA, .acc_data = acc_data });
+
+			vesc_request_data();
 
 			break;
 		}
 		case MSG_GOT_ACC_DATA: {
+#ifdef QUEUE_DEBUG
+			int dbglen = sprintf(
+				dbgbuf,
+				"{Q: GOT_ACC_DATA}\r\n"
+			);
+
+			HAL_UART_Transmit(&huart3, (uint8_t *) dbgbuf, dbglen, 10000);
+#endif
 			AccData acc_data = msg.acc_data;
 			// TODO: Feed values to Kalman
 			dbg_values.acc_data = acc_data;
@@ -311,12 +384,23 @@ int main(void)
 		}
 
 		case MSG_GOT_ESC_DATA: {
-			// TODO: Handle
+#ifdef QUEUE_DEBUG
+			int dbglen = sprintf(
+				dbgbuf,
+				"{Q: GOT_ESC_DATA}\r\n"
+			);
+
+			HAL_UART_Transmit(&huart3, (uint8_t *) dbgbuf, dbglen, 10000);
+#endif
+			EscData esc_data = msg.esc_data;
+			// TODO: Feed values to Kalman
+			dbg_values.esc_data = esc_data;
+
 			break;
 		}
 		}
 	}
-	/* USER CODE END 3 */
+  /* USER CODE END 3 */
 }
 
 /**
@@ -491,7 +575,7 @@ static void MX_TIM3_Init(void)
   htim3.Instance = TIM3;
   htim3.Init.Prescaler = 96;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 1000;
+  htim3.Init.Period = 1000-1;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
@@ -549,7 +633,7 @@ static void MX_TIM4_Init(void)
   htim4.Instance = TIM4;
   htim4.Init.Prescaler = 9600;
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim4.Init.Period = 100;
+  htim4.Init.Period = 100-1;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
@@ -586,6 +670,64 @@ static void MX_TIM4_Init(void)
 }
 
 /**
+  * @brief TIM5 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM5_Init(void)
+{
+
+  /* USER CODE BEGIN TIM5_Init 0 */
+
+  /* USER CODE END TIM5_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_IC_InitTypeDef sConfigIC = {0};
+
+  /* USER CODE BEGIN TIM5_Init 1 */
+
+  /* USER CODE END TIM5_Init 1 */
+  htim5.Instance = TIM5;
+  htim5.Init.Prescaler = 9600;
+  htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim5.Init.Period = 100-1;
+  htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim5.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim5) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim5, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_IC_Init(&htim5) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim5, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_RISING;
+  sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;
+  sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
+  sConfigIC.ICFilter = 0;
+  if (HAL_TIM_IC_ConfigChannel(&htim5, &sConfigIC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM5_Init 2 */
+
+  /* USER CODE END TIM5_Init 2 */
+
+}
+
+/**
   * @brief USART2 Initialization Function
   * @param None
   * @retval None
@@ -602,9 +744,9 @@ static void MX_USART2_UART_Init(void)
   /* USER CODE END USART2_Init 1 */
   huart2.Instance = USART2;
   huart2.Init.BaudRate = 115200;
-  huart2.Init.WordLength = UART_WORDLENGTH_9B;
-  huart2.Init.StopBits = UART_STOPBITS_2;
-  huart2.Init.Parity = UART_PARITY_EVEN;
+  huart2.Init.WordLength = UART_WORDLENGTH_8B;
+  huart2.Init.StopBits = UART_STOPBITS_1;
+  huart2.Init.Parity = UART_PARITY_NONE;
   huart2.Init.Mode = UART_MODE_TX_RX;
   huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
   huart2.Init.OverSampling = UART_OVERSAMPLING_16;

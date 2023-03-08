@@ -23,12 +23,19 @@ typedef struct {
 } AccData;
 
 typedef struct {
+	float temp_mos;
+	float erpm;
+	float current_motor;
+} EscData;
+
+typedef struct {
 	enum {
 		MSG_NONE = 0, // "Null" message. Cannot be put in the queue. Will only be returned
 		MSG_SEND_DEBUG, // Send state data over UART3 (USB)
 
 		MSG_TIME_STEP, // Update kalman filter, run control system, send current to ESC. Flushes all messages to the ESC
 
+		MSG_UART_GOT_DATA,
 		MSG_REQ_SENSORS, // Send requests to all sensors to get data, including ESC
 		MSG_GOT_ACC_DATA,
 		MSG_GOT_ESC_DATA,
@@ -36,9 +43,7 @@ typedef struct {
 	union {
 		AccData acc_data;
 
-		struct {
-			float erpm;
-		} esc_data;
+		EscData esc_data;
 	};
 } Message;
 
@@ -62,6 +67,6 @@ bool queue_put(Queue *q, Message msg);
 bool queue_has(Queue *q);
 
 // Returns a MSG_NONE if the queue is empty
-Message queue_read(Queue *q);
+Message queue_pop(Queue *q);
 
 #endif /* INC_QUEUE_H_ */
