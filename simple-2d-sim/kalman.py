@@ -29,9 +29,9 @@ class KalmanFilter:
 
     def update(self, z, F = None, Q = None, G = None):
         #Update F,Q,G if we have non fixed step time
-        self.F = self.F if F is None else F 
-        self.Q = self.Q if Q is None else Q
-        self.G = self.G if G is None else G
+        self.F = self.F if F is None else self.F 
+        self.Q = self.Q if Q is None else self.Q
+        self.G = self.G if G is None else self.G
         #Diff between measurement and last state
         diff = z - np.dot(self.H, self.x)
         #print("Diff python: ", diff[0])

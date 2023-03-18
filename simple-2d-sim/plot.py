@@ -23,6 +23,9 @@ DEFAULT_PARAMETERS = init.DEFAULT_PARAMETERS
 DEFAULT_KALMAN = init.DEFAULT_KALMAN
 DEFAULT_REG = init.DEFAULT_REG
 DEFAULT_KALMAN_GAIN = init.DEFAULT_KALMAN_GAIN
+DEFAULT_KALMAN_WHEEL = init.DEFAULT_KALMAN_WHEEL
+
+
 
 class States(Structure):
     _fields_ = [("x1", c_float),
@@ -36,6 +39,8 @@ class Matrix(Structure):
                 ("m21", c_float),
                 ("m22", c_float)]
 
+c_code = False
+
 class Plotter:
     def __init__(
         self,
@@ -43,6 +48,7 @@ class Plotter:
         init_state: SimulationState,
         reg: Regulator,
         kalman_filter: KalmanFilter,
+        kalman_filter_wheel: KalmanFilter,
         simtime: float, #Seconds of simultaion [S]
         dt: float) -> None: #Delta time in [S]
         
@@ -52,7 +58,7 @@ class Plotter:
         self.current_signals = ControlSignals()
         
         self.filter = kalman_filter 
-        
+        self.filter_wheel = kalman_filter_wheel
         self.filter_state = init_state
 
         self.c_state = pointer(States(0.0, 0.0, 0.0, 0.0))
@@ -99,32 +105,37 @@ class Plotter:
         #self.c_state.contents.x3 = self.filter_state.wheel_position #Update states in pointer since we are not mesuring them
         #self.c_state.contents.x4 = self.filter_state.wheel_position_d
         
+        if c_code:
+            c_kalman.pitch_kalman_filter_predict(c_float(self.a), c_float(dt), self.c_state, self.c_Qs)
+            self.filter_state.top_angle = self.c_state.contents.x1
+            self.filter_state.top_angle_d = self.c_state.contents.x2
 
-        c_kalman.pitch_kalman_filter_predict(c_float(self.a), c_float(dt), self.c_state, self.c_Qs)
+            #Wheel filter
+            #c_kalman_vel = c_kalman.wheel_velocity_kalman_filter_predict
+            #c_kalman_vel.restype = c_float  # Set output type from c code
+            #self.filter_state.wheel_position_d = c_kalman_vel(c_float(dt))
+            c_kalman_simple = c_kalman.simple_wheel_filter
+            c_kalman_simple.restype = c_float
 
-        self.filter_state.top_angle = self.c_state.contents.x1
-        self.filter_state.top_angle_d = self.c_state.contents.x2
+            self.filter_state.wheel_position_d = c_kalman_simple(c_float(self.wheel_d_noise[i-1]), c_float(dt))
 
-        #Wheel filter
-        #c_kalman_vel = c_kalman.wheel_velocity_kalman_filter_predict
-        #c_kalman_vel.restype = c_float  # Set output type from c code
-        #self.filter_state.wheel_position_d = c_kalman_vel(c_float(dt))
-        c_kalman_simple = c_kalman.simple_wheel_filter
-        c_kalman_simple.restype = c_float
-
-        self.filter_state.wheel_position_d = c_kalman_simple(c_float(self.wheel_d_noise[i-1]), c_float(dt))
-
+        else:
+            filter_states = self.filter.predict()
+            self.filter_state.top_angle = filter_states[0][0]
+            self.filter_state.top_angle_d = filter_states[1][0]
+            #self.filter_state.wheel_position_d = self.filter_wheel.predict()
+        
         self.wheel_d[i] = self.filter_state.wheel_position_d
 
 
         #Angular speed
         self.sim_output_no_noise[i] = self.state.top_angle_d
         self.sim_output_w_noise[i] = self.top_angle_d
-        self.kalman_output_d[i] = self.c_state.contents.x2
+        self.kalman_output_d[i] = self.filter_state.top_angle_d
 
         #Angles
         self.sim_output[i] = self.state.top_angle
-        self.kalman_output[i] = self.c_state.contents.x1
+        self.kalman_output[i] = self.filter_state.top_angle
         self.time += dt
         self.ticks[i] = self.time
 
@@ -173,8 +184,12 @@ class Plotter:
         self.wheel_d_noise[i] = x_d_w_noise
 
         ##### C Kalman filter #####
-        c_kalman.pitch_kalman_filter_update(c_float(top_angle_d), c_float(dt), self.c_state, self.c_Qs)
-        #c_kalman.wheel_velocity_kalman_filter_update(c_float(x_d_w_noise), c_float(dt));
+        if c_code:
+            c_kalman.pitch_kalman_filter_update(c_float(top_angle_d), c_float(dt), self.c_state, self.c_Qs)
+            #c_kalman.wheel_velocity_kalman_filter_update(c_float(x_d_w_noise), c_float(dt));
+        else:
+            self.filter.update(top_angle_d)
+            self.filter_wheel.update(x_d_w_noise)
 
     def step(self, dt: float, i) -> None:
         self.state = self.sim.step(self.state, self.current_signals, dt)
@@ -224,6 +239,7 @@ p = Plotter(
     INIT_STATE,
     DEFAULT_REG,
     DEFAULT_KALMAN,
+    DEFAULT_KALMAN_WHEEL,
     20,
     0.001
 )
