@@ -1,5 +1,6 @@
 from sim import SimulationState, SimulationParameters, ControlSignals, Simulator
 from regulator import Regulator, LookaheadSpeedRegulator, NullRegulator
+from pidcontroller import PIDController
 
 from kalman import KalmanFilter 
 
@@ -32,6 +33,12 @@ DEFAULT_REG = LookaheadSpeedRegulator(
     setpoint_x_d=0.0,
 )
 
+DEFAULT_REG_PID = PIDController(
+    kp = 23.0,
+    ki = 0.0,
+    kd = 2.0
+)
+
 dt = 0.001
 
 #state vector
@@ -53,7 +60,7 @@ H_w = np.array([DEFAULT_PARAMETERS.wheel_rad*np.pi/30]).reshape(1,1)
 
 
 #Process noise uncertainty, the uncertainty in how the unicycle is moving
-Q = 2.0 * np.array([[(dt**4)/4, (dt**3)/2],
+Q = 0.25 * np.array([[(dt**4)/4, (dt**3)/2],
                      [(dt**3)/2,     dt**2]])
 
 Q_w = 10.0 * np.array([dt])

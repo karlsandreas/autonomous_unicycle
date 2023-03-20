@@ -1,11 +1,14 @@
+from regulator import Regulator
 
-class PIDController:
+from sim import ControlSignals, SimulationState
+
+class PIDController(Regulator):
     def __init__(
         self,
         kp: float,
         ki: float,
         kd: float,
-        setpoint: float,
+        setpoint: float = 0,
     ):
         self.kp = kp
         self.ki = ki
@@ -15,8 +18,9 @@ class PIDController:
         self.ierror = 0.0
         self.has_limits = False #Optional with limits
 
-    def __call__(self, signal: float, dt: float) -> float:
+    def __call__(self, st: SimulationState, dt: float) -> float:
         #Run limit check on the setpoint
+        signal = st.top_angle
         self.setpoint = self.check_limits(self.setpoint)
         error = self.setpoint - signal
         
@@ -31,7 +35,7 @@ class PIDController:
 
         out = self.kp * error + self.ki * self.ierror + self.kd * derror    
         
-        return out
+        return ControlSignals(motor_torque_signal=out)
 
 
     def init_limits(self, upper: float, lower: float):   

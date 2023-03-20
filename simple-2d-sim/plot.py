@@ -1,4 +1,5 @@
 import numpy as np
+from pathlib import Path
 import random
 
 import matplotlib.pyplot as plt
@@ -11,11 +12,12 @@ from copy import deepcopy
 
 #Imports for c code
 from ctypes import *
-so_file = "./STM32/regulator.so"
-reg = CDLL(so_file)
+so_file = Path("regulator.so")
 
-so_file_filter = "./STM32/kalman_filter.so"
-c_kalman = CDLL(so_file_filter)
+reg = CDLL(so_file.resolve())
+
+so_file_filter = Path("kalman_filter.so")
+c_kalman = CDLL(so_file_filter.resolve())
 
 INIT_STATE = init.INIT_STATE
 DEFAULT_PARAMETERS = init.DEFAULT_PARAMETERS
@@ -189,7 +191,7 @@ class Plotter:
             #c_kalman.wheel_velocity_kalman_filter_update(c_float(x_d_w_noise), c_float(dt));
         else:
             self.filter.update(top_angle_d)
-            self.filter_wheel.update(x_d_w_noise)
+            #self.filter_wheel.update(x_d_w_noise)
 
     def step(self, dt: float, i) -> None:
         self.state = self.sim.step(self.state, self.current_signals, dt)

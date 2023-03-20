@@ -1,6 +1,7 @@
 #include <math.h>
 #include "regulator.h"
 #include <stdbool.h>
+#include <stdlib.h>
 //#include <stdio.h>
 
 float stop_time_x_d(float setpoint_x_d, float theta, float theta_d, float x_d)
