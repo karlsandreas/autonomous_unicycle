@@ -38,15 +38,15 @@ F = np.array([[1, dt],
 #Observation matrix
 H = np.array([0,1]).reshape(1,2)  
 #Process noise uncertainty, the uncertainty in how the unicycle is moving
-Q = 0.25 * np.array([[(dt**4)/4, (dt**3)/2],
+Q = 4.0 * np.array([[(dt**4)/4, (dt**3)/2],
                             [(dt**3)/2, dt**2]])
 #Measurement uncertainty, sensor uncertainty
-R = np.array([[0.25]]).reshape(1,1) 
+R = np.array([[1.0]]).reshape(1,1) 
 #Sensor distance from wheel center
 R = DEFAULT_PARAMETERS.sensor_position
 #Contoll matrix
-G = np.array([(0.5*dt**2)*R,dt*R]).reshape(2,1)
-
+#G = np.array([(0.5*dt**2)*R,dt*R]).reshape(2,1)
+G = np.array([0,0]).reshape(2,1)
 #Inital states for kalman filter
 x0 = np.array([INIT_STATE.top_angle,
                INIT_STATE.top_angle_d]).reshape(2,1)

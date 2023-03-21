@@ -69,6 +69,48 @@ class SimRenderOptions:
         self.draw_sensor = draw_sensor
         self.draw_torque = draw_torque
 
+class SimRenderOptions_2:
+    def __init__(
+        self,
+        wheel_color: Color = (100, 100, 200),
+        spoke_color: Color = (100, 100, 150),
+
+        torque_color: Color = (0, 255, 0),
+        setpoint_color: Color = (0, 0, 255),
+        expected_color: Color = (0, 255, 0),
+
+        sensor_color: Color = (255, 0, 128),
+        sensor_measure_color: Color = (255, 0, 255),
+
+        outside_thickness: float = 0.2,
+        inner_size: float = 0.6,
+        inner_thickness: float = 0.2,
+        n_spokes: int = 20,
+        spoke_size: float = 0.1,
+
+        torque_size: float = 0.5,
+
+        draw_sensor: bool = True,
+        draw_torque: bool = True,
+    ):
+        self.wheel_color = wheel_color
+        self.spoke_color = spoke_color
+        self.torque_color = torque_color
+        self.setpoint_color = setpoint_color
+        self.expected_color = expected_color
+        self.sensor_color = sensor_color
+        self.sensor_measure_color = sensor_measure_color
+        self.outside_thickness = outside_thickness
+        self.inner_size = inner_size
+        self.inner_thickness = inner_thickness
+        self.n_spokes = n_spokes
+        self.spoke_size = spoke_size
+        self.torque_size = torque_size
+
+        self.draw_sensor = draw_sensor
+        self.draw_torque = draw_torque
+
+
 INFO_FONT = "ShareTech.ttf", 30 # path, size
 INFO_FONT = "./simple-2d-sim/ShareTech.ttf", 30
 
@@ -139,7 +181,8 @@ class Render:
         self.screen = screen
 
         self.sim = simulator
-        self.init_state = self.state = init_state
+        self.init_state = init_state 
+        self.state = init_state
         
         self.reg = reg
         self.filter_reg = reg
@@ -222,8 +265,8 @@ class Render:
 
     def step(self, dt: float) -> None:
 
-        #self.filter_sig = self.filter_reg(self.filter_state, dt* self.speed_mult)
-        self.current_signals = self.reg(self.filter_state, dt * self.speed_mult)
+        self.filter_sig = self.filter_reg(self.filter_state, dt* self.speed_mult)
+        self.current_signals = self.reg(self.state, dt * self.speed_mult)
 
         mult = 3. if pygame.key.get_pressed()[pygame.K_LALT] else 0.3 if pygame.key.get_pressed()[pygame.K_LSHIFT] else 1.0
         val = mult if pygame.key.get_pressed()[pygame.K_RIGHT] else -mult if pygame.key.get_pressed()[pygame.K_LEFT] else 0
@@ -241,8 +284,8 @@ class Render:
 
         sensor_reading = self.sim.sensor_reading(self.state, self.current_signals)
         
-        var_x = 0.5 #m/s^2
-        var_z = 0.5 #m/s^2
+        var_x = 0.005 #m/s^2
+        var_z = 0.005 #m/s^2
         var_angle = 0.005 #rad/s 
         noise_x, noise_z, noise_angle = random.gauss(0, var_x**0.5), random.gauss(0, var_z**0.5), random.gauss(0, var_angle**0.5)
 
@@ -258,10 +301,11 @@ class Render:
         self.filter_state.top_angle = kalman_out[0][0]  
         self.filter_state.top_angle_d = kalman_out[1][0]  
 
+        self.state.top_angle_d = top_angle_d
         self.state = self.sim.step(self.state, self.current_signals, sim_dt)
         #self.filter.step(sim_dt, self.current_signals)
-        self.filter_state = self.sim.step(self.filter_state, self.current_signals, sim_dt)        
-
+        self.filter_state = self.sim.step(self.filter_state, self.filter_sig, sim_dt)        
+        
         F = np.array([[1, dt],
                            [0, 1]])
         Q = 0.05 * np.array([[dt**2, dt],
@@ -294,7 +338,7 @@ class Render:
         self.draw_grid(self.surf_render)
 
         self.render_sim(self.surf_render, SimRenderOptions())
-        self.render_sim(self.surf_render, SimRenderOptions(), self.filter_state)
+        self.render_sim(self.surf_render, SimRenderOptions_2(), self.filter_state)
 
         self.draw_info(self.surf_info)
 
