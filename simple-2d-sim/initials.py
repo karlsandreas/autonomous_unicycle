@@ -87,10 +87,10 @@ Q_w = 100.0 * np.array([[(dt**4)/4, (dt**3)/2],
                      [(dt**3)/2,     dt**2]])
 
 #Measurement uncertainty, sensor uncertainty
-R = np.array([[0.25,0.25],
-              [15,15]])
-R_t = 0.25 * np.array([[1]]).reshape(1,1) 
-R_w = 100 * np.array([[1]]).reshape(1,1) 
+R = np.array([[0.25,0],
+              [0,20]])
+R_t = 10 * np.array([[1]]).reshape(1,1) 
+R_w = 1000000 * np.array([[1]]).reshape(1,1) 
 R_s = DEFAULT_PARAMETERS.sensor_position
 #Contoll matrix
 #G = np.array([(0.5*dt**2)*R,dt*R])
