@@ -79,6 +79,12 @@ Q =  np.array([[q_t * (dt**4)/4, q_t * (dt**3)/2, 0, 0],
                      [q_t * (dt**3)/2,  q_t * dt**2, 0, 0],
                      [0, 0, q_w * (dt**4)/4, q_w * (dt**3)/2],
                      [0, 0, q_w * (dt**3)/2, q_w * dt**2]])
+                     
+
+Q_alt = np.array([[0.035,0,0,0],
+                  [0,0.0007,0,0],
+                  [0, 0, q_w * (dt**4)/4, q_w * (dt**3)/2],
+                   [0, 0, q_w * (dt**3)/2, q_w * dt**2]])
 
 Q_t = 10.0 * np.array([[(dt**4)/4, (dt**3)/2],
                      [(dt**3)/2,     dt**2]])
@@ -87,7 +93,7 @@ Q_w = 100.0 * np.array([[(dt**4)/4, (dt**3)/2],
                      [(dt**3)/2,     dt**2]])
 
 #Measurement uncertainty, sensor uncertainty
-R = np.array([[0.25,0],
+R = np.array([[0.3,0],
               [0,20]])
 R_t = 10 * np.array([[1]]).reshape(1,1) 
 R_w = 1000000 * np.array([[1]]).reshape(1,1) 
@@ -108,6 +114,17 @@ P_t = np.array([[100, 0],
 P_w = np.array([[100,0],
                 [0,100]])
 
+E = np.array([[DEFAULT_PARAMETERS.I_w + (DEFAULT_PARAMETERS.wheel_mass + DEFAULT_PARAMETERS.top_mass)*DEFAULT_PARAMETERS.wheel_rad**2, DEFAULT_PARAMETERS.top_mass * DEFAULT_PARAMETERS.wheel_rad * DEFAULT_PARAMETERS.top_height**2],
+             [DEFAULT_PARAMETERS.top_mass * DEFAULT_PARAMETERS.wheel_rad * DEFAULT_PARAMETERS.top_height**2, DEFAULT_PARAMETERS.I_c + DEFAULT_PARAMETERS.top_mass*DEFAULT_PARAMETERS.top_height**2]])
+J = np.array([[1],
+              [-1]])
+
+K = np.dot(-np.linalg.inv(E),J)
+
+#Control input
+B = np.array([0,K[0][0],0,K[1][0]/DEFAULT_PARAMETERS.wheel_rad]).reshape(4,1)
+
+
 
 DEFAULT_KALMAN_WHEEL = KalmanFilter(
                     F = F_w,
@@ -119,6 +136,7 @@ DEFAULT_KALMAN_WHEEL = KalmanFilter(
 DEFAULT_KALMAN = KalmanFilter(
                     F = F,
                     H = H,
+                    #G = -B,
                     Q = Q,
                     R = R,
                     P = P)

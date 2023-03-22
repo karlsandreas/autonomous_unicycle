@@ -96,8 +96,8 @@ class Plotter:
 
         var_x = 0.0004 #m/s^2
         var_z = 0.0004 #m/s^2
-        self.var_rpm = 1 #rpm
-        self.var_angle_d = 0.01 #rad/s 
+        self.var_rpm = 1.0 #rpm
+        self.var_angle_d = 1.0#deg/s 
         self.sensor_var = np.zeros(3) 
         self.sensor_var[0] = random.gauss(0, var_x)
         self.sensor_var[1] = random.gauss(0, var_z)
@@ -254,24 +254,33 @@ class Plotter:
         self.state.wheel_position = state_dict["wheel_position"].data[i]
         self.state.wheel_position_d = state_dict["wheel_position_d"].data[i]
 
+        return self.state
+
             
     def step_saved_states(self, dt, i, state_dict):
-        top_angle = state_dict["top_angle"].data[i]
-        top_angle_d = state_dict["top_angle_d"].data[i] 
+        top_angle = state_dict["top_angle"].data[i] * 180/np.pi
+        top_angle_d = state_dict["top_angle_d"].data[i] * 180/np.pi #Convert to deg/s since that what sensor is using
         wheel_d = state_dict["wheel_position_d"].data[i]
         wheel_rpm = (wheel_d / DEFAULT_PARAMETERS.wheel_rad) * (30 / np.pi)
 
+        
 
         if self.filter_version == "Python":
-            filter_states = self.filter.predict()
+            filter_states = self.filter.predict(self.current_signals.motor_torque_signal)
             kalman_top_angle = filter_states[0][0]
             kalman_top_angle_d = filter_states[1][0]
             kalman_wheel = filter_states[2][0]
             kalman_wheel_d = filter_states[3][0]
 
-        top_angle_d_noise = self.add_noise(self.var_angle_d, top_angle_d)
+
         
-        wheel_rpm_noise = self.add_noise(self.var_rpm, wheel_rpm)
+        if i%50 == 0:
+            top_angle_d_noise = self.add_noise(self.var_angle_d, top_angle_d)
+        
+            wheel_rpm_noise = self.add_noise(self.var_rpm, wheel_rpm)
+        else:
+            top_angle_d_noise = top_angle_d
+            wheel_rpm_noise = wheel_rpm
 
         
         
@@ -292,6 +301,8 @@ class Plotter:
         self.wheel_d.add([wheel_d, kalman_wheel_d, kalman_wheel_d],i)
 
         self.wheel_rpm.add([wheel_rpm, wheel_rpm_noise, kalman_wheel_d *30/np.pi / DEFAULT_PARAMETERS.wheel_rad],i)
+
+        self.current_signals = self.reg(SimulationState(kalman_wheel,kalman_wheel_d,kalman_top_angle,kalman_top_angle_d), dt)
 
 
     def add_noise(self, variance, input: float):
@@ -327,8 +338,8 @@ class Plotter:
 
         fig.legend()
         plt.xlabel("Time [s]")
-        axs[0].set_ylabel("Rad")
-        axs[1].set_ylabel("Rad/s")
+        axs[0].set_ylabel("Deg")
+        axs[1].set_ylabel("Deg/s")
         #axs[2].set_ylabel("m/s^2")
         plt.show()
 
