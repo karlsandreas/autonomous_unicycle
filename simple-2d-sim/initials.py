@@ -72,18 +72,23 @@ H_w = np.array([0,(1/DEFAULT_PARAMETERS.wheel_rad)*30/np.pi]).reshape(1,2)
 
 #Process noise uncertainty, the uncertainty in how the unicycle is moving
 #High process noise seems to give better results, low process noise seems to give unstable and oscilating signal
-Q = 10.0 * np.array([[(dt**4)/4, (dt**3)/2, 0, 0],
-                     [(dt**3)/2,     dt**2, 0, 0],
-                     [0, 0, (dt**4)/4, (dt**3)/2],
-                     [0, 0, (dt**3)/2,     dt**2]])
+q_w = 1000
+q_t = 10
+
+Q =  np.array([[q_t * (dt**4)/4, q_t * (dt**3)/2, 0, 0],
+                     [q_t * (dt**3)/2,  q_t * dt**2, 0, 0],
+                     [0, 0, q_w * (dt**4)/4, q_w * (dt**3)/2],
+                     [0, 0, q_w * (dt**3)/2, q_w * dt**2]])
+
 Q_t = 10.0 * np.array([[(dt**4)/4, (dt**3)/2],
                      [(dt**3)/2,     dt**2]])
 
 Q_w = 100.0 * np.array([[(dt**4)/4, (dt**3)/2],
                      [(dt**3)/2,     dt**2]])
+
 #Measurement uncertainty, sensor uncertainty
-#Sensor distance from wheel center
-R = np.array([0.25,0.25,100,100]).reshape(4,1)
+R = np.array([[0.25,0.25],
+              [15,15]])
 R_t = 0.25 * np.array([[1]]).reshape(1,1) 
 R_w = 100 * np.array([[1]]).reshape(1,1) 
 R_s = DEFAULT_PARAMETERS.sensor_position
@@ -95,7 +100,7 @@ R_s = DEFAULT_PARAMETERS.sensor_position
 x0 = np.array([INIT_STATE.top_angle,
                INIT_STATE.top_angle_d]).reshape(2,1)
 
-P = 100 * np.eye(4,4)
+P = 1000 * np.eye(4,4)
 
 P_t = np.array([[100, 0],
               [0, 100]])
@@ -112,10 +117,10 @@ DEFAULT_KALMAN_WHEEL = KalmanFilter(
 )
 
 DEFAULT_KALMAN = KalmanFilter(
-                    F = F_t,
-                    H = H_t,
-                    Q = Q_t,
-                    R = R_t,
-                    P = P_t)
+                    F = F,
+                    H = H,
+                    Q = Q,
+                    R = R,
+                    P = P)
 
 DEFAULT_KALMAN_GAIN = 0.5

@@ -266,7 +266,8 @@ class Plotter:
             filter_states = self.filter.predict()
             kalman_top_angle = filter_states[0][0]
             kalman_top_angle_d = filter_states[1][0]
-            kalman_wheel_d = self.filter_wheel.predict()[1][0]
+            kalman_wheel = filter_states[2][0]
+            kalman_wheel_d = filter_states[3][0]
 
         top_angle_d_noise = self.add_noise(self.var_angle_d, top_angle_d)
         
@@ -277,11 +278,12 @@ class Plotter:
 
 
         if self.filter_version == "Python":
-            self.filter.update(top_angle_d_noise)
+            sensor_reading = np.array([top_angle_d_noise,wheel_rpm_noise]).reshape(2,1)
+            self.filter.update(sensor_reading)
 
             self.p_vals.add([self.filter.P[0][0],self.filter.P[0][1],self.filter.P[1][0],self.filter.P[1][1]],i)
             
-            self.filter_wheel.update(wheel_rpm_noise)
+            #self.filter_wheel.update(wheel_rpm_noise)
         
         self.angle_d.add([top_angle_d, top_angle_d_noise, kalman_top_angle_d],i)
         
