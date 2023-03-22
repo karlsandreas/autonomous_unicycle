@@ -35,8 +35,11 @@ typedef struct {
 
 		MSG_TIME_STEP, // Update kalman filter, run control system, send current to ESC. Flushes all messages to the ESC
 
-		MSG_UART_GOT_DATA,
-		MSG_REQ_SENSORS, // Send requests to all sensors to get data, including ESC
+		MSG_REQ_VESC,
+		MSG_FLUSH_VESC, // Send all data to VESC
+		MSG_REQ_ACC,
+
+		MSG_VESC_UART_GOT_DATA,
 		MSG_GOT_ACC_DATA,
 		MSG_GOT_ESC_DATA,
 	} ty;

@@ -89,7 +89,8 @@ const uint16_t crc16_tab[] = { 0x0000, 0x1021, 0x2042, 0x3063, 0x4084,
 #define RX_DATA_LEN 1000
 #define UART_RXSZ 128
 
-//#define DEBUG_COMM
+//#define DEBUG_COMM 1
+//#define DEBUG_VERBOSE 1
 
 static struct {
 	uint8_t tx_data[1024];
@@ -120,8 +121,8 @@ static inline uint16_t read_u16(uint8_t **data) {
 }
 
 static inline uint32_t read_u32(uint8_t **data) {
-	uint16_t hi = read_u8(data);
-	uint16_t lo = read_u8(data);
+	uint16_t hi = read_u16(data);
+	uint16_t lo = read_u16(data);
 	return (uint32_t) lo | ((uint32_t) hi << 16);
 }
 
@@ -148,48 +149,64 @@ void vesc_init(UART_HandleTypeDef *vesc_uart, UART_HandleTypeDef *debug_uart, Qu
 
 	VESC.q = q;
 
-	HAL_UART_Receive_IT(VESC.vesc_uart, VESC.rx_buf, UART_RXSZ);
+	vesc_start_recv();
 }
 
 void vesc_uart_cb_txcplt(UART_HandleTypeDef *huart) {
 
-#ifdef DEBUG_COMM
+#ifdef DEBUG_VERBOSE
 	char *msg = "[TX DONE]\r\n";
 	HAL_UART_Transmit(VESC.debug_uart, (uint8_t*) msg, strlen(msg), 1000000);
 #endif
 
-	VESC.current_offset = 0;
 	VESC.tx_waiting = false;
 }
 
 static volatile bool rx_queued = false;
 
+void vesc_start_recv() {
+	HAL_UART_Receive_IT(VESC.vesc_uart, VESC.rx_buf, UART_RXSZ);
+}
+
 void vesc_uart_cb_rxcplt(UART_HandleTypeDef *_huart) {
 	if (VESC.rx_offset + UART_RXSZ < RX_DATA_LEN) {
 		// TODO: handle if we are out of bounds?
-		memcpy(VESC.rx_data + VESC.rx_offset, VESC.rx_buf, UART_RXSZ);
+		// memcpy(VESC.rx_data + VESC.rx_offset, VESC.rx_buf, UART_RXSZ);
+		for (int i = 0; i < UART_RXSZ; i++) {
+			VESC.rx_data[VESC.rx_offset + i] = VESC.rx_buf[i];
+		}
 		VESC.rx_offset += UART_RXSZ;
 	}
 
 	if (!rx_queued) {
-		queue_put(VESC.q, (Message) { .ty = MSG_UART_GOT_DATA });
+		queue_put(VESC.q, (Message) { .ty = MSG_VESC_UART_GOT_DATA });
 		rx_queued = true;
 	}
 
-	HAL_UART_Receive_IT(VESC.vesc_uart, VESC.rx_buf, UART_RXSZ);
+	vesc_start_recv();
 }
 
 void vesc_got_data() {
 	rx_queued = false;
+
+	if (VESC.rx_offset == 0) {
+#ifdef DEBUG_VERBOSE
+		char *no_data = "<RX: NO DATA>\r\n";
+		HAL_UART_Transmit(VESC.debug_uart, (uint8_t *) no_data, strlen(no_data), 10000);
+
+#endif
+		return;
+	}
+
 #ifdef DEBUG_COMM
 
-	char hexbuf[500];
+	char hexbuf[RX_DATA_LEN * 2];
 	for (int i = 0; i < VESC.rx_offset; i++) {
 		write_hex(hexbuf + 2 * i, VESC.rx_data[i]);
 	}
 	hexbuf[2 * VESC.rx_offset] = 0;
 
-	char dbgbuf[500];
+	char dbgbuf[RX_DATA_LEN * 2 + 100];
 	int dbglen = snprintf(
 		dbgbuf, sizeof(dbgbuf),
 		"[RX %d: %s]\r\n",
@@ -236,6 +253,7 @@ void vesc_got_data() {
 		}
 
 		if (VESC.rx_data[offset + msg_size + 4] != 0x3) {
+
 #ifdef DEBUG_COMM
 			int dbglen = snprintf(
 				dbgbuf, sizeof(dbgbuf),
@@ -245,6 +263,7 @@ void vesc_got_data() {
 
 			HAL_UART_Transmit(VESC.debug_uart, (uint8_t *) dbgbuf, dbglen, 10000);
 #endif
+
 
 			offset++;
 			continue;
@@ -294,8 +313,10 @@ void vesc_got_data() {
 #ifdef DEBUG_COMM
 			int dbglen = snprintf(
 				dbgbuf, sizeof(dbgbuf),
-				"<VALUES: temp_mos = %7.5f, temp_motor = %7.5f, current_motor = %7.5f, current_in = %7.5f, id = %7.5f, iq = %7.5f, duty_now = %7.5f, rpm = %7.5f, v_in = %7.5f, amp_hours = %7.5f, amp_hours_charged = %7.5f, watt_hours = %7.5f, watt_hours_charged = %7.5f>\r\n",
-				temp_mos, temp_motor, current_motor, current_in, id, iq, duty_now, rpm, v_in, amp_hours, amp_hours_charged, watt_hours, watt_hours_charged
+				//"<VALUES: temp_mos = %7.5f, temp_motor = %7.5f, current_motor = %7.5f, current_in = %7.5f, id = %7.5f, iq = %7.5f, duty_now = %7.5f, rpm = %7.5f, v_in = %7.5f, amp_hours = %7.5f, amp_hours_charged = %7.5f, watt_hours = %7.5f, watt_hours_charged = %7.5f>\r\n",
+				//temp_mos, temp_motor, current_motor, current_in, id, iq, duty_now, rpm, v_in, amp_hours, amp_hours_charged, watt_hours, watt_hours_charged
+				"<VALUES: temp_mos = %7.5f, current_motor = %7.5f, rpm = %7.5f>\r\n",
+				temp_mos, current_motor, rpm
 			);
 
 			HAL_UART_Transmit(VESC.debug_uart, (uint8_t *) dbgbuf, dbglen, 10000);
@@ -330,7 +351,7 @@ void vesc_got_data() {
 
 	HAL_NVIC_EnableIRQ(USART2_IRQn);
 
-#ifdef DEBUG_COMM
+#ifdef DEBUG_VERBOSE
 	dbglen = snprintf(
 		dbgbuf, sizeof(dbgbuf),
 		"<RX DONE>\r\n"
@@ -362,11 +383,14 @@ void vesc_queue_packet(uint8_t *content, size_t len, size_t response_size) {
 }
 
 void vesc_transmit_and_recv() {
+	if (VESC.current_offset == 0) {
+		return;
+	}
 	if (VESC.tx_waiting) {
-#ifdef DEBUG_COMM
+
 		char *msg = "BLOCK_TX_WAITING\r\n";
 		HAL_UART_Transmit(VESC.debug_uart, (uint8_t*) msg, strlen(msg), 1000000);
-#endif
+
 
 		HAL_GPIO_WritePin(LDERROR_GPIO_Port, LDERROR_Pin, GPIO_PIN_SET);
 
@@ -388,9 +412,10 @@ void vesc_transmit_and_recv() {
 
 	VESC.tx_waiting = true;
 	HAL_UART_Transmit_IT(VESC.vesc_uart, VESC.tx_data, VESC.current_offset);
+	VESC.current_offset = 0;
 
+	vesc_start_recv();
 }
-
 
 void vesc_set_current(float current) {
 	if (!dead_mans_switch_activated()) {
