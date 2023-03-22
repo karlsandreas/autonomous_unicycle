@@ -18,6 +18,7 @@
 void vesc_uart_cb_txcplt(UART_HandleTypeDef *huart);
 void vesc_uart_cb_rxcplt(UART_HandleTypeDef *huart);
 
+void vesc_start_recv();
 void vesc_got_data();
 
 void vesc_init(UART_HandleTypeDef *vesc_uart, UART_HandleTypeDef *debug_uart, Queue *q);

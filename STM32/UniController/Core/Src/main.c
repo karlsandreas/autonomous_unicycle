@@ -122,11 +122,18 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if (htim == &htim4 ) {
 		// TODO: Put these on different timers?
 
+
+		/*
 		queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_REQ_SENSORS });
+		queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_SEND_DEBUG });
 		queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_TIME_STEP });
+		*/
+
+		queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_REQ_VESC });
+		queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_FLUSH_VESC });
 	}
 	if (htim == &htim5) {
-		queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_SEND_DEBUG });
+		// queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_SEND_DEBUG });
 	}
 }
 
@@ -138,6 +145,13 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 	if (huart == &huart2) {
+		vesc_uart_cb_rxcplt(huart);
+	}
+}
+
+void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart) {
+	if (huart == &huart2) {
+
 		vesc_uart_cb_rxcplt(huart);
 	}
 }
@@ -206,9 +220,19 @@ AccData get_accelerometer_data(I2C_HandleTypeDef *i2c, uint16_t acc_addr) {
 	float ay = ay_i * (ACC_FS / (1<<15));
 	float az = az_i * (ACC_FS / (1<<15));
 
+	// Compensate for zero point and scale
+    float az_mid = (13.45 + -6.7) / 2;
+    float az_range = (13.45 - -6.7) / 2;
+    float ay_mid = (9.6 + -10.1) / 2;
+    float ay_range = (9.6 - -10.1) / 2;
+
+    float az_adj = (az - az_mid) / az_range * 9.82;
+    float ay_adj = (ay - ay_mid) / ay_range * 9.82;
+
+
 	return (AccData) {
 		.gx = gx, .gy = gy, .gz = gz,
-		.ax = ax, .ay = ay, .az = az
+		.ax = ax, .ay = ay_adj, .az = az_adj
 	};
 }
 
@@ -278,13 +302,17 @@ int main(void)
 
 	setup_mpu(&hi2c2, MPU_ADDR);
 
-	queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_REQ_SENSORS });
-	queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_TIME_STEP });
-	queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_SEND_DEBUG });
+	// queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_REQ_SENSORS });
+	// queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_FLUSH_VESC });
+	//queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_REQ_SENSORS });
+	//queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_REQ_SENSORS });
+	//queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_TIME_STEP });
+	//queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_SEND_DEBUG });
 
 	struct {
 		float dt;
 		float current;
+		float wheel_pos_d;
 	} dbg_values;
 
 	// For Kalman + control system
@@ -328,8 +356,11 @@ int main(void)
 
 			int dbglen = sprintf(
 				dbgbuf,
-				"qsz = %d. t = %lu us. current = %ld mA, CTRL = %s\r\n",
-				queue_nelem(&MAIN_QUEUE), (int32_t) us_since_startup(), (int32_t) (1000 * dbg_values.current), ctrl_hex
+				"qsz = %4d. t = %8lu us. current = %6ld mA, ax = %8ld, ay = %8ld, az = %8ld. CTRL = \r\n",
+				queue_nelem(&MAIN_QUEUE), (int32_t) us_since_startup(), (int32_t) (1000 * dbg_values.current),
+				(int32_t) (1000 * CTRL.last_acc.ax),
+				(int32_t) (1000 * CTRL.last_acc.ay),
+				(int32_t) (1000 * CTRL.last_acc.az)
 			);
 
 			HAL_UART_Transmit_IT(&huart3, (uint8_t *) dbgbuf, dbglen);
@@ -353,31 +384,50 @@ int main(void)
 
 			dbg_values.dt = dt;
 
-			float wheel_pos_d = CTRL.last_esc.erpm / 22.9 * WHEEL_RAD;
+			float wheel_rpm = CTRL.last_esc.erpm / 22.9;
+			float wheel_rad_per_second = wheel_rpm * 2 * 3.14 / 60;
+			float wheel_pos_d = -wheel_rad_per_second * WHEEL_RAD;
+
+			dbg_values.wheel_pos_d = wheel_pos_d;
 
 			CTRL.qs.m11 = 2 * dt*dt*dt*dt / 4;
 			CTRL.qs.m12 = 2 * dt*dt*dt / 4;
 			CTRL.qs.m21 = 2 * dt*dt / 4;
 			CTRL.qs.m22 = 2 * dt / 4;
+
 			CTRL.st.x4 = wheel_pos_d;
 			CTRL.st.x3 += wheel_pos_d * dt;
 
 			pitch_kalman_filter_predict(CTRL.a, dt, &CTRL.st, &CTRL.qs);
 			float tau = LookaheadSpeedRegulator(0, CTRL.st.x1, CTRL.st.x2, wheel_pos_d, dt);
 			float current = tau / 0.59; // see notes
+			current *= 10;
 
-			CTRL.a = sqrt((CTRL.last_acc.ax * CTRL.last_acc.ax) + (CTRL.last_acc.ay * CTRL.last_acc.ay));
+			CTRL.a = sqrt((CTRL.last_acc.ay * CTRL.last_acc.ay) + (CTRL.last_acc.az * CTRL.last_acc.az));
 			pitch_kalman_filter_update(CTRL.last_acc.gx, dt, &CTRL.st, &CTRL.qs);
 
 			dbg_values.current = current;
 
 			vesc_set_current(current);
-			vesc_transmit_and_recv(&huart2, &huart3);
 
 			break;
 		}
 
-		case MSG_UART_GOT_DATA: {
+		case MSG_FLUSH_VESC: {
+#ifdef QUEUE_DEBUG
+			int dbglen = sprintf(
+				dbgbuf,
+				"{Q: FLUSH VESC}\r\n"
+			);
+
+			HAL_UART_Transmit(&huart3, (uint8_t *) dbgbuf, dbglen, 10000);
+#endif
+
+			vesc_transmit_and_recv(&huart2, &huart3);
+			break;
+		}
+
+		case MSG_VESC_UART_GOT_DATA: {
 #ifdef QUEUE_DEBUG
 			int dbglen = sprintf(
 				dbgbuf,
@@ -391,17 +441,31 @@ int main(void)
 			break;
 		}
 
-		case MSG_REQ_SENSORS: {
+		case MSG_REQ_ACC: {
 #ifdef QUEUE_DEBUG
 			int dbglen = sprintf(
 				dbgbuf,
-				"{Q: REQ_SENSORS}\r\n"
+				"{Q: REQ_ACC}\r\n"
 			);
 
 			HAL_UART_Transmit(&huart3, (uint8_t *) dbgbuf, dbglen, 10000);
 #endif
 			AccData acc_data = get_accelerometer_data(&hi2c2, MPU_ADDR);
 			queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_GOT_ACC_DATA, .acc_data = acc_data });
+
+			break;
+
+		}
+
+		case MSG_REQ_VESC: {
+#ifdef QUEUE_DEBUG
+			int dbglen = sprintf(
+				dbgbuf,
+				"{Q: REQ_VESC}\r\n"
+			);
+
+			HAL_UART_Transmit(&huart3, (uint8_t *) dbgbuf, dbglen, 10000);
+#endif
 
 			vesc_request_data();
 
@@ -416,24 +480,25 @@ int main(void)
 
 			HAL_UART_Transmit(&huart3, (uint8_t *) dbgbuf, dbglen, 10000);
 #endif
+
 			AccData acc_data = msg.acc_data;
-			// TODO: Feed values to Kalman
 			CTRL.last_acc = acc_data;
 
 			break;
 		}
 
 		case MSG_GOT_ESC_DATA: {
-#ifdef QUEUE_DEBUG
+//#ifdef QUEUE_DEBUG
 			int dbglen = sprintf(
 				dbgbuf,
-				"{Q: GOT_ESC_DATA}\r\n"
+				"{Q: GOT_ESC_DATA temp=%7.5f erpm=%7.5f}\r\n",
+				msg.esc_data.temp_mos,msg.esc_data.erpm
 			);
 
 			HAL_UART_Transmit(&huart3, (uint8_t *) dbgbuf, dbglen, 10000);
-#endif
+//#endif
+
 			EscData esc_data = msg.esc_data;
-			// TODO: Feed values to Kalman
 			CTRL.last_esc = esc_data;
 
 			break;
@@ -673,7 +738,7 @@ static void MX_TIM4_Init(void)
   htim4.Instance = TIM4;
   htim4.Init.Prescaler = 9600;
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim4.Init.Period = 20-1;
+  htim4.Init.Period = 100;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
