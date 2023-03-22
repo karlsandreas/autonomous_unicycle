@@ -115,6 +115,14 @@ uint16_t MPU_ADDR = 0x68;
 
 uint32_t ms_counter;
 
+// (will take about 1000 hours to overflow)
+uint32_t khz_counter = 0;
+
+#define ACC_FREQ 100
+#define VESC_FREQ 50
+#define DUMP_FREQ 100
+#define STEP_FREQ 100
+
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if (htim == &htim3) { // htim3 ticks once every us, elapses once every ms
 		ms_counter++;
@@ -122,15 +130,22 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if (htim == &htim4 ) {
 		// TODO: Put these on different timers?
 
+		khz_counter++;
 
-		/*
-		queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_REQ_SENSORS });
-		queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_SEND_DEBUG });
-		queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_TIME_STEP });
-		*/
+		if (khz_counter % (1000 / ACC_FREQ) == 0) {
+			queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_REQ_ACC });
+		}
+		if (khz_counter % (1000 / VESC_FREQ) == 0) {
+			queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_REQ_VESC });
+			queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_FLUSH_VESC });
+		}
+		if (khz_counter % (1000 / DUMP_FREQ) == 0) {
+			queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_SEND_DEBUG });
+		}
+		if (khz_counter % (1000 / STEP_FREQ) == 0) {
+			queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_TIME_STEP });
+		}
 
-		queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_REQ_VESC });
-		queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_FLUSH_VESC });
 	}
 	if (htim == &htim5) {
 		// queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_SEND_DEBUG });
@@ -356,14 +371,16 @@ int main(void)
 
 			int dbglen = sprintf(
 				dbgbuf,
-				"qsz = %4d. t = %8lu us. current = %6ld mA, ax = %8ld, ay = %8ld, az = %8ld. CTRL = \r\n",
-				queue_nelem(&MAIN_QUEUE), (int32_t) us_since_startup(), (int32_t) (1000 * dbg_values.current),
+				"qsz = %4d. t = %8lu us. current = %6ld mA, erpm = %8ld, ax = %8ld, ay = %8ld, az = %8ld. CTRL = \r\n",
+				queue_nelem(&MAIN_QUEUE), (int32_t) us_since_startup(), (int32_t) (1000 * dbg_values.current), (int32_t) (1000 * CTRL.last_esc.erpm),
 				(int32_t) (1000 * CTRL.last_acc.ax),
 				(int32_t) (1000 * CTRL.last_acc.ay),
 				(int32_t) (1000 * CTRL.last_acc.az)
 			);
 
 			HAL_UART_Transmit_IT(&huart3, (uint8_t *) dbgbuf, dbglen);
+			// Use below if you are debug printing other things
+			// HAL_UART_Transmit(&huart3, (uint8_t *) dbgbuf, dbglen, 10000);
 
 			break;
 		}
@@ -488,15 +505,15 @@ int main(void)
 		}
 
 		case MSG_GOT_ESC_DATA: {
-//#ifdef QUEUE_DEBUG
+#ifdef QUEUE_DEBUG
 			int dbglen = sprintf(
 				dbgbuf,
 				"{Q: GOT_ESC_DATA temp=%7.5f erpm=%7.5f}\r\n",
-				msg.esc_data.temp_mos,msg.esc_data.erpm
+				msg.esc_data.temp_mos, msg.esc_data.erpm
 			);
 
-			HAL_UART_Transmit(&huart3, (uint8_t *) dbgbuf, dbglen, 10000);
-//#endif
+			HAL_UART_Transmit(&huart3, (uint8_t *) dbgbuf, dbglen, 100000);
+#endif
 
 			EscData esc_data = msg.esc_data;
 			CTRL.last_esc = esc_data;
@@ -738,7 +755,7 @@ static void MX_TIM4_Init(void)
   htim4.Instance = TIM4;
   htim4.Init.Prescaler = 9600;
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim4.Init.Period = 100;
+  htim4.Init.Period = 10;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
@@ -896,7 +913,7 @@ static void MX_USART3_UART_Init(void)
 
   /* USER CODE END USART3_Init 1 */
   huart3.Instance = USART3;
-  huart3.Init.BaudRate = 115200;
+  huart3.Init.BaudRate = 230400;
   huart3.Init.WordLength = UART_WORDLENGTH_9B;
   huart3.Init.StopBits = UART_STOPBITS_2;
   huart3.Init.Parity = UART_PARITY_EVEN;
