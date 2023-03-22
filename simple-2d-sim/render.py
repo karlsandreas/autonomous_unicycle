@@ -245,7 +245,7 @@ class Render:
         self.c_Qs = pointer(Matrix(0.05*dt**2, 0.05*dt, 0.05*dt, 0.05))
 
         self.reg_version = "Python" #C
-        self.filter_version = "Python" #C
+        self.filter_version = "P" #ython" #C
 
         self.a = 0.0
     def run(self) -> None:
@@ -280,7 +280,7 @@ class Render:
                         if isinstance(self.reg, PIDController):
                             self.reg.setpoint = 0
                         if isinstance(self.reg, LookaheadSpeedRegulator):
-                            self.reg.setpoint_x_d = 0
+                            self.reg.setpoint_x_d = 0.5
 
             self.draw()
 
@@ -385,15 +385,15 @@ class Render:
 
 
         ############ Integration step ###############
-        self.filter_state = deepcopy(self.state)
+        #self.filter_state = deepcopy(self.state)
 
         ########### Sensor reading and noise #######
         sensor_reading = self.sim.sensor_reading(self.filter_state, self.current_signals)
         #sensor_reading = self.sim.sensor_reading(self.state, self.current_signals)
         
-        var_x = 0.05 #0.0004 #m/s^2
-        var_z = 0.05 #0.0004 #m/s^2
-        var_angle = 0.05 #rad/s 
+        var_x = 0.0#0005 #0.0004 #m/s^2
+        var_z = 0.0#0005 #0.0004 #m/s^2
+        var_angle = 0.1 #rad/s 
         noise_x, noise_z, noise_angle = random.gauss(0, var_x), random.gauss(0, var_z), random.gauss(0, var_angle)
 
         a_x = sensor_reading[1] + noise_x
@@ -414,13 +414,15 @@ class Render:
             #Update arrays that depend on dt
             F = np.array([[1, dt],
                                [0, 1]])
-            Q = 0.05 * np.array([[dt**2, dt],
+            Q = 10.0 * np.array([[dt**2, dt],
                                [dt, 1]])
             R = self.sim.params.sensor_position
             G = np.array([(0.5*dt**2)*R,dt*R]).reshape(2,1)
 
             self.filter.update(top_angle_d, F = F, Q = Q, G = G)
             ######################################
+
+        self.filter_state.top_angle_d = top_angle_d
         if self.filter_version == "C":
             ##### C Kalman filter #####
             c_kalman.pitch_kalman_filter_update(c_float(top_angle_d), c_float(dt), self.c_state, self.c_Qs)
@@ -438,12 +440,12 @@ class Render:
         sim_dt = dt
         ############ Integration step ###############
         self.state = self.sim.step(self.state, self.current_signals, sim_dt)
-        #self.filter_state = self.sim.step(self.filter_state, self.current_signals, sim_dt)        
+        self.filter_state = self.sim.step(self.filter_state, self.current_signals, sim_dt)        
 
 
         self.space.pixels_per_unit = self.space.pixels_per_unit + (self.wanted_zoom - self.space.pixels_per_unit) * dt / ZOOM_TAU
         if self.mode == "follow":
-            pos = np.array([self.state.wheel_position, self.sim.params.wheel_rad + 0.5])
+            pos = np.array([self.filter_state.wheel_position, self.sim.params.wheel_rad + 0.5])
 
             expected = pos + CAMERA_TAU * 0.8 * np.array([self.state.wheel_position_d, 0])
             self.space.view_center = self.space.view_center + (expected - self.space.view_center) * dt / CAMERA_TAU
@@ -463,8 +465,8 @@ class Render:
         self.surf_render.fill((0, 0, 0))
         self.draw_grid(self.surf_render)
 
-        self.render_sim(self.surf_render, SimRenderOptions())
-        self.render_sim(self.surf_render, SimRenderOptions_2(), self.filter_state)
+        self.render_sim(self.surf_render, SimRenderOptions(), self.filter_state)
+        #self.render_sim(self.surf_render, SimRenderOptions_2(), self.filter_state)
 
         self.draw_info(self.surf_info)
 
@@ -566,7 +568,7 @@ class Render:
             )
 
             x_hat, z_hat = np.array(sim.sensor_axes(state)) # type: ignore
-            sensor_reading = sim.sensor_reading(state, self.current_signals)
+            sensor_reading = sim.sensor_reading(self.filter_state, self.filter_sig)
             a_x = sensor_reading[1]
             a_z = sensor_reading[2]
             x_vec, z_vec = a_x * x_hat, a_z * z_hat
@@ -615,17 +617,17 @@ class Render:
 
         left_col = [
             ("Position", self.state.wheel_position, "m"),
-            ("Speed", self.state.wheel_position_d * 3600, "m/h"),
-            ("Speed kalman", self.filter_state.wheel_position_d * 3600, "m/h"),
-            ("Angle", self.state.top_angle / np.pi * 180, "deg"),
+            #("Speed", self.state.wheel_position_d * 3600, "m/h"),
+            ("Speed", self.filter_state.wheel_position_d * 3600, "m/h"),
+            ("Angle", self.filter_state.top_angle / np.pi * 180, "deg"),
             ("Sensor reading", self.sensor_reading / np.pi * 180, "deg/s"),
             # ("Linearity", np.sin(self.state.top_angle) / self.state.top_angle * 100, "%"),
             ("Motor torque", self.state.motor_torque, "Nm"),
 
         ]
-        if isinstance(self.reg, LookaheadSpeedRegulator):
+        if isinstance(self.filter_reg, LookaheadSpeedRegulator):
             left_col.extend([
-                ("Speed setpoint", self.reg.setpoint_x_d * 3600, "m/h"),
+                ("Speed setpoint", self.filter_reg.setpoint_x_d * 3600, "m/h"),
             ])
         if isinstance(self.reg, PIDController):
             left_col.extend([
@@ -644,8 +646,8 @@ class Render:
             ("Speed", self.speed_mult, "s/s"),
             ("Frame rate", self.current_fps, "FPS"),
             ("Tick time", self.avg_tick_time, "s"),
-            ("Reg time", self.avg_dt_reg_filter, "s"),
-            ("Sim time", self.avg_dt_sim, "s"),
+            #("Reg time", self.avg_dt_reg_filter, "s"),
+            #("Sim time", self.avg_dt_sim, "s"),
         ]:
             text = f"{fmt_unit(val, unit)}: {name}"
 

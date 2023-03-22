@@ -30,7 +30,7 @@ DEFAULT_PARAMETERS = SimulationParameters(
 # DEFAULT_REG = NullRegulator(params=DEFAULT_PARAMETERS)
 DEFAULT_REG = LookaheadSpeedRegulator(
     params=DEFAULT_PARAMETERS,
-    setpoint_x_d=0.0,
+    setpoint_x_d=0.5,
 )
 
 DEFAULT_REG_PID = PIDController(
@@ -60,7 +60,7 @@ H_w = np.array([DEFAULT_PARAMETERS.wheel_rad*np.pi/30]).reshape(1,1)
 
 
 #Process noise uncertainty, the uncertainty in how the unicycle is moving
-Q = 0.25 * np.array([[(dt**4)/4, (dt**3)/2],
+Q = 10.0 * np.array([[(dt**4)/4, (dt**3)/2],
                      [(dt**3)/2,     dt**2]])
 
 Q_w = 10.0 * np.array([dt])
