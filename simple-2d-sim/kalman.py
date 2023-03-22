@@ -10,7 +10,7 @@ class KalmanFilter:
         self.G = 0 if G is None else G #Control input model
         self.Q = np.eye(self.n) if Q is None else Q #Covariance process 
         self.R = np.eye(self.n) if R is None else R #Covariance observation
-        self.P = np.eye(self.n) if P is None else P #Covariacne matrix
+        self.P = np.eye(self.n) if P is None else P #Covariance matrix
         self.x = np.zeros((self.n, 1)) if x0 is None else x0 #Init state
 
 

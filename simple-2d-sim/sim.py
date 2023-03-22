@@ -104,6 +104,9 @@ class SimulationState:
             top_angle_d=self.top_angle_d + vels.top_angle_d * dt,
             motor_torque=self.motor_torque + vels.motor_torque * dt,
         )
+    
+    def get_array(self):
+        return np.array([self.top_angle, self.top_angle_d, self.wheel_position, self.wheel_position_d, self.motor_torque])
 
 # Uses Runge-Kutta-4 to integrate the simulation
 class Simulator:
