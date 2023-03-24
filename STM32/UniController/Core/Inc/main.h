@@ -172,6 +172,9 @@ void Error_Handler(void);
 #define LDERROR_Pin LD3_Pin
 #define LDERROR_GPIO_Port LD3_GPIO_Port
 
+#define LDARMED_Pin LD2_Pin
+#define LDARMED_GPIO_Port LD2_GPIO_Port
+
 
 
 /* USER CODE END Private defines */

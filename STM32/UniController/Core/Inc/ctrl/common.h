@@ -1,3 +1,9 @@
+
+#ifndef INC_CTRL_COMMON_H_
+#define INC_CTRL_COMMON_H_
+
+//#include <math.h>
+
 struct states
 {
     float x1; /* theta angle*/
@@ -24,6 +30,10 @@ typedef struct matrix Matrix;
 #define F21 (0.0)
 #define F22 (1.0)
 
-#define E_PITCH (0.01F)
-#define E_WHEEL (0.001F)
-#define WHEEL_RAD 0.24
+#define R_ANGLE (0.01F)
+#define R_WHEEL (0.001F)
+
+#define WHEEL_RAD (0.28)
+#define RPM_TO_RADS (30/M_PI)  
+
+#endif
