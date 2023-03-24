@@ -1,17 +1,16 @@
-#include <math.h>
 #include "main.h"
 #include <stdio.h>
-
+#include <math.h>
 
 float cov11_angle = 10.0;
 float cov12_angle = 0.0;
 float cov21_angle = 10.0;
 float cov22_angle = 0.0;
 
-float cov33_wheel = 100.0;
+float cov33_wheel = 10.0;
 float cov34_wheel = 0.0;
 float cov43_wheel = 0.0;
-float cov44_wheel = 100.0;
+float cov44_wheel = 10.0;
 
 void kalman_filter_predict(float input, float dt, States *s, Matrix *q_t, Matrix *q_w)
 {
@@ -128,8 +127,8 @@ void kalman_filter_update(float sensor_t, float sensor_w, float dt, States *s, M
     float gain1_t = cov12_angle * (1 / (cov22_angle + r_angle));
     float gain2_t = cov22_angle * (1 / (cov22_angle + r_angle));
     float k = WHEEL_RAD * RPM_TO_RADS;
-    float gain1_w = (cov34_wheel * k) / (cov44_wheel * pow(K,2) + r_wheel);
-    float gain2_w = (cov44_wheel * k) / (cov44_wheel * pow(K,2) + r_wheel);
+    float gain1_w = (cov34_wheel * k) / (cov44_wheel * pow(k,2) + r_wheel);
+    float gain2_w = (cov44_wheel * k) / (cov44_wheel * pow(k,2) + r_wheel);
 
 
     //printf("Gain1: %f Gain2: %f\n", gain1, gain2);
@@ -153,10 +152,10 @@ void kalman_filter_update(float sensor_t, float sensor_w, float dt, States *s, M
     cov21_angle = c21;
     cov22_angle = c22;
 
-    float c33 = cov33_wheel + cov44_wheel*pow(gain1_w,2)*pow(k,2) - cov34_wheel*gain1_w*k - cov43_wheel*gain1_w*k + pow(gain1_w,2)*r_wheel;
-    float c34 = cov34_wheel + cov44_wheel*gain1_w*gain2_w*pow(k,2) - cov44_wheel*gain1_w*k - cov34_wheel*gain2_w*k + gain1_w*gain2_w*r_wheel;
-    float c43 = cov43_wheel + cov44_wheel*gain1_w*gain2_w*pow(k,2) - cov44_wheel*gain1_w*k - cov43_wheel*gain2_w*k + gain1_w*gain2_w*r_wheel;
-    float c44 = cov44_wheel + cov44_wheel*pow(gain2_w,2)*pow(k,2) - 2*cov44_wheel*gain2_w*k + pow(gain2_w,2)*r_wheel;
+    float c33 = cov33_wheel + cov44_wheel * pow(gain1_w,2) * pow(k,2) - cov34_wheel*gain1_w*k - cov43_wheel*gain1_w*k + pow(gain1_w,2)*r_wheel;
+    float c34 = cov34_wheel + cov44_wheel *gain1_w*gain2_w * pow(k,2) - cov44_wheel*gain1_w*k - cov34_wheel*gain2_w*k + gain1_w*gain2_w*r_wheel;
+    float c43 = cov43_wheel + cov44_wheel * gain1_w*gain2_w * pow(k,2) - cov44_wheel*gain1_w*k - cov43_wheel*gain2_w*k + gain1_w*gain2_w*r_wheel;
+    float c44 = cov44_wheel + cov44_wheel*pow(gain2_w,2) * pow(k,2) - 2*cov44_wheel*gain2_w*k + pow(gain2_w,2)*r_wheel;
 
     cov33_wheel = c33;
     cov34_wheel = c34;
@@ -245,8 +244,8 @@ void wheel_velocity_kalman_filter_update(float sensor, float dt)
     //printf("Diff: %f\n", diff);
 
     /* Gain calculation */
-    float gain1 = cov_vel_11 / (cov_vel_11 + E_WHEEL);
-    float gain2 = cov_vel_21 / (cov_vel_11 + E_WHEEL);
+    float gain1 = cov_vel_11 / (cov_vel_11 + r_wheel);
+    float gain2 = cov_vel_21 / (cov_vel_11 + r_wheel);
     //printf("Gain1: %f Gain2: %f\n", gain1, gain2);
     /* Update states */
     float last_x_d = x_d;
@@ -276,7 +275,7 @@ float cov_vel = 1.0;
 float simple_wheel_filter(float sensor, float dt)
 {
     float q_vel = 10 * dt;
-    float gain = cov_vel/(cov_vel + E_WHEEL);
+    float gain = cov_vel/(cov_vel + r_wheel);
 
     cov_vel = (1-gain)*cov_vel + q_vel ;
     

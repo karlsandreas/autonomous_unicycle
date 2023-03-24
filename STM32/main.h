@@ -1,4 +1,4 @@
-#include <math.h>
+//#include <math.h>
 
 struct states
 {
@@ -29,5 +29,5 @@ typedef struct matrix Matrix;
 #define R_ANGLE (0.01F)
 #define R_WHEEL (0.001F)
 
-#define WHEEL_RAD = (0.28)
-#define RPM_TO_RADS = (30/M_PI)  
+#define WHEEL_RAD (0.28)
+#define RPM_TO_RADS (30/M_PI)  

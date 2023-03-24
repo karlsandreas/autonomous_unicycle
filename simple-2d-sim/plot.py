@@ -79,7 +79,7 @@ class Plotter:
         dt: float) -> None: #Delta time in [S]
         
         self.reg_version = "Python" #C
-        self.filter_version = "Python" #C
+        self.filter_version = "C" #C
 
         self.sim = simulator
         self.init_state = self.state = init_state
@@ -92,7 +92,11 @@ class Plotter:
 
         self.c_state = pointer(States(0.0, 0.0, 0.0, 0.0))
         dt = init.dt
-        self.c_Qs = pointer(Matrix(0.05*dt**2, 0.05*dt, 0.05*dt, 0.05))
+        q_t = 10.0
+        q_w = 10.0
+        self.c_Qs_t = pointer(Matrix(q_t*(dt**4)/4, q_t*(dt**3)/2, q_t*(dt**3)/2, q_t*dt**2))
+        self.c_Qs_w = pointer(Matrix(q_w*(dt**4)/4, q_w*(dt**3)/2, q_w*(dt**3)/2, q_w*dt**2))
+
 
         var_x = 0.0004 #m/s^2
         var_z = 0.0004 #m/s^2
@@ -272,8 +276,19 @@ class Plotter:
             kalman_wheel = filter_states[2][0]
             kalman_wheel_d = filter_states[3][0]
 
+        if self.filter_version == "C":
+            #self.c_state.contents.x1 = top_angle #Update states in pointer since we are not mesuring them
+            #self.c_state.contents.x2 = top_angle_d #Update states in pointer since we are not mesuring them
+            #self.c_state.contents.x3 = wheel_d #Update states in pointer since we are not mesuring them
+            #self.c_state.contents.x4 = wheel_rpm
 
-        
+            c_kalman.kalman_filter_predict(c_float(0.0), c_float(dt), self.c_state, self.c_Qs_t,self.c_Qs_w)
+            
+            kalman_top_angle = self.c_state.contents.x1
+            kalman_top_angle_d = self.c_state.contents.x2
+            kalman_wheel = self.c_state.contents.x3
+            kalman_wheel_d = self.c_state.contents.x4
+
         if i%50 == 0:
             top_angle_d_noise = self.add_noise(self.var_angle_d, top_angle_d)
         
@@ -294,6 +309,10 @@ class Plotter:
             
             #self.filter_wheel.update(wheel_rpm_noise)
         
+        if self.filter_version == "C":
+
+            c_kalman.kalman_filter_update(c_float(top_angle_d_noise),c_float(wheel_rpm_noise), c_float(dt), self.c_state, self.c_Qs_t, self.c_Qs_w)
+
         self.angle_d.add([top_angle_d, top_angle_d_noise, kalman_top_angle_d],i)
         
         self.angle.add([top_angle, kalman_top_angle],i) 
