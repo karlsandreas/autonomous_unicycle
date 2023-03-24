@@ -329,7 +329,10 @@ int main(void)
 		float dt;
 		float current;
 		float wheel_pos_d;
+		unsigned int msgs_since_last;
 	} dbg_values;
+
+	dbg_values.msgs_since_last = 0;
 
 	// For Kalman + control system
 
@@ -355,6 +358,7 @@ int main(void)
 		}
 
 		Message msg = queue_pop(&MAIN_QUEUE);
+		dbg_values.msgs_since_last++;
 
 		switch (msg.ty) {
 		case MSG_NONE:
@@ -372,12 +376,17 @@ int main(void)
 
 			int dbglen = sprintf(
 				dbgbuf,
-				"qsz = %4d. t = %8lu us. current = %6ld mA, erpm = %8ld, ax = %8ld, ay = %8ld, az = %8ld. CTRL = \r\n",
-				queue_nelem(&MAIN_QUEUE), (int32_t) us_since_startup(), (int32_t) (1000 * dbg_values.current), (int32_t) (1000 * CTRL.last_esc.erpm),
-				(int32_t) (1000 * CTRL.last_acc.ax),
-				(int32_t) (1000 * CTRL.last_acc.ay),
-				(int32_t) (1000 * CTRL.last_acc.az)
+				"qsz = %4d n_proc=%4d/s. t = %8lu us. current = %6ld mA, erpm = %8ld, "
+				//"ax = %8ld, ay = %8ld, az = %8ld, "
+				"gx = %7.5f rad/s, "
+				"theta = %8ld mrad, theta_d = %8ld mrad, x = %8ld, x_d = %8ld\r\n",
+				queue_nelem(&MAIN_QUEUE), (dbg_values.msgs_since_last * 1000 / DUMP_FREQ), (int32_t) us_since_startup(), (int32_t) (1000 * dbg_values.current), (int32_t) (CTRL.last_esc.erpm),
+				//(int32_t) (1000 * CTRL.last_acc.ax), (int32_t) (1000 * CTRL.last_acc.ay), (int32_t) (1000 * CTRL.last_acc.az),
+				CTRL.last_acc.gx,
+				(int32_t) (1000 * CTRL.st.x1), (int32_t) (1000 * CTRL.st.x2), (int32_t) (1000 * CTRL.st.x3), (int32_t) (1000 * CTRL.st.x4)
 			);
+
+			dbg_values.msgs_since_last = 0;
 
 			HAL_UART_Transmit_IT(&huart3, (uint8_t *) dbgbuf, dbglen);
 			// Use below if you are debug printing other things
