@@ -26,6 +26,7 @@
 #include <stdio.h>
 
 #include "vesc_com.h"
+#include "vesc_current_reg.h"
 #include "queue.h"
 #include "ctrl/common.h"
 #include "ctrl/regulator.h"
@@ -333,12 +334,16 @@ int main(void)
 
 	struct {
 		float dt;
-		float current;
+		float current_w, current_o;
 		float wheel_pos_d;
 		unsigned int msgs_since_last;
 	} dbg_values;
 
 	dbg_values.msgs_since_last = 0;
+
+	VESC_Current_Reg vcr = (VESC_Current_Reg) {
+		.k_p = 1.,
+	};
 
 	// For Kalman + control system
 
@@ -380,14 +385,18 @@ int main(void)
 
 			int dbglen = sprintf(
 				dbgbuf,
-				"qsz = %4d n_proc=%4d/s. t = %8lu ms. current = %6ld mA, erpm = %8ld, "
+				"qsz = %4d n_proc=%4d/s. t = %8lu ms. I_w = %6ld mA, erpm = %8ld, "
 				"ax = %8ld, ay = %8ld, az = %8ld, "
 				"gx = %7.5f rad/s, "
-				"theta = %8ld mrad, theta_d = %8ld mrad, x = %8ld, x_d = %8ld\r\n",
-				queue_nelem(&MAIN_QUEUE), (dbg_values.msgs_since_last * 1000 / DUMP_FREQ), (int32_t) (us_since_startup() / 1000), (int32_t) (1000 * dbg_values.current), (int32_t) (CTRL.last_esc.erpm),
+				"theta = %8ld mrad, theta_d = %8ld mrad, x = %8ld, x_d = %8ld"
+				//"I (filtered) = %6ld mA, I (out) = %6ld mA"
+				"\r\n"
+				,
+				queue_nelem(&MAIN_QUEUE), (dbg_values.msgs_since_last * 1000 / DUMP_FREQ), (int32_t) (us_since_startup() / 1000), (int32_t) (1000 * dbg_values.current_w), (int32_t) (CTRL.last_esc.erpm),
 				(int32_t) (1000 * CTRL.last_acc.ax), (int32_t) (1000 * CTRL.last_acc.ay), (int32_t) (1000 * CTRL.last_acc.az),
 				CTRL.last_acc.gx,
 				(int32_t) (1000 * CTRL.st.x1), (int32_t) (1000 * CTRL.st.x2), (int32_t) (1000 * CTRL.st.x3), (int32_t) (1000 * CTRL.st.x4)
+				//(int32_t) (1000 * vcr.input_filtered), (int32_t) (1000 * dbg_values.current_o)
 			);
 
 			dbg_values.msgs_since_last = 0;
@@ -430,14 +439,25 @@ int main(void)
 			kalman_filter_predict(0, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w);
 
 			float tau = LookaheadSpeedRegulator(0, CTRL.st.x1, CTRL.st.x2, CTRL.st.x4, dt);
-			float current = tau / 0.59; // see notes
-			// current *= 1;
+			float current_wanted = tau / 0.59; // see notes
+			//current_wanted *= 0.7;
 
-			kalman_filter_update(CTRL.last_acc.gx, wheel_rpm, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w);
+			dbg_values.current_w = current_wanted;
 
-			dbg_values.current = current;
+			kalman_filter_update(-CTRL.last_acc.gx, wheel_rpm, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w);
 
-			vesc_set_current(current);
+			float current_out;
+			if (dead_mans_switch_activated()) {
+				vcr.setpoint = current_wanted;
+				current_out = vcr_step(&vcr, dt, CTRL.last_esc.current_motor);
+			} else {
+				vcr.input_filtered = 0;
+				vcr.setpoint = 0;
+				current_out = 0;
+			}
+			dbg_values.current_o = current_out;
+
+			vesc_set_current(current_out);
 
 			break;
 		}
