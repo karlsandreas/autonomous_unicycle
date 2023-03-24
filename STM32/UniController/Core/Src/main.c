@@ -241,9 +241,13 @@ AccData get_accelerometer_data(I2C_HandleTypeDef *i2c, uint16_t acc_addr) {
     float az_adj = (az - az_mid) / az_range * 9.82;
     float ay_adj = (ay - ay_mid) / ay_range * 9.82;
 
+    // TODO: Adjust y and z
+    // TODO: This should be dynamically set based on start up values
+    float gx_adj = gx + 0.045; // zero point compensation
+
 
 	return (AccData) {
-		.gx = gx, .gy = gy, .gz = gz,
+		.gx = gx_adj, .gy = gy, .gz = gz,
 		.ax = ax, .ay = ay_adj, .az = az_adj
 	};
 }
