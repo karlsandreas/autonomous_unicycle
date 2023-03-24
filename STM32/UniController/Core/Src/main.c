@@ -187,11 +187,14 @@ uint32_t get_and_reset_dt_us() {
 // Checks if the dead man's switch is both connected and pressed
 bool dead_mans_switch_activated() {
 	if (HAL_GPIO_ReadPin(BTN1_T_GPIO_Port, BTN1_T_Pin) == GPIO_PIN_RESET) {
+		HAL_GPIO_WritePin(LDARMED_GPIO_Port, LDARMED_Pin, GPIO_PIN_RESET);
 		return false;
 	}
 	if (HAL_GPIO_ReadPin(BTN1_I_GPIO_Port, BTN1_I_Pin) == GPIO_PIN_SET) {
+		HAL_GPIO_WritePin(LDARMED_GPIO_Port, LDARMED_Pin, GPIO_PIN_RESET);
 		return false;
 	}
+	HAL_GPIO_WritePin(LDARMED_GPIO_Port, LDARMED_Pin, GPIO_PIN_SET);
 	return true;
 }
 
