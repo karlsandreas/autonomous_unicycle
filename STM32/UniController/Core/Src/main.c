@@ -26,6 +26,7 @@
 #include <stdio.h>
 
 #include "vesc_com.h"
+#include "vesc_current_reg.h"
 #include "queue.h"
 #include "ctrl/common.h"
 #include "ctrl/regulator.h"
@@ -187,11 +188,14 @@ uint32_t get_and_reset_dt_us() {
 // Checks if the dead man's switch is both connected and pressed
 bool dead_mans_switch_activated() {
 	if (HAL_GPIO_ReadPin(BTN1_T_GPIO_Port, BTN1_T_Pin) == GPIO_PIN_RESET) {
+		HAL_GPIO_WritePin(LDARMED_GPIO_Port, LDARMED_Pin, GPIO_PIN_RESET);
 		return false;
 	}
 	if (HAL_GPIO_ReadPin(BTN1_I_GPIO_Port, BTN1_I_Pin) == GPIO_PIN_SET) {
+		HAL_GPIO_WritePin(LDARMED_GPIO_Port, LDARMED_Pin, GPIO_PIN_RESET);
 		return false;
 	}
+	HAL_GPIO_WritePin(LDARMED_GPIO_Port, LDARMED_Pin, GPIO_PIN_SET);
 	return true;
 }
 
@@ -241,9 +245,13 @@ AccData get_accelerometer_data(I2C_HandleTypeDef *i2c, uint16_t acc_addr) {
     float az_adj = (az - az_mid) / az_range * 9.82;
     float ay_adj = (ay - ay_mid) / ay_range * 9.82;
 
+    // TODO: Adjust y and z
+    // TODO: This should be dynamically set based on start up values
+    float gx_adj = gx + 0.045; // zero point compensation
+
 
 	return (AccData) {
-		.gx = gx, .gy = gy, .gz = gz,
+		.gx = gx_adj, .gy = gy, .gz = gz,
 		.ax = ax, .ay = ay_adj, .az = az_adj
 	};
 }
@@ -254,9 +262,12 @@ struct {
 	AccData last_acc;
 
 	States st;
-	Matrix qs;
+	Matrix q_w, q_t;
 	float a;
 } CTRL;
+
+const float Q_T = 10.0;
+const float Q_W = 100.0;
 
 // #define QUEUE_DEBUG
 
@@ -323,16 +334,21 @@ int main(void)
 
 	struct {
 		float dt;
-		float current;
+		float current_w, current_o;
 		float wheel_pos_d;
+		unsigned int msgs_since_last;
 	} dbg_values;
+
+	dbg_values.msgs_since_last = 0;
+
+	VESC_Current_Reg vcr = (VESC_Current_Reg) {
+		.k_p = 1.,
+	};
 
 	// For Kalman + control system
 
 	CTRL.a = 0;
 	CTRL.st = (States) { .x1 = 0, .x2 = 0, .x3 = 0, .x4 = 0 };
-	float init_dt = 0.001;
-	CTRL.qs = (Matrix) { .m11 = 0.05 * init_dt * init_dt, .m12 = 0.05 * init_dt * init_dt, .m21 = 0.05 * init_dt * init_dt, .m22 = 0.05 };
 
 
   /* USER CODE END 2 */
@@ -351,6 +367,7 @@ int main(void)
 		}
 
 		Message msg = queue_pop(&MAIN_QUEUE);
+		dbg_values.msgs_since_last++;
 
 		switch (msg.ty) {
 		case MSG_NONE:
@@ -368,12 +385,21 @@ int main(void)
 
 			int dbglen = sprintf(
 				dbgbuf,
-				"qsz = %4d. t = %8lu us. current = %6ld mA, erpm = %8ld, ax = %8ld, ay = %8ld, az = %8ld. CTRL = \r\n",
-				queue_nelem(&MAIN_QUEUE), (int32_t) us_since_startup(), (int32_t) (1000 * dbg_values.current), (int32_t) (1000 * CTRL.last_esc.erpm),
-				(int32_t) (1000 * CTRL.last_acc.ax),
-				(int32_t) (1000 * CTRL.last_acc.ay),
-				(int32_t) (1000 * CTRL.last_acc.az)
+				"qsz = %4d n_proc=%4d/s. t = %8lu ms. I_w = %6ld mA, erpm = %8ld, "
+				"ax = %8ld, ay = %8ld, az = %8ld, "
+				"gx = %7.5f rad/s, "
+				"theta = %8ld mrad, theta_d = %8ld mrad, x = %8ld, x_d = %8ld"
+				//"I (filtered) = %6ld mA, I (out) = %6ld mA"
+				"\r\n"
+				,
+				queue_nelem(&MAIN_QUEUE), (dbg_values.msgs_since_last * 1000 / DUMP_FREQ), (int32_t) (us_since_startup() / 1000), (int32_t) (1000 * dbg_values.current_w), (int32_t) (CTRL.last_esc.erpm),
+				(int32_t) (1000 * CTRL.last_acc.ax), (int32_t) (1000 * CTRL.last_acc.ay), (int32_t) (1000 * CTRL.last_acc.az),
+				CTRL.last_acc.gx,
+				(int32_t) (1000 * CTRL.st.x1), (int32_t) (1000 * CTRL.st.x2), (int32_t) (1000 * CTRL.st.x3), (int32_t) (1000 * CTRL.st.x4)
+				//(int32_t) (1000 * vcr.input_filtered), (int32_t) (1000 * dbg_values.current_o)
 			);
+
+			dbg_values.msgs_since_last = 0;
 
 			HAL_UART_Transmit_IT(&huart3, (uint8_t *) dbgbuf, dbglen);
 			// Use below if you are debug printing other things
@@ -399,30 +425,39 @@ int main(void)
 			dbg_values.dt = dt;
 
 			float wheel_rpm = CTRL.last_esc.erpm / 22.9;
-			float wheel_rad_per_second = wheel_rpm * 2 * 3.14 / 60;
-			float wheel_pos_d = -wheel_rad_per_second * WHEEL_RAD;
 
-			dbg_values.wheel_pos_d = wheel_pos_d;
+			CTRL.q_t.m11 = Q_T * dt*dt*dt*dt / 4;
+			CTRL.q_t.m12 = Q_T * dt*dt*dt / 2;
+			CTRL.q_t.m21 = Q_T * dt*dt*dt / 2;
+			CTRL.q_t.m22 = Q_T * dt*dt / 2;
 
-			CTRL.qs.m11 = 2 * dt*dt*dt*dt / 4;
-			CTRL.qs.m12 = 2 * dt*dt*dt / 4;
-			CTRL.qs.m21 = 2 * dt*dt / 4;
-			CTRL.qs.m22 = 2 * dt / 4;
+			CTRL.q_w.m11 = Q_W * dt*dt*dt*dt / 4;
+			CTRL.q_w.m12 = Q_W * dt*dt*dt / 2;
+			CTRL.q_w.m21 = Q_W * dt*dt*dt / 2;
+			CTRL.q_w.m22 = Q_W * dt*dt / 2;
 
-			CTRL.st.x4 = wheel_pos_d;
-			CTRL.st.x3 += wheel_pos_d * dt;
+			kalman_filter_predict(0, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w);
 
-			pitch_kalman_filter_predict(CTRL.a, dt, &CTRL.st, &CTRL.qs);
-			float tau = LookaheadSpeedRegulator(0, CTRL.st.x1, CTRL.st.x2, wheel_pos_d, dt);
-			float current = tau / 0.59; // see notes
-			current *= 10;
+			float tau = LookaheadSpeedRegulator(0, CTRL.st.x1, CTRL.st.x2, CTRL.st.x4, dt);
+			float current_wanted = tau / 0.59; // see notes
+			//current_wanted *= 0.7;
 
-			CTRL.a = sqrt((CTRL.last_acc.ay * CTRL.last_acc.ay) + (CTRL.last_acc.az * CTRL.last_acc.az));
-			pitch_kalman_filter_update(CTRL.last_acc.gx, dt, &CTRL.st, &CTRL.qs);
+			dbg_values.current_w = current_wanted;
 
-			dbg_values.current = current;
+			kalman_filter_update(-CTRL.last_acc.gx, wheel_rpm, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w);
 
-			vesc_set_current(current);
+			float current_out;
+			if (dead_mans_switch_activated()) {
+				vcr.setpoint = current_wanted;
+				current_out = vcr_step(&vcr, dt, CTRL.last_esc.current_motor);
+			} else {
+				vcr.input_filtered = 0;
+				vcr.setpoint = 0;
+				current_out = 0;
+			}
+			dbg_values.current_o = current_out;
+
+			vesc_set_current(current_out);
 
 			break;
 		}

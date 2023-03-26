@@ -46,16 +46,17 @@ extern "C" {
 
 // Gyroscope scale
 
-// GYRO_FS is in rad/s²
+// GYRO_FS is in rad/s
 #if GYRO_FS_CFG == 0
-	#define GYRO_FS 250
+	#define GYRO_FS_DEG 250
 #elif GYRO_FS_CFG == 1
-	#define GYRO_FS 500
+	#define GYRO_FS_DEG 500
 #elif GYRO_FS_CFG == 2
-	#define GYRO_FS 1000
+	#define GYRO_FS_DEG 1000
 #elif GYRO_FS_CFG == 3
-#define GYRO_FS 2000
+#define GYRO_FS_DEG 2000
 #endif
+#define GYRO_FS ((float)GYRO_FS_DEG / 180 * 3.1415)
 
 // Accelerometer scale
 
@@ -170,6 +171,9 @@ void Error_Handler(void);
 // Red LED LD3 showing error
 #define LDERROR_Pin LD3_Pin
 #define LDERROR_GPIO_Port LD3_GPIO_Port
+
+#define LDARMED_Pin LD2_Pin
+#define LDARMED_GPIO_Port LD2_GPIO_Port
 
 
 
