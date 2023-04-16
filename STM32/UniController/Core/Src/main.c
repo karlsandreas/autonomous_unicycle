@@ -264,6 +264,8 @@ struct {
 	States st;
 	Matrix q_w, q_t;
 	float a;
+  Covariances covs;
+  R_error r_vals;
 } CTRL;
 
 const float Q_T = 10.0;
@@ -279,6 +281,7 @@ const float Q_W = 100.0;
   */
 int main(void)
 {
+
   /* USER CODE BEGIN 1 */
 	char dbgbuf[500];
   /* USER CODE END 1 */
@@ -348,7 +351,16 @@ int main(void)
 	// For Kalman + control system
 
 	CTRL.a = 0;
-	CTRL.st = (States) { .x1 = 0, .x2 = 0, .x3 = 0, .x4 = 0 };
+	CTRL.st = (States) { .x1 = 0, .x2 = 0, .x3 = 0, .x4 = 0 , .x5 = 0, .x6 = 0};
+  //Measurement error
+  CTRL.r_vals = (R_error) {.pitch = 0.3, .roll = 0.3, .wheel = 20};
+  //Struct for all covariances
+  CTRL.covs = (Covariances) {.pitch.m11 = 10.0, .pitch.m12 = 0.0, .pitch.m21 = 10.0, .pitch.m22 = 0.0,
+                             .roll.m11 = 10.0, .roll.m12 = 0.0, .roll.m21 = 10.0, .roll.m22 = 0.0,
+                             .wheel.m11 = 10.0, .wheel.m12 = 0.0, .wheel.m21 = 0.0, .wheel.m22 = 10.0};
+
+  //Init the pid for roll, Kp, Ki, Kd
+  init_pid_regulator(20,0,0);
 
 
   /* USER CODE END 2 */
@@ -385,7 +397,7 @@ int main(void)
 
 			int dbglen = sprintf(
 				dbgbuf,
-				"qsz = %4d n_proc=%4d/s. t = %8lu ms. I_w = %6ld mA, erpm = %8ld, "
+				"qsz = %4d n_proc=%4d/s, t = %8lu ms, I_w = %6ld mA, erpm = %8ld, "
 				"ax = %8ld, ay = %8ld, az = %8ld, "
 				"gx = %7.5f rad/s, "
 				"theta = %8ld mrad, theta_d = %8ld mrad, x = %8ld, x_d = %8ld"
@@ -436,15 +448,21 @@ int main(void)
 			CTRL.q_w.m21 = Q_W * dt*dt*dt / 2;
 			CTRL.q_w.m22 = Q_W * dt*dt / 2;
 
-			kalman_filter_predict(0, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w);
+			kalman_filter_predict(0, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w, &CTRL.covs, &CTRL.r_vals);
+      roll_kalman_filter_predict(0, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w, &CTRL.covs, &CTRL.r_vals);
 
 			float tau = LookaheadSpeedRegulator(0, CTRL.st.x1, CTRL.st.x2, CTRL.st.x4, dt);
+
+      //Roll pid regulator
+      float tau_roll = pid_regulator(0, CTRL.st.x5, dt);
+
 			float current_wanted = tau / 0.59; // see notes
 			//current_wanted *= 0.7;
 
 			dbg_values.current_w = current_wanted;
 
-			kalman_filter_update(-CTRL.last_acc.gx, wheel_rpm, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w);
+			kalman_filter_update(-CTRL.last_acc.gx, wheel_rpm, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w, &CTRL.covs, &CTRL.r_vals);
+      roll_kalman_filter_update(-CTRL.last_acc.gy, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w, &CTRL.covs, &CTRL.r_vals);
 
 			float current_out;
 			if (dead_mans_switch_activated()) {

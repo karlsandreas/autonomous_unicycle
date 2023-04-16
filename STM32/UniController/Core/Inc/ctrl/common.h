@@ -6,10 +6,12 @@
 
 struct states
 {
-    float x1; /* theta angle*/
-    float x2; /* theta_d angular velocity*/
+    float x1; /* theta angle pitch*/
+    float x2; /* theta_d angular velocity pitch*/
     float x3; /* x distance */
     float x4; /* x_d velocity */
+    float x5; /* theta angle roll*/
+    float x6; /* theta_d angular velocity roll*/
 };
 
 typedef struct states States;
@@ -23,6 +25,25 @@ struct matrix
 };
 
 typedef struct matrix Matrix;
+
+struct covariances
+{   
+    Matrix pitch;
+    Matrix roll;
+    Matrix wheel
+     
+};
+
+typedef struct covariances Covariances;
+
+struct r_error  
+{
+    float pitch;
+    float roll;
+    float wheel;
+};
+
+typedef struct r_error R_error;
 
 #define SENSOR_POS_Z (0.4)
 #define F11 (1.0)
