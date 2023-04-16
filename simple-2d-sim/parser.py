@@ -24,8 +24,8 @@ class DebugParser:
         for line in debugdata:
             line = line.strip()
             line = line.strip('\x00')
-            identifier, value, rest = self.parse_identifier_value(line)
 
+            identifier, value, rest = self.parse_identifier_value(line)
             if rest == None:
                 break
             
@@ -90,7 +90,6 @@ class DebugParser:
                 i += 1
                 if (i-1 == len(line)-1):
                     break
-
             if isFloat:
                 value = float(line[:i])
             else:

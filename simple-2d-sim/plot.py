@@ -11,14 +11,10 @@ import initials as init
 from copy import deepcopy
 from parser import DebugParser
 
+
 #Imports for c code
 from ctypes import *
-so_file = Path("STM32/regulator.so")
 
-reg = CDLL(so_file.resolve())
-
-so_file_filter = Path("STM32/kalman_filter.so")
-c_kalman = CDLL(so_file_filter.resolve())
 
 INIT_STATE = init.INIT_STATE
 DEFAULT_PARAMETERS = init.DEFAULT_PARAMETERS
@@ -47,15 +43,15 @@ c_code = False
 
 
 class PlotValuesForOneGraph:
-    def __init__(self, itterations: int, labels: list):
+    def __init__(self, iterations: int, labels: list):
         self.data = {}
         self.labels = labels
 
         for label in labels:
-            self.data[label] = np.zeros(itterations)
+            self.data[label] = np.zeros(iterations)
 
 
-        self.ticks = np.linspace(0, itterations, num=itterations)
+        self.ticks = np.linspace(0, iterations, num=iterations)
     
     def add(self, values: list, i):
         j = 0
@@ -68,6 +64,25 @@ class PlotValuesForOneGraph:
         return [self.ticks, self.data]
 
 
+
+def resim_logged_data(path, parser: DebugParser):
+    p = parser(path)
+    p.parse()
+    state_dict = p.get_state_dict() 
+    itertations = state_dict["dt"].size
+    plotter = Plotter(
+                    Simulator(DEFAULT_PARAMETERS),
+                    INIT_STATE,
+                    DEFAULT_REG,
+                    DEFAULT_KALMAN,
+                    resim = True,
+                    dt = state_dict["dt"][0],
+                    iterations=itertations)
+
+    plotter.run(saved_states= state_dict)
+
+    plotter.draw_plots()
+
 class Plotter:
     def __init__(
         self,
@@ -75,15 +90,24 @@ class Plotter:
         init_state: SimulationState,
         reg: Regulator,
         kalman_filter: KalmanFilter,
-        kalman_filter_wheel: KalmanFilter,
-        dt = None, #Delta time in [S]
-        itterations = None,
+        resim = False,
+        dt = float, #Delta time in [S]
+        iterations = None,
         simtime = None): #Seconds of simultaion [S]
         
-        if itterations != None:
-            self.itterations = itterations
+        so_file = Path("STM32/regulator.so")
+
+        reg = CDLL(so_file.resolve())
+
+        so_file_filter = Path("STM32/kalman_filter.so")
+        c_kalman = CDLL(so_file_filter.resolve())
+        self.resim = resim
+
+        if self.resim:
+            self.iterations = iterations
+            self.saved_data = False
         else:
-            self.itterations = int(simtime/dt)
+            self.iterations = int(simtime/dt)
             self.dt = dt
 
         self.reg_version = "Python" #C
@@ -95,15 +119,16 @@ class Plotter:
         self.current_signals = ControlSignals()
         
         self.filter = kalman_filter 
-        self.filter_wheel = kalman_filter_wheel
         self.filter_state = init_state
+
+        self.noise_state = init_state
 
         self.c_state = pointer(States(0.0, 0.0, 0.0, 0.0))
         dt = init.dt
-        q_t = 10.0
-        q_w = 10.0
-        self.c_Qs_t = pointer(Matrix(q_t*(dt**4)/4, q_t*(dt**3)/2, q_t*(dt**3)/2, q_t*dt**2))
-        self.c_Qs_w = pointer(Matrix(q_w*(dt**4)/4, q_w*(dt**3)/2, q_w*(dt**3)/2, q_w*dt**2))
+        self.q_t = 10.0
+        self.q_w = 10.0
+        self.c_Qs_t = pointer(Matrix(self.q_t*(dt**4)/4, self.q_t*(dt**3)/2, self.q_t*(dt**3)/2, self.q_t*dt**2))
+        self.c_Qs_w = pointer(Matrix(self.q_w*(dt**4)/4, self.q_w*(dt**3)/2, self.q_w*(dt**3)/2, self.q_w*dt**2))
 
 
         var_x = 0.0004 #m/s^2
@@ -128,55 +153,67 @@ class Plotter:
         self.top_angle_d = 0.0
         self.a = 0.0
 
-        self.saved_data = True
+        
 
-    def step_reg_filter(self, dt: float, i) -> None:
+    def update_qs(self, dt):
+            self.c_Qs_t.contents.m11 = c_float(self.q_t * (dt**4)/4) 
+            self.c_Qs_t.contents.m12 = c_float(self.q_t * (dt**3)/2)
+            self.c_Qs_t.contents.m21 = c_float(self.q_t * (dt**3)/2)
+            self.c_Qs_t.contents.m22 = c_float(self.q_t * dt**2)
+
+            self.c_Qs_w.contents.m11 = c_float(self.q_w * (dt**4)/4) 
+            self.c_Qs_w.contents.m12 = c_float(self.q_w * (dt**3)/2)
+            self.c_Qs_w.contents.m21 = c_float(self.q_w * (dt**3)/2)
+            self.c_Qs_w.contents.m22 = c_float(self.q_w * dt**2)
+
+
+    def step_reg_filter(self, dt: float, i, st: SimulationState) -> None:
+        if self.resim:
+            self.state = st
 
         if self.filter_version == "C":
             ######## Kalman filter in C ##########
             #Update the Qs since they depend on dt
-            self.c_Qs.contents.m11 = c_float(2.0 * (dt**4)/4) 
-            self.c_Qs.contents.m12 = c_float(2.0 * (dt**3)/2)
-            self.c_Qs.contents.m21 = c_float(2.0 * (dt**3)/2)
-            self.c_Qs.contents.m22 = c_float(2.0 * dt**2)
+            self.update_qs(dt)
 
-            #self.c_state.contents.x3 = self.filter_state.wheel_position #Update states in pointer since we are not mesuring them
-            #self.c_state.contents.x4 = self.filter_state.wheel_position_d
-        
-        if self.filter_version == "C":
-            c_kalman.pitch_kalman_filter_predict(c_float(self.a), c_float(dt), self.c_state, self.c_Qs)
+            #self.c_state.contents.x1 = top_angle #Update states in pointer since we are not mesuring them
+            #self.c_state.contents.x2 = top_angle_d #Update states in pointer since we are not mesuring them
+            #self.c_state.contents.x3 = wheel_d #Update states in pointer since we are not mesuring them
+            #self.c_state.contents.x4 = wheel_rpm
+            
+            c_kalman.kalman_filter_predict(c_float(0.0), c_float(dt), self.c_state, self.c_Qs_t, self.c_Qs_w)
             self.filter_state.top_angle = self.c_state.contents.x1
             self.filter_state.top_angle_d = self.c_state.contents.x2
+            self.filter_state.wheel_position = self.c_state.contents.x3
+            self.filter_state.wheel_position_d = self.c_state.contents.x4
 
-            #Wheel filter
-            #c_kalman_vel = c_kalman.wheel_velocity_kalman_filter_predict
-            #c_kalman_vel.restype = c_float  # Set output type from c code
-            #self.filter_state.wheel_position_d = c_kalman_vel(c_float(dt))
-            c_kalman_simple = c_kalman.simple_wheel_filter
-            c_kalman_simple.restype = c_float
-
-            self.filter_state.wheel_position_d = c_kalman_simple(c_float(self.wheel_d_noise[i-1]), c_float(dt))
 
         if self.filter_version == "Python":
-            filter_states = self.filter.predict()
+            filter_states = self.filter.predict(self.current_signals.motor_torque_signal)
             self.filter_state.top_angle = filter_states[0][0]
             self.filter_state.top_angle_d = filter_states[1][0]
-            #self.filter_state.wheel_position_d = self.filter_wheel.predict()
+            self.filter_state.wheel_position = filter_states[2][0]
+            self.filter_state.wheel_position_d = filter_states[3][0]
 
 
-        #Angular speed
-        
-        self.angle_d.add([self.state.top_angle_d, self.top_angle_d, self.filter_state.top_angle_d],i)
+        if i%50 == 0:
+            #top angle d is in deg/s
+            self.noise_state.top_angle_d = self.add_noise(self.var_angle_d, self.filter_state.top_angle_d)
 
+            #wheel_pos_d is in rpm
+            self.noise_state.wheel_position_d = self.add_noise(self.var_rpm, self.filter_state.wheel_position_d)
+        else:
+            self.noise_state.top_angle_d = self.filter_state.top_angle_d
+            self.noise_state.wheel_position_d = self.filter_state.wheel_position_d
+
+        ####Save values for plot
+        self.angle_d.add([self.state.top_angle_d, self.noise_state.top_angle_d, self.filter_state.top_angle_d],i)
         self.angle.add([self.state.top_angle, self.filter_state.top_angle],i) 
         
-        self.wheel_d.add([self.state.wheel_position_d, self.filter_state.wheel_position_d],i)
+        self.wheel_d.add([self.state.wheel_position_d, self.noise_state.wheel_position_d, self.filter_state.wheel_position_d],i)
 
         
-        #Angles
-
-        
-        self.time += dt
+        #self.time += dt
 
         if self.reg_version == "C":
             ############## Regulator in c ##############
@@ -184,8 +221,6 @@ class Plotter:
             c_regulator = reg.LookaheadSpeedRegulator
             c_regulator.restype = c_float  # Set output type from c code 
 
-            
-            
             self.current_signals = ControlSignals(c_regulator(c_float(self.reg.setpoint_x_d), 
                                                     c_float(self.filter_state.top_angle), 
                                                     c_float(self.filter_state.top_angle_d),
@@ -199,62 +234,39 @@ class Plotter:
             ############################################
 
         ############ Integration step ###############
-        self.filter_state = deepcopy(self.state)
+        #self.filter_state = deepcopy(self.state)
 
-        ########### Sensor reading and noise #######
-        sensor_reading = self.sim.sensor_reading(self.filter_state, self.current_signals)
-        #sensor_reading = self.sim.sensor_reading(self.state, self.current_signals)
-        
-        var_x = 0.0004 #m/s^2
-        var_z = 0.0004 #m/s^2
-        var_angle_d = 0.001 #rad/s 
-        noise_x, noise_z, noise_angle = random.gauss(0, var_x), random.gauss(0, var_z), random.gauss(0, var_angle_d)
-
-        a_x = sensor_reading[1] + noise_x
-        a_z = sensor_reading[2] + noise_z
-        self.a = (a_x**2 + a_z**2)**0.5
-
-
-        top_angle_d = sensor_reading[0] + noise_angle
-        self.top_angle_d = top_angle_d
-
-        self.sensor_reading = top_angle_d #Copy to class for info tab
-        
-        x_d = self.filter_state.wheel_position 
-        #self.wheel_d_sim[i] = x_d
-        x_d_noise = random.gauss(0, 0.1)
-        x_d_w_noise = x_d + x_d_noise
-        #self.wheel_d_noise[i] = x_d_w_noise
 
         if self.filter_version == "C":
             ##### C Kalman filter #####
-            c_kalman.pitch_kalman_filter_update(c_float(top_angle_d), c_float(dt), self.c_state, self.c_Qs)
-            #c_kalman.wheel_velocity_kalman_filter_update(c_float(x_d_w_noise), c_float(dt));
+            c_kalman.kalman_filter_update(c_float(self.noise_state.top_angle_d), c_float(dt), self.c_state, self.c_Qs_t, self.c_Qs_w)
         
         if self.filter_version == "Python":
-            self.filter.update(top_angle_d)
-        
+            sensor_reading = np.array([self.noise_state.top_angle_d,self.noise_state.wheel_position_d]).reshape(2,1)
+            self.filter.update(sensor_reading)
+
             self.p_vals.add([self.filter.P[0][0],self.filter.P[0][1],self.filter.P[1][0],self.filter.P[1][1]],i)
             
-
-            #self.filter_wheel.update(x_d_w_noise)
+        
 
     def step(self, dt: float, i) -> None:
         self.state = self.sim.step(self.state, self.current_signals, dt)
-        
+    
+
+
     #Loop the step function i iterations, 
-    def run(self) -> None:
+    def run(self, saved_states = None ) -> None:
         if self.resim:
+            for i in range(0, self.iterations): 
+                states = self.update_state_dict_to_simstates(saved_states,i)
+                dt = saved_states["dt"][i]
+                self.step_reg_filter(dt, i, states)
             
         if self.saved_data:
-            #saved_states_2 = self.load_saved_states("sensor_data/sim_all_states_22_03_dt_0_001.npy")
-            p = DebugParser("sensor_data/testrun_pitch_20230324/run-1.txt")
-            p.parse()
-            saved_states = p.get_state_dict()
-            self.iterations = saved_states["dt"].size
             for i in range(0, self.iterations): 
                 self.step_saved_states(saved_states["dt"][i], i, saved_states)
-        else:
+
+        if not self.resim:
             for i in range(0, int(self.iterations)):
                 if (i > self.iterations/2):
                     self.reg.setpoint_x_d = 1
@@ -263,16 +275,17 @@ class Plotter:
                 self.step(self.dt, i)
             #np.save('./sensor_data/sim_wheel_pos_d', self.x_ds)
 
-    def update_state_dict_to_simstates(self, state_dict, i):
-        self.state.top_angle = state_dict["top_angle"].data[i] 
-        self.state.top_angle_d = state_dict["top_angle_d"].data[i]
-        self.state.wheel_position = state_dict["wheel_position"].data[i]
-        self.state.wheel_position_d = state_dict["wheel_position_d"].data[i]
+    def update_state_dict_to_simstates(self, state_dict, i) -> SimulationState:
+        new_state = SimulationState(wheel_position=state_dict["wheel_position"].data[i], 
+                                    wheel_position_d=state_dict["wheel_position_d"].data[i],
+                                    top_angle=state_dict["top_angle"].data[i],
+                                    top_angle_d=state_dict["top_angle_d"].data[i])
 
-        return self.state
+        return new_state
 
             
-    def step_saved_states(self, dt, i, state_dict):
+    def step_saved_states(self, dt, i, state_dict, st:SimulationState):
+        
         top_angle = state_dict["top_angle"].data[i] * 180/np.pi
         top_angle_d = state_dict["top_angle_d"].data[i] * 180/np.pi #Convert to deg/s since that what sensor is using
         wheel_d = state_dict["wheel_position_d"].data[i]
@@ -375,21 +388,20 @@ class Plotter:
 
 
 
-p = Plotter(
-    Simulator(DEFAULT_PARAMETERS),
-    INIT_STATE,
-    DEFAULT_REG,
-    DEFAULT_KALMAN,
-    DEFAULT_KALMAN_WHEEL,
-    30,
-    0.001
-)
+# p = Plotter(
+#     Simulator(DEFAULT_PARAMETERS),
+#     INIT_STATE,
+#     DEFAULT_REG,
+#     DEFAULT_KALMAN,
+#     DEFAULT_KALMAN_WHEEL,
+# )
 
 
-p.run()
+#p.run()
 
-p.draw_plots()
+#p.draw_plots()
 
+#resim_logged_data("sensor_data/testrun_pitch_20230324/run-1.txt", DebugParser)
 
 
 

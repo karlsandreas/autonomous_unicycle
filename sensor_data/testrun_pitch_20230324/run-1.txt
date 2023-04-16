@@ -1869,9 +1869,6 @@ qsz =    2 n_proc=  70/s. t =     5391 ms. I_w =    -24 mA, erpm =        0, ax 
 qsz =    2 n_proc=  60/s. t =     5412 ms. I_w =    -34 mA, erpm =        0, ax =      -95, ay =      254, az =     9857, gx = -0.01039 rad/s, theta =        0 mrad, theta_d =        7 mrad, x =        0, x_d =        0
 qsz =    2 n_proc=  40/s. t =     5434 ms. I_w =    -42 mA, erpm =        0, ax =     -201, ay =      244, az =     9852, gx = -0.00826 rad/s, theta =        0 mrad, theta_d =        7 mrad, x =        0, x_d =        0
 qsz =    2 n_proc=  70/s. t =     5456 ms. I_w =    -48 mA, erpm =        0, ax =     -278, ay =      234, az =     9857, gx = -0.00826 rad/s, theta =        0 mrad, theta_d =        7 mrad, x =        0, x_d =        0
-
-
-hewwo hii!!!!
 qsz =    2 n_proc=  20/s. t =       12 ms. I_w =    -53 mA, erpm =        0, ax =        0, ay =        0, az =        0, gx = 0.00000 rad/s, theta =        0 mrad, theta_d =        0 mrad, x =        0, x_d =         0
 qsz =    2 n_proc=  40/s. t =       34 ms. I_w =      0 mA, erpm =        0, ax =      -38, ay =      325, az =     9843, gx = -0.00400 rad/s, theta =        0 mrad, theta_d =        0 mrad, x =        0, x_d =        0
 qsz =    2 n_proc=  60/s. t =       56 ms. I_w =      0 mA, erpm =        0, ax =      258, ay =      335, az =     9861, gx = -0.00933 rad/s, theta =        0 mrad, theta_d =        0 mrad, x =        0, x_d =        0
