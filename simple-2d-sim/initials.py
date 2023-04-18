@@ -19,12 +19,12 @@ INIT_STATE = SimulationState(
 DEFAULT_PARAMETERS = SimulationParameters(
     wheel_rad = 0.28,
     wheel_mass = 9.292,
-    top_height = 0.4,
-    top_mass = 2.5 + 5.0,
+    top_height = 0.25,
+    top_mass = 3.0,
     motor_reaction_speed = 0.9,
-    sensor_position= 0.4,
+    sensor_position= 0.6,
     wheel_inertia= 0.114,
-    top_inertia=0.125 + 5.0*0.5**2, 
+    top_inertia=0.125 + 5.0*0.5**2,
 )
 
 # DEFAULT_REG = NullRegulator(params=DEFAULT_PARAMETERS)
@@ -38,6 +38,9 @@ DEFAULT_REG_PID = PIDController(
     ki = 0.0,
     kd = 2.0
 )
+
+if __name__ == "__main__":
+    DEFAULT_REG.dump_params()
 
 dt = 0.001
 

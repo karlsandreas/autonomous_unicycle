@@ -32,6 +32,13 @@ class LookaheadSpeedRegulator(Regulator):
 
         self.last_delta_tau = 0.
 
+    def dump_params(self):
+        print(f"#define param_A {self.A}")
+        print(f"#define param_B {self.B}")
+        print(f"#define param_C {self.C}")
+        print(f"#define param_D {self.D}")
+        print(f"#define param_E {self.E}")
+
     def expected_theta_after(self, st: SimulationState, t: float) -> float:
         theta = st.top_angle
         theta_d = st.top_angle_d

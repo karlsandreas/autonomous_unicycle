@@ -138,7 +138,7 @@ class Simulator:
         # X φ'' + Y θ'' = Z
         # U φ'' + V θ'' = W
         X, Y = I_w + (m_w+m_c)*r**2, m_c*r*l*np.cos(o1)
-        Z = -M + m_c*r*l*np.sin(o1)*do1*phi_dot
+        Z = -M + m_c*r*l*np.sin(o1)*do1*phi_dot # Ska det inte vara do1^2 ?
         U, V = m_c*r*l*np.cos(o1), I_c + m_c*l**2
         W = M + m_c*g*l*np.sin(o1)
 

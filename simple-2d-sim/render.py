@@ -248,6 +248,7 @@ class Render:
         self.filter_version = "Python" #C
 
         self.a = 0.0
+
     def run(self) -> None:
         last_t = time.time()
         frames_last_second = []

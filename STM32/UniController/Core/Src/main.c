@@ -304,7 +304,7 @@ struct {
 	float a;
 } CTRL;
 
-const float Q_T = 10.0;
+const float Q_T = 80.0;
 const float Q_W = 100.0;
 
 #define MOTOR_CW 0
