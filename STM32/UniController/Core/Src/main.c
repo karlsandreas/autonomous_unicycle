@@ -185,6 +185,7 @@ uint32_t get_and_reset_dt_us() {
 	return dt;
 }
 
+/*
 // Checks if the dead man's switch is both connected and pressed
 bool dead_mans_switch_activated() {
 	if (HAL_GPIO_ReadPin(BTN1_T_GPIO_Port, BTN1_T_Pin) == GPIO_PIN_RESET) {
@@ -197,6 +198,28 @@ bool dead_mans_switch_activated() {
 	}
 	HAL_GPIO_WritePin(LDARMED_GPIO_Port, LDARMED_Pin, GPIO_PIN_SET);
 	return true;
+}
+*/
+
+bool dead_mans_switch_activated() {
+	HAL_GPIO_WritePin(DEADMAN_GND_GPIO_Port, DEADMAN_GND_Pin, GPIO_PIN_RESET);
+	return HAL_GPIO_ReadPin(DEADMAN_SW_GPIO_Port, DEADMAN_SW_Pin) == GPIO_PIN_RESET;
+}
+// QRV
+const bool morse_table[] = {
+	1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0,
+	1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0,
+	1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 0, 0,
+	0, 0, 0, 0, 0
+};
+
+void dead_mans_switch_update_led() {
+	// bool blink_on = (ms_counter % 600 < 300) && ((ms_counter & 3) == 1);
+	bool blink_on = morse_table[(ms_counter / 83) % sizeof(morse_table)];
+	blink_on &= (ms_counter & 3) == 1;
+	blink_on |= dead_mans_switch_activated();
+
+	HAL_GPIO_WritePin(DEADMAN_LED_GPIO_Port, DEADMAN_LED_Pin, blink_on ? GPIO_PIN_SET : GPIO_PIN_RESET);
 }
 
 // Puts the MPU6050 into active mode, with the appropriate CFGs from main.h set
@@ -1019,13 +1042,13 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOG_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, LD3_Pin|LD2_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, LD3_Pin|LD2_Pin|DEADMAN_LED_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(USB_PowerSwitchOn_GPIO_Port, USB_PowerSwitchOn_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(BTN1_O_GPIO_Port, BTN1_O_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(DEADMAN_GND_GPIO_Port, DEADMAN_GND_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : USER_Btn_Pin */
   GPIO_InitStruct.Pin = USER_Btn_Pin;
@@ -1033,17 +1056,11 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(USER_Btn_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : LD3_Pin LD2_Pin */
-  GPIO_InitStruct.Pin = LD3_Pin|LD2_Pin;
+  /*Configure GPIO pins : LD3_Pin LD2_Pin DEADMAN_LED_Pin */
+  GPIO_InitStruct.Pin = LD3_Pin|LD2_Pin|DEADMAN_LED_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : BTN1_T_Pin BTN1_I_Pin */
-  GPIO_InitStruct.Pin = BTN1_T_Pin|BTN1_I_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /*Configure GPIO pin : USB_PowerSwitchOn_Pin */
@@ -1059,12 +1076,18 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(USB_OverCurrent_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : BTN1_O_Pin */
-  GPIO_InitStruct.Pin = BTN1_O_Pin;
+  /*Configure GPIO pin : DEADMAN_GND_Pin */
+  GPIO_InitStruct.Pin = DEADMAN_GND_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(BTN1_O_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(DEADMAN_GND_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : DEADMAN_SW_Pin */
+  GPIO_InitStruct.Pin = DEADMAN_SW_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(DEADMAN_SW_GPIO_Port, &GPIO_InitStruct);
 
 }
 

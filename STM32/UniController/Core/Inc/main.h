@@ -136,8 +136,6 @@ void Error_Handler(void);
 #define RMII_TXD1_GPIO_Port GPIOB
 #define LD3_Pin GPIO_PIN_14
 #define LD3_GPIO_Port GPIOB
-#define BTN1_T_Pin GPIO_PIN_15
-#define BTN1_T_GPIO_Port GPIOB
 #define STLK_RX_Pin GPIO_PIN_8
 #define STLK_RX_GPIO_Port GPIOD
 #define STLK_TX_Pin GPIO_PIN_9
@@ -146,8 +144,8 @@ void Error_Handler(void);
 #define USB_PowerSwitchOn_GPIO_Port GPIOG
 #define USB_OverCurrent_Pin GPIO_PIN_7
 #define USB_OverCurrent_GPIO_Port GPIOG
-#define BTN1_O_Pin GPIO_PIN_6
-#define BTN1_O_GPIO_Port GPIOC
+#define DEADMAN_GND_Pin GPIO_PIN_6
+#define DEADMAN_GND_GPIO_Port GPIOC
 #define USB_SOF_Pin GPIO_PIN_8
 #define USB_SOF_GPIO_Port GPIOA
 #define USB_VBUS_Pin GPIO_PIN_9
@@ -164,8 +162,10 @@ void Error_Handler(void);
 #define RMII_TXD0_GPIO_Port GPIOG
 #define LD2_Pin GPIO_PIN_7
 #define LD2_GPIO_Port GPIOB
-#define BTN1_I_Pin GPIO_PIN_8
-#define BTN1_I_GPIO_Port GPIOB
+#define DEADMAN_SW_Pin GPIO_PIN_8
+#define DEADMAN_SW_GPIO_Port GPIOB
+#define DEADMAN_LED_Pin GPIO_PIN_9
+#define DEADMAN_LED_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 
 // Red LED LD3 showing error
