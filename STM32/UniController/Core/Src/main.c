@@ -116,34 +116,41 @@ uint16_t MPU_ADDR = 0x68;
 
 uint32_t ms_counter;
 
-// (will take about 1000 hours to overflow)
-uint32_t khz_counter = 0;
+// All in Hz
+#define TIM4_FREQ 10000
 
 #define ACC_FREQ 100
 #define VESC_FREQ 50
-#define DUMP_FREQ 100
-#define STEP_FREQ 100
+#define DUMP_FREQ 50
+#define STEP_FREQ 500
+
+// (will take many hours to overflow)
+uint32_t tim4_ctr = 0;
+
+void dead_mans_switch_update_led();
+
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if (htim == &htim3) { // htim3 ticks once every us, elapses once every ms
 		ms_counter++;
+		dead_mans_switch_update_led();
 	}
 	if (htim == &htim4 ) {
 		// TODO: Put these on different timers?
 
-		khz_counter++;
+		tim4_ctr++;
 
-		if (khz_counter % (1000 / ACC_FREQ) == 0) {
+		if (tim4_ctr % (TIM4_FREQ / ACC_FREQ) == 0) {
 			queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_REQ_ACC });
 		}
-		if (khz_counter % (1000 / VESC_FREQ) == 0) {
+		if (tim4_ctr % (TIM4_FREQ / VESC_FREQ) == 0) {
 			queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_REQ_VESC });
 			queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_FLUSH_VESC });
 		}
-		if (khz_counter % (1000 / DUMP_FREQ) == 0) {
+		if (tim4_ctr % (TIM4_FREQ / DUMP_FREQ) == 0) {
 			queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_SEND_DEBUG });
 		}
-		if (khz_counter % (1000 / STEP_FREQ) == 0) {
+		if (tim4_ctr % (TIM4_FREQ / STEP_FREQ) == 0) {
 			queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_TIME_STEP });
 		}
 
@@ -237,12 +244,17 @@ void setup_mpu(I2C_HandleTypeDef *i2c, uint16_t acc_addr) {
 	HAL_I2C_Mem_Write(i2c, acc_addr << 1, 0x1c, 1, acc_config, 1, 200000);
 }
 
+#define I2C_TIMEOUT 20
+
 // TODO: Do this with interrupt
 AccData get_accelerometer_data(I2C_HandleTypeDef *i2c, uint16_t acc_addr) {
 	// 0x43 = gyro_xout_h
 	// 0x44 = gyro_xout_
 	uint8_t gyro_data[6] = {0x69, 0x69, 0x69, 0x69, 0x69, 0x69};
-	HAL_I2C_Mem_Read(&hi2c2, acc_addr << 1, 0x43, 1, gyro_data, 6, 2000000);
+	if (HAL_I2C_Mem_Read(&hi2c2, acc_addr << 1, 0x43, 1, gyro_data, 6, 20) == HAL_ERROR) {
+		return (AccData) { .success = false };
+	}
+
 	int16_t gx_i = (int16_t) ((gyro_data[0] << 8) | gyro_data[1]);
 	int16_t gy_i = (int16_t) ((gyro_data[2] << 8) | gyro_data[3]);
 	int16_t gz_i = (int16_t) ((gyro_data[4] << 8) | gyro_data[5]);
@@ -251,7 +263,9 @@ AccData get_accelerometer_data(I2C_HandleTypeDef *i2c, uint16_t acc_addr) {
 	float gz = gz_i * (GYRO_FS / (1<<15));
 
 	uint8_t acc_data[6] = {0x69, 0x69, 0x69, 0x69, 0x69, 0x69};
-	HAL_I2C_Mem_Read(&hi2c2, acc_addr << 1, 0x3b, 1, acc_data, 6, 2000000);
+	if (HAL_I2C_Mem_Read(&hi2c2, acc_addr << 1, 0x3b, 1, acc_data, 6, 20) == HAL_ERROR) {
+		return (AccData) { .success = false };
+	}
 	int16_t ax_i = (int16_t) ((acc_data[0] << 8) | acc_data[1]);
 	int16_t ay_i = (int16_t) ((acc_data[2] << 8) | acc_data[3]);
 	int16_t az_i = (int16_t) ((acc_data[4] << 8) | acc_data[5]);
@@ -274,6 +288,7 @@ AccData get_accelerometer_data(I2C_HandleTypeDef *i2c, uint16_t acc_addr) {
 
 
 	return (AccData) {
+		.success = true,
 		.gx = gx_adj, .gy = gy, .gz = gz,
 		.ax = ax, .ay = ay_adj, .az = az_adj
 	};
@@ -291,6 +306,11 @@ struct {
 
 const float Q_T = 10.0;
 const float Q_W = 100.0;
+
+#define MOTOR_CW 0
+#define MOTOR_CCW 1
+
+#define MOTOR_DIRECTION MOTOR_CCW
 
 // #define QUEUE_DEBUG
 
@@ -360,9 +380,13 @@ int main(void)
 		float current_w, current_o;
 		float wheel_pos_d;
 		unsigned int msgs_since_last;
+
+		int msg_idx, n_time_steps_since_last;
 	} dbg_values;
 
 	dbg_values.msgs_since_last = 0;
+	dbg_values.msg_idx = 0;
+	dbg_values.n_time_steps_since_last = 0;
 
 	VESC_Current_Reg vcr = (VESC_Current_Reg) {
 		.k_p = 1.,
@@ -399,30 +423,34 @@ int main(void)
 		case MSG_SEND_DEBUG: {
 			// TODO: Send state of kalman filter and controller
 
+			/*
 			char ctrl_hex[2 * sizeof(CTRL) + 2];
 			char *ctrl_data = (void*) &CTRL;
 			for (int i = 0; i < sizeof(CTRL); i++) {
 				write_hex(&ctrl_hex[2*i], ctrl_data[i]);
 			}
 			ctrl_hex[2 * sizeof(CTRL)] = 0;
+			*/
+
+			bool dead_mans = dead_mans_switch_activated();
 
 			int dbglen = sprintf(
 				dbgbuf,
-				"qsz = %4d n_proc=%4d/s. t = %8lu ms. I_w = %6ld mA, erpm = %8ld, "
+				"msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms. I_w = %6ld mA, erpm = %8ld, "
 				"ax = %8ld, ay = %8ld, az = %8ld, "
 				"gx = %7.5f rad/s, "
 				"theta = %8ld mrad, theta_d = %8ld mrad, x = %8ld, x_d = %8ld"
 				//"I (filtered) = %6ld mA, I (out) = %6ld mA"
-				"\r\n"
-				,
-				queue_nelem(&MAIN_QUEUE), (dbg_values.msgs_since_last * 1000 / DUMP_FREQ), (int32_t) (us_since_startup() / 1000), (int32_t) (1000 * dbg_values.current_w), (int32_t) (CTRL.last_esc.erpm),
+				"\r\n",
+				dbg_values.msg_idx, dbg_values.n_time_steps_since_last, queue_nelem(&MAIN_QUEUE), dead_mans ? "on" : "off", (int32_t) (us_since_startup() / 1000), (int32_t) (1000 * dbg_values.current_w), (int32_t) (CTRL.last_esc.erpm),
 				(int32_t) (1000 * CTRL.last_acc.ax), (int32_t) (1000 * CTRL.last_acc.ay), (int32_t) (1000 * CTRL.last_acc.az),
 				CTRL.last_acc.gx,
 				(int32_t) (1000 * CTRL.st.x1), (int32_t) (1000 * CTRL.st.x2), (int32_t) (1000 * CTRL.st.x3), (int32_t) (1000 * CTRL.st.x4)
 				//(int32_t) (1000 * vcr.input_filtered), (int32_t) (1000 * dbg_values.current_o)
 			);
+			dbg_values.msg_idx++;
+			dbg_values.n_time_steps_since_last = 0;
 
-			dbg_values.msgs_since_last = 0;
 
 			HAL_UART_Transmit_IT(&huart3, (uint8_t *) dbgbuf, dbglen);
 			// Use below if you are debug printing other things
@@ -447,7 +475,13 @@ int main(void)
 
 			dbg_values.dt = dt;
 
+#if MOTOR_DIRECTION == MOTOR_CW
 			float wheel_rpm = CTRL.last_esc.erpm / 22.9;
+#elif MOTOR_DIRECTION == MOTOR_CCW
+			float wheel_rpm = CTRL.last_esc.erpm / -22.9;
+#else
+#error "Invalid motor direction"
+#endif
 
 			CTRL.q_t.m11 = Q_T * dt*dt*dt*dt / 4;
 			CTRL.q_t.m12 = Q_T * dt*dt*dt / 2;
@@ -462,7 +496,13 @@ int main(void)
 			kalman_filter_predict(0, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w);
 
 			float tau = LookaheadSpeedRegulator(0, CTRL.st.x1, CTRL.st.x2, CTRL.st.x4, dt);
+#if MOTOR_DIRECTION == MOTOR_CW
 			float current_wanted = tau / 0.59; // see notes
+#elif MOTOR_DIRECTION == MOTOR_CCW
+			float current_wanted = tau / -0.59; // see notes
+#else
+#error "Invalid motor direction"
+#endif
 			//current_wanted *= 0.7;
 
 			dbg_values.current_w = current_wanted;
@@ -481,6 +521,8 @@ int main(void)
 			dbg_values.current_o = current_out;
 
 			vesc_set_current(current_out);
+
+			dbg_values.n_time_steps_since_last++;
 
 			break;
 		}
@@ -523,7 +565,16 @@ int main(void)
 			HAL_UART_Transmit(&huart3, (uint8_t *) dbgbuf, dbglen, 10000);
 #endif
 			AccData acc_data = get_accelerometer_data(&hi2c2, MPU_ADDR);
-			queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_GOT_ACC_DATA, .acc_data = acc_data });
+			if (acc_data.success == false) {
+				int dbglen = sprintf(
+					dbgbuf,
+					"[ACC I2C FAIL]\r\n"
+				);
+
+				HAL_UART_Transmit(&huart3, (uint8_t *) dbgbuf, dbglen, 10000);
+			} else {
+				queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_GOT_ACC_DATA, .acc_data = acc_data });
+			}
 
 			break;
 
@@ -808,9 +859,9 @@ static void MX_TIM4_Init(void)
 
   /* USER CODE END TIM4_Init 1 */
   htim4.Instance = TIM4;
-  htim4.Init.Prescaler = 9600;
+  htim4.Init.Prescaler = 96;
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim4.Init.Period = 10;
+  htim4.Init.Period = 100;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
@@ -956,9 +1007,9 @@ static void MX_USART3_UART_Init(void)
   /* USER CODE END USART3_Init 1 */
   huart3.Instance = USART3;
   huart3.Init.BaudRate = 230400;
-  huart3.Init.WordLength = UART_WORDLENGTH_9B;
-  huart3.Init.StopBits = UART_STOPBITS_2;
-  huart3.Init.Parity = UART_PARITY_EVEN;
+  huart3.Init.WordLength = UART_WORDLENGTH_8B;
+  huart3.Init.StopBits = UART_STOPBITS_1;
+  huart3.Init.Parity = UART_PARITY_NONE;
   huart3.Init.Mode = UART_MODE_TX_RX;
   huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
   huart3.Init.OverSampling = UART_OVERSAMPLING_16;

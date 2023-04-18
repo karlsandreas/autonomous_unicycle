@@ -17,6 +17,8 @@
 #define CLEAR_MESSAGES false
 
 typedef struct {
+	bool success;
+
 	uint8_t acc_id;
 	float gx, gy, gz;
 	float ax, ay, az;
