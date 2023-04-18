@@ -9,6 +9,7 @@ from regulator import Regulator, LookaheadSpeedRegulator, NullRegulator
 from kalman import KalmanFilter
 import initials as init
 from copy import deepcopy
+from parser import DebugParser
 
 #Imports for c code
 from ctypes import *
@@ -75,9 +76,16 @@ class Plotter:
         reg: Regulator,
         kalman_filter: KalmanFilter,
         kalman_filter_wheel: KalmanFilter,
-        simtime: float, #Seconds of simultaion [S]
-        dt: float) -> None: #Delta time in [S]
+        dt = None, #Delta time in [S]
+        itterations = None,
+        simtime = None): #Seconds of simultaion [S]
         
+        if itterations != None:
+            self.itterations = itterations
+        else:
+            self.itterations = int(simtime/dt)
+            self.dt = dt
+
         self.reg_version = "Python" #C
         self.filter_version = "C" #C
 
@@ -107,8 +115,6 @@ class Plotter:
         self.sensor_var[1] = random.gauss(0, var_z)
         self.sensor_var[2] = random.gauss(0, self.var_angle_d)
 
-        self.iterations = int(simtime/dt)
-        self.dt = dt
 
         self.angle = PlotValuesForOneGraph(self.iterations,["Angle clean", "Angle kalman"])
         self.angle_d = PlotValuesForOneGraph(self.iterations,["Angle_d clean","Angle_d noise", "Angle_d kalman"])
@@ -238,11 +244,16 @@ class Plotter:
         
     #Loop the step function i iterations, 
     def run(self) -> None:
-
+        if self.resim:
+            
         if self.saved_data:
-            saved_states = self.load_saved_states("sensor_data/sim_all_states_22_03_dt_0_001.npy")
+            #saved_states_2 = self.load_saved_states("sensor_data/sim_all_states_22_03_dt_0_001.npy")
+            p = DebugParser("sensor_data/testrun_pitch_20230324/run-1.txt")
+            p.parse()
+            saved_states = p.get_state_dict()
+            self.iterations = saved_states["dt"].size
             for i in range(0, self.iterations): 
-                self.step_saved_states(self.dt, i, saved_states)
+                self.step_saved_states(saved_states["dt"][i], i, saved_states)
         else:
             for i in range(0, int(self.iterations)):
                 if (i > self.iterations/2):

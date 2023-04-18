@@ -7,10 +7,10 @@ float cov12_angle = 0.0;
 float cov21_angle = 10.0;
 float cov22_angle = 0.0;
 
-float cov33_wheel = 10.0;
+float cov33_wheel = 100.0;
 float cov34_wheel = 0.0;
 float cov43_wheel = 0.0;
-float cov44_wheel = 10.0;
+float cov44_wheel = 100.0;
 
 void kalman_filter_predict(float input, float dt, States *s, Matrix *q_t, Matrix *q_w)
 {
