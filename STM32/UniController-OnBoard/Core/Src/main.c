@@ -59,12 +59,19 @@ TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;
 
 UART_HandleTypeDef huart2;
+UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
 
 #define TIM_REALTIME htim1
 #define TIM_SCHEDULER htim2
+
 #define UART_VESC_PITCH huart2
+#define UART_IRQ_VESC_PITCH USART2_IRQn
+
+#define UART_VESC_ROLL huart3
+#define UART_IRQ_VESC_ROLL USART3_IRQn
+
 // #define UART_VESC_ROLL huart3
 #define I2C_MPU hi2c2
 
@@ -79,6 +86,7 @@ static void MX_USART2_UART_Init(void);
 static void MX_I2C2_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_TIM2_Init(void);
+static void MX_USART3_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
 void dead_mans_switch_update_led();
@@ -89,6 +97,9 @@ void dead_mans_switch_update_led();
 /* USER CODE BEGIN 0 */
 
 static Queue MAIN_QUEUE;
+
+static VESC vesc_pitch;
+static VESC vesc_roll;
 
 uint32_t ms_counter;
 
@@ -147,19 +158,28 @@ uint32_t get_and_reset_dt_us() {
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
 	if (huart == &UART_VESC_PITCH) {
-		vesc_uart_cb_txcplt(huart);
+		vesc_uart_cb_txcplt(&vesc_pitch, huart);
+	}
+	if (huart == &UART_VESC_ROLL) {
+		vesc_uart_cb_txcplt(&vesc_roll, huart);
 	}
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 	if (huart == &UART_VESC_PITCH) {
-		vesc_uart_cb_rxcplt(huart);
+		vesc_uart_cb_rxcplt(&vesc_pitch, huart);
+	}
+	if (huart == &UART_VESC_ROLL) {
+		vesc_uart_cb_rxcplt(&vesc_roll, huart);
 	}
 }
 
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart) {
 	if (huart == &UART_VESC_PITCH) {
-		vesc_uart_cb_rxcplt(huart);
+		vesc_uart_cb_rxcplt(&vesc_pitch, huart);
+	}
+	if (huart == &UART_VESC_ROLL) {
+		vesc_uart_cb_rxcplt(&vesc_roll, huart);
 	}
 }
 
@@ -308,6 +328,7 @@ int main(void)
   MX_USB_DEVICE_Init();
   MX_TIM1_Init();
   MX_TIM2_Init();
+  MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
 
 	HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, SET);
@@ -330,8 +351,8 @@ int main(void)
 	HAL_TIM_Base_Start_IT(&TIM_REALTIME);
 	HAL_TIM_Base_Start_IT(&TIM_SCHEDULER);
 
-
-	vesc_init(&UART_VESC_PITCH, &MAIN_QUEUE);
+	vesc_init(&vesc_pitch, &UART_VESC_PITCH, UART_IRQ_VESC_PITCH, &MAIN_QUEUE);
+	vesc_init(&vesc_roll, &UART_VESC_ROLL, UART_IRQ_VESC_ROLL, &MAIN_QUEUE);
 
 	setup_mpu(&I2C_MPU, MPU_ADDR);
 
@@ -481,7 +502,10 @@ int main(void)
 			}
 			dbg_values.current_o = current_out;
 
-			vesc_set_current(current_out);
+			vesc_set_current(&vesc_pitch, current_out);
+
+			// TODO: Roll regulator
+			vesc_set_current(&vesc_roll, 10 * CTRL.last_acc.gy);
 
 			dbg_values.n_time_steps_since_last++;
 
@@ -498,7 +522,8 @@ int main(void)
 			CDC_Transmit_FS((uint8_t *) dbgbuf, dbglen);
 #endif
 
-			vesc_transmit_and_recv();
+			vesc_transmit_and_recv(&vesc_pitch);
+			vesc_transmit_and_recv(&vesc_roll);
 			break;
 		}
 
@@ -512,7 +537,8 @@ int main(void)
 			CDC_Transmit_FS((uint8_t *) dbgbuf, dbglen);
 #endif
 
-			vesc_got_data();
+			vesc_got_data(&vesc_pitch);
+			vesc_got_data(&vesc_roll);
 			break;
 		}
 
@@ -551,7 +577,8 @@ int main(void)
 			CDC_Transmit_FS((uint8_t *) dbgbuf, dbglen);
 #endif
 
-			vesc_request_data();
+			vesc_request_data(&vesc_pitch);
+			vesc_request_data(&vesc_roll);
 
 			break;
 		}
@@ -790,6 +817,39 @@ static void MX_USART2_UART_Init(void)
   /* USER CODE BEGIN USART2_Init 2 */
 
   /* USER CODE END USART2_Init 2 */
+
+}
+
+/**
+  * @brief USART3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART3_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART3_Init 0 */
+
+  /* USER CODE END USART3_Init 0 */
+
+  /* USER CODE BEGIN USART3_Init 1 */
+
+  /* USER CODE END USART3_Init 1 */
+  huart3.Instance = USART3;
+  huart3.Init.BaudRate = 115200;
+  huart3.Init.WordLength = UART_WORDLENGTH_8B;
+  huart3.Init.StopBits = UART_STOPBITS_1;
+  huart3.Init.Parity = UART_PARITY_NONE;
+  huart3.Init.Mode = UART_MODE_TX_RX;
+  huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart3.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART3_Init 2 */
+
+  /* USER CODE END USART3_Init 2 */
 
 }
 

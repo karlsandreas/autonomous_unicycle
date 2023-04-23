@@ -90,26 +90,9 @@ const uint16_t crc16_tab[] = { 0x0000, 0x1021, 0x2042, 0x3063, 0x4084,
 		0x0cc1, 0xef1f, 0xff3e, 0xcf5d, 0xdf7c, 0xaf9b, 0xbfba, 0x8fd9, 0x9ff8,
 		0x6e17, 0x7e36, 0x4e55, 0x5e74, 0x2e93, 0x3eb2, 0x0ed1, 0x1ef0 };
 
-#define RX_DATA_LEN 1000
-#define UART_RXSZ 128
-
 //#define DEBUG_COMM 1
 //#define DEBUG_VERBOSE 1
 
-static struct {
-	uint8_t tx_data[1024];
-	size_t current_offset;
-	volatile bool tx_waiting;
-
-	uint8_t rx_buf[UART_RXSZ];
-
-	UART_HandleTypeDef *vesc_uart;
-
-	Queue *q;
-
-	volatile uint8_t rx_data[RX_DATA_LEN];
-	volatile size_t rx_offset;
-} VESC;
 
 static inline uint8_t read_u8(uint8_t **data) {
 	uint8_t val = **data;
@@ -144,54 +127,54 @@ static inline float read_f32(uint8_t **data, uint32_t scale) {
 }
 
 
-void vesc_init(UART_HandleTypeDef *vesc_uart, Queue *q) {
-	VESC.vesc_uart = vesc_uart;
+void vesc_init(VESC *vesc, UART_HandleTypeDef *vesc_uart, IRQn_Type uart_irq, Queue *q) {
+	vesc->vesc_uart = vesc_uart;
+	vesc->uart_irq = uart_irq;
 
-	VESC.tx_waiting = 0;
+	vesc->tx_waiting = 0;
+	vesc->rx_queued = false;
 
-	VESC.q = q;
+	vesc->q = q;
 
-	vesc_start_recv();
+	vesc_start_recv(vesc);
 }
 
-void vesc_uart_cb_txcplt(UART_HandleTypeDef *huart) {
+void vesc_uart_cb_txcplt(VESC *vesc, UART_HandleTypeDef *huart) {
 
 #ifdef DEBUG_VERBOSE
 	char *msg = "[TX DONE]\r\n";
 	CDC_Transmit_FS((uint8_t *) msg, strlen(msg));
 #endif
 
-	VESC.tx_waiting = false;
+	vesc->tx_waiting = false;
 }
 
-static volatile bool rx_queued = false;
-
-void vesc_start_recv() {
-	HAL_UART_Receive_IT(VESC.vesc_uart, VESC.rx_buf, UART_RXSZ);
+void vesc_start_recv(VESC *vesc) {
+	HAL_UART_Receive_IT(vesc->vesc_uart, vesc->rx_buf, UART_RXSZ);
 }
 
-void vesc_uart_cb_rxcplt(UART_HandleTypeDef *_huart) {
-	if (VESC.rx_offset + UART_RXSZ < RX_DATA_LEN) {
+void vesc_uart_cb_rxcplt(VESC *vesc, UART_HandleTypeDef *_huart) {
+	if (vesc->rx_offset + UART_RXSZ < RX_DATA_LEN) {
 		// TODO: handle if we are out of bounds?
 		// memcpy(VESC.rx_data + VESC.rx_offset, VESC.rx_buf, UART_RXSZ);
 		for (int i = 0; i < UART_RXSZ; i++) {
-			VESC.rx_data[VESC.rx_offset + i] = VESC.rx_buf[i];
+			vesc->rx_data[vesc->rx_offset + i] = vesc->rx_buf[i];
 		}
-		VESC.rx_offset += UART_RXSZ;
+		vesc->rx_offset += UART_RXSZ;
 	}
 
-	if (!rx_queued) {
-		queue_put(VESC.q, (Message) { .ty = MSG_VESC_UART_GOT_DATA });
-		rx_queued = true;
+	if (!vesc->rx_queued) {
+		queue_put(vesc->q, (Message) { .ty = MSG_VESC_UART_GOT_DATA });
+		vesc->rx_queued = true;
 	}
 
-	vesc_start_recv();
+	vesc_start_recv(vesc);
 }
 
-void vesc_got_data() {
-	rx_queued = false;
+void vesc_got_data(VESC *vesc) {
+	vesc->rx_queued = false;
 
-	if (VESC.rx_offset == 0) {
+	if (vesc->rx_offset == 0) {
 #ifdef DEBUG_VERBOSE
 		char *no_data = "<RX: NO DATA>\r\n";
 		CDC_Transmit_FS((uint8_t*) no_data, strlen(no_data));
@@ -202,16 +185,16 @@ void vesc_got_data() {
 #ifdef DEBUG_COMM
 
 	char hexbuf[RX_DATA_LEN * 2];
-	for (int i = 0; i < VESC.rx_offset; i++) {
-		write_hex(hexbuf + 2 * i, VESC.rx_data[i]);
+	for (int i = 0; i < vesc->rx_offset; i++) {
+		write_hex(hexbuf + 2 * i, vesc->rx_data[i]);
 	}
-	hexbuf[2 * VESC.rx_offset] = 0;
+	hexbuf[2 * vesc->rx_offset] = 0;
 
 	char dbgbuf[RX_DATA_LEN * 2 + 100];
 	int dbglen = snprintf(
 		dbgbuf, sizeof(dbgbuf),
 		"[RX %d: %s]\r\n",
-		VESC.rx_offset, hexbuf
+		vesc->rx_offset, hexbuf
 	);
 
 	CDC_Transmit_FS((uint8_t *) dbgbuf, dbglen);
@@ -219,15 +202,15 @@ void vesc_got_data() {
 
 	// parse message
 	size_t offset = 0;
-	while (offset < VESC.rx_offset) {
-		if (VESC.rx_data[offset] != 2) {
+	while (offset < vesc->rx_offset) {
+		if (vesc->rx_data[offset] != 2) {
 			// Invalid message found!
 
 #ifdef DEBUG_COMM
 			int dbglen = snprintf(
 				dbgbuf, sizeof(dbgbuf),
 				"<PARSE ERR @%d/%d: Invalid header>\r\n",
-				offset, VESC.rx_offset
+				offset, vesc->rx_offset
 			);
 
 			CDC_Transmit_FS((uint8_t *) dbgbuf, dbglen);
@@ -236,15 +219,15 @@ void vesc_got_data() {
 			continue;
 		}
 
-		uint8_t msg_size = VESC.rx_data[offset + 1];
+		uint8_t msg_size = vesc->rx_data[offset + 1];
 
-		if (offset + msg_size + 5 > VESC.rx_offset) {
+		if (offset + msg_size + 5 > vesc->rx_offset) {
 #ifdef DEBUG_COMM
 
 			int dbglen = snprintf(
 				dbgbuf, sizeof(dbgbuf),
 				"<PARSE STOP @%d/%d: len %d too long>\r\n",
-				offset, VESC.rx_offset, msg_size
+				offset, vesc->rx_offset, msg_size
 			);
 
 			CDC_Transmit_FS((uint8_t *) dbgbuf, dbglen);
@@ -253,13 +236,13 @@ void vesc_got_data() {
 			break;
 		}
 
-		if (VESC.rx_data[offset + msg_size + 4] != 0x3) {
+		if (vesc->rx_data[offset + msg_size + 4] != 0x3) {
 
 #ifdef DEBUG_COMM
 			int dbglen = snprintf(
 				dbgbuf, sizeof(dbgbuf),
 				"<PARSE ERR @%d/%d: Invalid trailer>\r\n",
-				offset, VESC.rx_offset
+				offset, vesc->rx_offset
 			);
 
 			CDC_Transmit_FS((uint8_t *) dbgbuf, dbglen);
@@ -274,20 +257,20 @@ void vesc_got_data() {
 
 #ifdef DEBUG_COMM
 		for (int i = 0; i < msg_size; i++) {
-			write_hex(hexbuf + 2 * i, VESC.rx_data[offset + 2 + i]);
+			write_hex(hexbuf + 2 * i, vesc->rx_data[offset + 2 + i]);
 		}
 		hexbuf[2 * msg_size] = 0;
 
 		int dbglen = snprintf(
 			dbgbuf, sizeof(dbgbuf),
 			"<PARSE DATA @%d/%d: %d bytes: %s>\r\n",
-			offset, VESC.rx_offset, msg_size, hexbuf
+			offset, vesc->rx_offset, msg_size, hexbuf
 		);
 
 		CDC_Transmit_FS((uint8_t *) dbgbuf, dbglen);
 #endif
 
-		uint8_t *packet = &VESC.rx_data[offset + 2];
+		uint8_t *packet = &vesc->rx_data[offset + 2];
 
 		uint8_t msg_type = packet[0];
 		switch (msg_type) {
@@ -310,7 +293,7 @@ void vesc_got_data() {
 
 			Message msg = (Message) { .ty = MSG_GOT_ESC_DATA, .esc_data = { .temp_mos = temp_mos, .erpm = rpm, .current_motor = current_motor } };
 
-			queue_put(VESC.q, msg);
+			queue_put(vesc->q, msg);
 #ifdef DEBUG_COMM
 			int dbglen = snprintf(
 				dbgbuf, sizeof(dbgbuf),
@@ -332,7 +315,7 @@ void vesc_got_data() {
 			int dbglen = snprintf(
 				dbgbuf, sizeof(dbgbuf),
 				"<PARSE PACKET %d/%d: UNKNOWN MESSAGE TYPE 0x%02x>\r\n",
-				offset, VESC.rx_offset, msg_type
+				offset, vesc->rx_offset, msg_type
 			);
 
 			CDC_Transmit_FS((uint8_t *) dbgbuf, dbglen);
@@ -344,13 +327,13 @@ void vesc_got_data() {
 		offset += 5 + msg_size;
 	}
 
-	HAL_NVIC_DisableIRQ(USART2_IRQn);
+	HAL_NVIC_DisableIRQ(vesc->uart_irq);
 
 	// Go back
-	memmove((void*) VESC.rx_data, (void*) &VESC.rx_data[offset], VESC.rx_offset - offset);
-	VESC.rx_offset = VESC.rx_offset - offset;
+	memmove((void*) vesc->rx_data, (void*) &vesc->rx_data[offset], vesc->rx_offset - offset);
+	vesc->rx_offset = vesc->rx_offset - offset;
 
-	HAL_NVIC_EnableIRQ(USART2_IRQn);
+	HAL_NVIC_EnableIRQ(vesc->uart_irq);
 
 #ifdef DEBUG_VERBOSE
 	dbglen = snprintf(
@@ -363,38 +346,38 @@ void vesc_got_data() {
 }
 
 // If response_size == 0, then we don't expected a response.
-void vesc_queue_packet(uint8_t *content, size_t len, size_t response_size) {
+void vesc_queue_packet(VESC *vesc, uint8_t *content, size_t len, size_t response_size) {
 	if (len > 256) {
 		// TODO: Not yet implemented
 		return;
 	}
 
-	VESC.tx_data[VESC.current_offset++] = 0x2; // short (<256 bytes) packet
-	VESC.tx_data[VESC.current_offset++] = (uint8_t) (len & 0xff);
+	vesc->tx_data[vesc->current_offset++] = 0x2; // short (<256 bytes) packet
+	vesc->tx_data[vesc->current_offset++] = (uint8_t) (len & 0xff);
 
 	uint16_t crc16 = 0;
 	for (size_t i = 0; i < len; i++) {
-		VESC.tx_data[VESC.current_offset++] = content[i];
+		vesc->tx_data[vesc->current_offset++] = content[i];
 		crc16 = (crc16 << 8) ^ crc16_tab[0xff & ((crc16 >> 8) ^ content[i])];
 	}
-	VESC.tx_data[VESC.current_offset++] = (uint8_t) ((crc16 >> 8) & 0xff);
-	VESC.tx_data[VESC.current_offset++] = (uint8_t) (crc16 & 0xff);
-	VESC.tx_data[VESC.current_offset++] = 0x3;
+	vesc->tx_data[vesc->current_offset++] = (uint8_t) ((crc16 >> 8) & 0xff);
+	vesc->tx_data[vesc->current_offset++] = (uint8_t) (crc16 & 0xff);
+	vesc->tx_data[vesc->current_offset++] = 0x3;
 
 }
 
-void vesc_transmit_and_recv() {
-	if (VESC.current_offset == 0) {
+void vesc_transmit_and_recv(VESC *vesc) {
+	if (vesc->current_offset == 0) {
 		return;
 	}
-	if (VESC.tx_waiting) {
+	if (vesc->tx_waiting) {
 
 		char *msg = "BLOCK_TX_WAITING\r\n";
 		CDC_Transmit_FS((uint8_t*) msg, strlen(msg));
 
 		HAL_GPIO_WritePin(LDERROR_GPIO_Port, LDERROR_Pin, GPIO_PIN_SET);
 
-		while (VESC.tx_waiting) {
+		while (vesc->tx_waiting) {
 			__asm("nop");
 		}
 		HAL_GPIO_WritePin(LDERROR_GPIO_Port, LDERROR_Pin, GPIO_PIN_RESET);
@@ -405,19 +388,19 @@ void vesc_transmit_and_recv() {
 	int dbglen = snprintf(
 		dbgbuf, sizeof(dbgbuf),
 		"[TX %d]\r\n",
-		VESC.current_offset
+		vesc->current_offset
 	);
 	CDC_Transmit_FS((uint8_t *) dbgbuf, dbglen);
 #endif
 
-	VESC.tx_waiting = true;
-	HAL_UART_Transmit_IT(VESC.vesc_uart, VESC.tx_data, VESC.current_offset);
-	VESC.current_offset = 0;
+	vesc->tx_waiting = true;
+	HAL_UART_Transmit_IT(vesc->vesc_uart, vesc->tx_data, vesc->current_offset);
+	vesc->current_offset = 0;
 
-	vesc_start_recv();
+	vesc_start_recv(vesc);
 }
 
-void vesc_set_current(float current) {
+void vesc_set_current(VESC *vesc, float current) {
 	if (!dead_mans_switch_activated()) {
 		current = 0.0;
 	}
@@ -436,10 +419,10 @@ void vesc_set_current(float current) {
 	CDC_Transmit_FS((uint8_t*) msg, strlen(msg));
 #endif
 
-	vesc_queue_packet(buf, 5, 0);
+	vesc_queue_packet(vesc, buf, 5, 0);
 }
 
-void vesc_request_data() {
+void vesc_request_data(VESC *vesc) {
 	uint8_t buf[1];
 	buf[0] = COMM_GET_VALUES;
 
@@ -448,5 +431,5 @@ void vesc_request_data() {
 	CDC_Transmit_FS((uint8_t*) msg, strlen(msg));
 #endif
 
-	vesc_queue_packet(buf, 1, 0x29);
+	vesc_queue_packet(vesc, buf, 1, 0x29);
 }
