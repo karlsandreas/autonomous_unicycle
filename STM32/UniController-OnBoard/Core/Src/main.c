@@ -419,14 +419,14 @@ int main(void)
 			int dbglen = sprintf(
 				dbgbuf,
 				"msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms. I_w = %6ld mA, erpm = %8ld, "
-				"ax = %8ld, ay = %8ld, az = %8ld, "
-				"gx = %7.5f rad/s, "
+				//"ax = %8ld, ay = %8ld, az = %8ld, "
+				//"gx = %7.5f rad/s, gy = %7.5f rad/s, gz = %7.5f rad/s, "
 				"theta = %8ld mrad, theta_d = %8ld mrad, x = %8ld, x_d = %8ld"
 				//"I (filtered) = %6ld mA, I (out) = %6ld mA"
 				"\r\n",
 				dbg_values.msg_idx, dbg_values.n_time_steps_since_last, queue_nelem(&MAIN_QUEUE), dead_mans ? "on" : "off", (int32_t) (us_since_startup() / 1000), (int32_t) (1000 * dbg_values.current_w), (int32_t) (CTRL.last_esc.erpm),
-				(int32_t) (1000 * CTRL.last_acc.ax), (int32_t) (1000 * CTRL.last_acc.ay), (int32_t) (1000 * CTRL.last_acc.az),
-				CTRL.last_acc.gx,
+				//(int32_t) (1000 * CTRL.last_acc.ax), (int32_t) (1000 * CTRL.last_acc.ay), (int32_t) (1000 * CTRL.last_acc.az),
+				//CTRL.last_acc.gx, CTRL.last_acc.gy, CTRL.last_acc.gz,
 				(int32_t) (1000 * CTRL.st.x1), (int32_t) (1000 * CTRL.st.x2), (int32_t) (1000 * CTRL.st.x3), (int32_t) (1000 * CTRL.st.x4)
 				//(int32_t) (1000 * vcr.input_filtered), (int32_t) (1000 * dbg_values.current_o)
 			);
