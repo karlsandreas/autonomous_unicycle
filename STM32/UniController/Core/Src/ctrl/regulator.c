@@ -31,15 +31,6 @@ float LookaheadSpeedRegulator(float setpoint_x_d, float theta, float theta_d, fl
     return tau;
 }
 
-
-
-
-
-
-
-
-
-
 float kp = 0.0;
 float ki = 0.0;
 float kd = 0.0;
