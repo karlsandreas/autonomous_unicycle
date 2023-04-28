@@ -1,4 +1,4 @@
-from sim import SimulationState, SimulationParameters, ControlSignals, Simulator
+from sim import SimulationState_Roll, SimulationState_Pitch, SimulationParameters, ControlSignals, Simulator_Pitch, Simulator_Roll
 from regulator import Regulator, LookaheadSpeedRegulator, NullRegulator
 from pidcontroller import PIDController
 
@@ -8,7 +8,7 @@ from kalman import KalmanFilter
 import numpy as np
 
 
-INIT_STATE = SimulationState(
+INIT_STATE_P = SimulationState_Pitch(
     wheel_position = 0,
     wheel_position_d = 0,
     top_angle = 0,
@@ -16,15 +16,36 @@ INIT_STATE = SimulationState(
     motor_torque = 0,
 )
 
+INIT_STATE_R = SimulationState_Roll(
+    top_angle= 0.0,
+    top_angle_d= 0.0,
+    reaction_wheel_angle= 0.0,
+    reaction_wheel_angle_d= 0.0,
+    motor_torque= 0.0,   
+)
+
 DEFAULT_PARAMETERS = SimulationParameters(
-    wheel_rad = 0.28,
-    wheel_mass = 9.292,
-    top_height = 0.25,
-    top_mass = 3.0,
-    motor_reaction_speed = 0.9,
+    chassi_mass= 3.0,
+    pitch_wheel_mass= 9.292,
+    roll_wheel_mass= 4.0,
+    yaw_wheel_mass= 0.0,
+    
+    pitch_wheel_rad= 0.28,
+    roll_wheel_rad= 0.2,
+    yaw_wheel_rad= 0.0,
+
+    chassi_mc_height= 0.25,
+    roll_wheel_height= 1.0,
+    yaw_wheel_height= 0.0,
+    
+    motor_reaction_speed = 0.95,
     sensor_position= 0.6,
-    wheel_inertia= 0.114,
-    top_inertia=0.125 + 5.0*0.5**2,
+
+    total_intertia_roll=1+ 0.125 + 5.0*0.5**2,
+    pitch_wheel_inertia= 0.114,
+    roll_wheel_inertia= 0.020,
+    yaw_wheel_intertia= 0.0,  
+    chassi_inertia=0.125 + 5.0*0.5**2,
 )
 
 # DEFAULT_REG = NullRegulator(params=DEFAULT_PARAMETERS)
@@ -34,9 +55,9 @@ DEFAULT_REG = LookaheadSpeedRegulator(
 )
 
 DEFAULT_REG_PID = PIDController(
-    kp = 23.0,
+    kp = 0.4,
     ki = 0.0,
-    kd = 2.0
+    kd = 0.0
 )
 
 if __name__ == "__main__":
@@ -63,11 +84,11 @@ F_w = np.array([[1, dt],
 #Observation matrix
 #H = np.array([0, 1, DEFAULT_PARAMETERS.wheel_rad*np.pi/30]).reshape(1,3)
 H = np.array([[0,1,0,0],
-              [0,0,0,(1/DEFAULT_PARAMETERS.wheel_rad)*30/np.pi]])
+              [0,0,0,(1/DEFAULT_PARAMETERS.pitch_wheel_rad)*30/np.pi]])
 
 
 H_t = np.array([0,1]).reshape(1,2)  
-H_w = np.array([0,(1/DEFAULT_PARAMETERS.wheel_rad)*30/np.pi]).reshape(1,2)  
+H_w = np.array([0,(1/DEFAULT_PARAMETERS.pitch_wheel_rad)*30/np.pi]).reshape(1,2)  
 
 
 
@@ -106,8 +127,8 @@ R_s = DEFAULT_PARAMETERS.sensor_position
 #G = np.array([(0.5*dt**2)*R,dt*R]).reshape(2,1)
 
 #Inital states for kalman filter
-x0 = np.array([INIT_STATE.top_angle,
-               INIT_STATE.top_angle_d]).reshape(2,1)
+x0 = np.array([INIT_STATE_P.top_angle,
+               INIT_STATE_P.top_angle_d]).reshape(2,1)
 
 P = 1000 * np.eye(4,4)
 
@@ -117,15 +138,15 @@ P_t = np.array([[100, 0],
 P_w = np.array([[100,0],
                 [0,100]])
 
-E = np.array([[DEFAULT_PARAMETERS.I_w + (DEFAULT_PARAMETERS.wheel_mass + DEFAULT_PARAMETERS.top_mass)*DEFAULT_PARAMETERS.wheel_rad**2, DEFAULT_PARAMETERS.top_mass * DEFAULT_PARAMETERS.wheel_rad * DEFAULT_PARAMETERS.top_height**2],
-             [DEFAULT_PARAMETERS.top_mass * DEFAULT_PARAMETERS.wheel_rad * DEFAULT_PARAMETERS.top_height**2, DEFAULT_PARAMETERS.I_c + DEFAULT_PARAMETERS.top_mass*DEFAULT_PARAMETERS.top_height**2]])
+E = np.array([[DEFAULT_PARAMETERS.I_hp + (DEFAULT_PARAMETERS.pitch_wheel_mass + DEFAULT_PARAMETERS.chassi_mass)*DEFAULT_PARAMETERS.pitch_wheel_rad**2, DEFAULT_PARAMETERS.chassi_mass * DEFAULT_PARAMETERS.pitch_wheel_rad * DEFAULT_PARAMETERS.chassi_mc_height**2],
+             [DEFAULT_PARAMETERS.chassi_mass * DEFAULT_PARAMETERS.pitch_wheel_rad * DEFAULT_PARAMETERS.chassi_mc_height**2, DEFAULT_PARAMETERS.I_cp + DEFAULT_PARAMETERS.chassi_mass*DEFAULT_PARAMETERS.chassi_mc_height**2]])
 J = np.array([[1],
               [-1]])
 
 K = np.dot(-np.linalg.inv(E),J)
 
 #Control input
-B = np.array([0,K[0][0],0,K[1][0]/DEFAULT_PARAMETERS.wheel_rad]).reshape(4,1)
+B = np.array([0,K[0][0],0,K[1][0]/DEFAULT_PARAMETERS.pitch_wheel_rad]).reshape(4,1)
 
 
 
