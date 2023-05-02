@@ -16,6 +16,8 @@ from sim import SimulationState_Pitch, SimulationState_Roll, SimulationState, Si
 from regulator import Regulator, LookaheadSpeedRegulator, NullRegulator
 from kalman import KalmanFilter
 
+from resim import Resimulator_Pitch
+
 from fmt import fmt_unit
 import initials as init
 
@@ -307,24 +309,36 @@ class Render:
             pygame.display.flip()
             frames_last_second.append(time.time())
 
-    
-            dt = time.time() - last_t
-            while dt > MIN_DT:
-                tick_start = time.time()
-                self.step(MIN_DT)
+            if isinstance(self.sim_p, Resimulator_Pitch):
+                dt = self.sim_p.get_dt()
+                if dt < 0:
+                    dt = 0.01
+                time.sleep(dt)
+                self.step(dt)
+
+                frames_last_second = [t for t in frames_last_second if t > time.time() - 1]
+                self.current_fps = len(frames_last_second)
+                tick_times.append(dt)
+
+            else: 
+                dt = time.time() - last_t
+
+                while dt > MIN_DT:
+                    tick_start = time.time()
+                    self.step(MIN_DT)
+                    self.step_reg_filter_pitch(MIN_DT)
+                    self.step_reg_filter_roll(MIN_DT)
+                    tick_times.append(time.time() - tick_start)
+
+                    dt -= MIN_DT
+                self.step(dt)
                 self.step_reg_filter_pitch(MIN_DT)
                 self.step_reg_filter_roll(MIN_DT)
-                tick_times.append(time.time() - tick_start)
 
-                dt -= MIN_DT
-            self.step(dt)
-            self.step_reg_filter_pitch(MIN_DT)
-            self.step_reg_filter_roll(MIN_DT)
+                last_t = time.time()
 
-            last_t = time.time()
-
-            frames_last_second = [t for t in frames_last_second if t > time.time() - 1]
-            self.current_fps = len(frames_last_second)
+                frames_last_second = [t for t in frames_last_second if t > time.time() - 1]
+                self.current_fps = len(frames_last_second)
             tick_times = tick_times[-1000:]
             self.avg_tick_time = sum(tick_times) / len(tick_times)
 
@@ -796,9 +810,24 @@ class Render:
 
 
 pygame.init()
-pygame.font.init()
+pygame.font.init()  
 screen = pygame.display.set_mode((1900, 1000), pygame.RESIZABLE, vsync=1)
 pygame.display.set_caption("Autonomous Unicycle")
+
+
+
+
+r_resim = Render(
+    screen,
+    Simulator_Roll(DEFAULT_PARAMETERS),
+    Resimulator_Pitch("/home/andreas/School-local/Kandidatarbete/autonomous_unicycle/sensor_data/run-4.txt", DEFAULT_PARAMETERS),
+    INIT_STATE_R,
+    INIT_STATE_P,
+    reg_p = DEFAULT_REG,
+    reg_r= DEFAULT_REG_PID,
+    kalman_filter= DEFAULT_KALMAN
+)
+
 
 r = Render(
     screen,
@@ -812,3 +841,5 @@ r = Render(
 )
 
 r.run()
+
+#r_resim.run()
