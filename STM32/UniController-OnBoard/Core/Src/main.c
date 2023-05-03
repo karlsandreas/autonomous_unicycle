@@ -295,9 +295,12 @@ struct {
 
 } CTRL;
 
+float roll_angle = 0.;
+
 RollRegulator roll_reg = (RollRegulator) {
-	.kp1 = -50,
-	.kd1 = -70,
+	.kp1 = -40,
+	.kd1 = 0,
+
 	.kp2 = 0.0004
 };
 
@@ -307,7 +310,7 @@ const float Q_W = 100.0;
 #define MOTOR_CW 0
 #define MOTOR_CCW 1
 
-#define MOTOR_DIRECTION MOTOR_CW
+#define MOTOR_DIRECTION MOTOR_CCW
 
 // #define QUEUE_DEBUG
 
@@ -450,7 +453,8 @@ int main(void)
 				"erpm_pitch = %4d, erpm_roll = %4d "
 				"I_w_pitch = %7.5f A, I_w_roll = %7.5f A "
 				//"theta_pitch = %7.5fmrad, theta_d_pitch = %7.5fmrad/s, "
-				"theta_roll = %7.5fmrad, theta_d_roll = %7.5fmrad/s "
+				// "theta_roll = %7.5fmrad, theta_d_roll = %7.5fmrad/s "
+				"theta_roll(comp) = %7.5fmrad "
 				//"I (filtered) = %6ld mA, I (out) = %6ld mA"
 				"\r\n",
 				dbg_values.msg_idx, dbg_values.n_time_steps_since_last, queue_nelem(&MAIN_QUEUE), dead_mans ? "on" : "off", (int32_t) (us_since_startup() / 1000),
@@ -459,7 +463,8 @@ int main(void)
 				//(int32_t) (1000 * CTRL.last_acc.ax), (int32_t) (1000 * CTRL.last_acc.ay), (int32_t) (1000 * CTRL.last_acc.az),
 				//CTRL.last_acc.gx, CTRL.last_acc.gy, CTRL.last_acc.gz,
 				//1000 * CTRL.st.x1, 1000 * CTRL.st.x2,
-				1000 * CTRL.st.x5, 1000 * CTRL.st.x6
+				// 1000 * CTRL.st.x5, 1000 * CTRL.st.x6
+				1000 * roll_angle
 				//(int32_t) (1000 * vcr.input_filtered), (int32_t) (1000 * dbg_values.current_o)
 			);
 			dbg_values.msg_idx++;
@@ -512,11 +517,16 @@ int main(void)
 			float sensor_gyro_pitch = CTRL.last_acc.gy;
 			float sensor_gyro_roll = CTRL.last_acc.gx;
 
+			float sensor_acc_roll = CTRL.last_acc.ay;
+			float acc_predicted_angle = -sensor_acc_roll / 9.82 * (3.14 / 2);
+			float gain = 10 * dt;
+			roll_angle = (1 - gain) * roll_angle + dt * sensor_acc_roll + gain * acc_predicted_angle;
+
 			kalman_filter_predict(0, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w, &CTRL.covs);
 			roll_kalman_filter_predict(0, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w, &CTRL.covs);
 
 			float tau_pitch = LookaheadSpeedRegulator(0, CTRL.st.x1, CTRL.st.x2, CTRL.st.x4, dt);
-			float tau_roll = roll_reg_step(&roll_reg, dt, CTRL.st.x5, CTRL.st.x6, wheel_rpm_roll);
+			float tau_roll = roll_reg_step(&roll_reg, dt, roll_angle, sensor_acc_roll, wheel_rpm_roll);
 
 #if MOTOR_DIRECTION == MOTOR_CW
 			float current_wanted_pitch = tau_pitch / 0.59; // see notes
