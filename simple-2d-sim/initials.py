@@ -96,31 +96,40 @@ H_w = np.array([0,(1/DEFAULT_PARAMETERS.pitch_wheel_rad)*30/np.pi]).reshape(1,2)
 
 #Process noise uncertainty, the uncertainty in how the unicycle is moving
 #High process noise seems to give better results, low process noise seems to give unstable and oscilating signal
-q_w = 1000
-q_t = 10
+q_wc = 100
+q_tc = 80
 
-Q =  np.array([[q_t * (dt**4)/4, q_t * (dt**3)/2, 0, 0],
-                     [q_t * (dt**3)/2,  q_t * dt**2, 0, 0],
-                     [0, 0, q_w * (dt**4)/4, q_w * (dt**3)/2],
-                     [0, 0, q_w * (dt**3)/2, q_w * dt**2]])
+Q =  np.array([[q_tc * (dt**4)/4, q_tc * (dt**3)/2, 0, 0],
+                     [q_tc * (dt**3)/2,  q_tc * dt**2, 0, 0],
+                     [0, 0, q_wc * (dt**4)/4, q_wc * (dt**3)/2],
+                     [0, 0, q_wc * (dt**3)/2, q_wc * dt**2]])
                      
 
 Q_alt = np.array([[0.035,0,0,0],
                   [0,0.0007,0,0],
-                  [0, 0, q_w * (dt**4)/4, q_w * (dt**3)/2],
-                   [0, 0, q_w * (dt**3)/2, q_w * dt**2]])
+                  [0, 0, q_wc * (dt**4)/4, q_wc * (dt**3)/2],
+                   [0, 0, q_wc * (dt**3)/2, q_wc * dt**2]])
 
-Q_t = 10.0 * np.array([[(dt**4)/4, (dt**3)/2],
+#Q for pitch top
+Q_t = q_tc * np.array([[(dt**4)/4, (dt**3)/2],
                      [(dt**3)/2,     dt**2]])
 
-Q_w = 100.0 * np.array([[(dt**4)/4, (dt**3)/2],
+
+#Q for roll
+Q_r = q_tc * np.array([[(dt**4)/4, (dt**3)/2],
+                     [(dt**3)/2,     dt**2]])
+
+#Q for wheel
+Q_w = q_wc * np.array([[(dt**4)/4, (dt**3)/2],
                      [(dt**3)/2,     dt**2]])
 
 #Measurement uncertainty, sensor uncertainty
 R = np.array([[0.3,0],
               [0,20]])
+
 R_t = 10 * np.array([[1]]).reshape(1,1) 
 R_w = 1000000 * np.array([[1]]).reshape(1,1) 
+
 R_s = DEFAULT_PARAMETERS.sensor_position
 #Contoll matrix
 #G = np.array([(0.5*dt**2)*R,dt*R])
@@ -162,7 +171,6 @@ DEFAULT_KALMAN = KalmanFilter(
                     H = H,
                     #G = -B,
                     Q = Q,
-                    R = R,
-                    P = P)
+                    R = R)
 
 DEFAULT_KALMAN_GAIN = 0.5

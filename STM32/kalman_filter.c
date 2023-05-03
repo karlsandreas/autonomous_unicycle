@@ -7,15 +7,16 @@ struct covariances
 {   
     Matrix pitch;
     Matrix roll;
-    Matrix wheel
+    Matrix wheel;
      
 };
-typedef struct covariances Covariances;
 
+typedef struct covariances Covariances;
+/*
 covs = (Covariances) {.pitch.m11 = 10.0, .pitch.m12 = 0.0, .pitch.m21 = 10.0, .pitch.m22 = 0.0,
                       .roll.m11 = 10.0, .roll.m12 = 0.0, .roll.m21 = 10.0, .roll.m22 = 0.0,
                       .wheel.m11 = 10.0, .wheel.m12 = 0.0, .wheel.m21 = 0.0, .wheel.m22 = 10.0};
-
+*/
 
 struct r_error  
 {
@@ -27,7 +28,7 @@ struct r_error
 typedef struct r_error R_error;
 
 //Measurement error
-r_vals = (R_error) {.pitch = 0.3, .roll = 0.3, .wheel = 20};
+//r_vals = (R_error) {.pitch = 0.3, .roll = 0.3, .wheel = 20};
 
 
 
@@ -72,7 +73,6 @@ void kalman_filter_predict(float input, float dt, States *s, Matrix *q_t, Matrix
     float p44 = c44;
 
     //printf("Ps: %0.15f %0.15f %0.15f %0.15f \n", p11, p12, p21, p22);
- 
     covs->pitch.m11 = p11 + q_t->m11;  
     covs->pitch.m12 = p12 + q_t->m12;
     covs->pitch.m21 = p21 + q_t->m21;
@@ -83,7 +83,11 @@ void kalman_filter_predict(float input, float dt, States *s, Matrix *q_t, Matrix
     covs->wheel.m21 = p43 + q_w->m21;
     covs->wheel.m22 = p44 + q_w->m22;
     //printf("Covs: %0.15f %0.15f %0.15f %0.15f\n", covs->pitch.m11, covs->pitch.m12, covs->pitch.m21, covs->pitch.m22);
-}
+    printf("Covs after predict pitch: %0.15f %0.15f %0.15f %0.15f\n", covs->pitch.m11, covs->pitch.m12, covs->pitch.m21, covs->pitch.m22);
+    printf("Covs after predict wheel: %0.15f %0.15f %0.15f %0.15f\n", covs->roll.m11, covs->roll.m12, covs->roll.m21, covs->roll.m22);
+
+
+};
 
 
 
@@ -129,21 +133,21 @@ void kalman_filter_update(float sensor_t, float sensor_w, float dt, States *s, M
     float c33 = covs->wheel.m11 + covs->wheel.m22 * pow(gain1_w,2) * pow(k,2) - covs->wheel.m12*gain1_w*k - covs->wheel.m21*gain1_w*k + pow(gain1_w,2)*r_vals->wheel;
     float c34 = covs->wheel.m12 + covs->wheel.m22 *gain1_w*gain2_w * pow(k,2) - covs->wheel.m22*gain1_w*k - covs->wheel.m12*gain2_w*k + gain1_w*gain2_w*r_vals->wheel;
     float c43 = covs->wheel.m21 + covs->wheel.m22 * gain1_w*gain2_w * pow(k,2) - covs->wheel.m22*gain1_w*k - covs->wheel.m21*gain2_w*k + gain1_w*gain2_w*r_vals->wheel;
-    float c44 = covs->wheel.m22 + covs->wheel.m22*pow(gain2_w,2) * pow(k,2) - 2*covs->wheel.m22*gain2_w*k + pow(gain2_w,2)*r_vals->wheel;
+    float c44 = covs->wheel.m22 + covs->wheel.m22 * pow(gain2_w,2) * pow(k,2) - 2*covs->wheel.m22*gain2_w*k + pow(gain2_w,2)*r_vals->wheel;
 
     covs->wheel.m11 = c33;
     covs->wheel.m12 = c34;
     covs->wheel.m21 = c43;
     covs->wheel.m22 = c44;
-    
-    //printf("Update after covs: %0.15f %0.15f %0.15f %0.15f\n", covs->pitch.m11, covs->pitch.m12, covs->pitch.m21, covs->pitch.m22);
+    printf("Covs after update pitch: %0.15f %0.15f %0.15f %0.15f\n", covs->pitch.m11, covs->pitch.m12, covs->pitch.m21, covs->pitch.m22);
+    printf("Covs after update wheel: %0.15f %0.15f %0.15f %0.15f\n", covs->roll.m11, covs->roll.m12, covs->roll.m21, covs->roll.m22);
 
-}
+};
 
 
 //Kalman filter for roll, essentially the same as for pitch
 
-void roll_kalman_filter_update(float sensor, float dt, States *s, Matrix *q, Covariances *covs)
+void roll_kalman_filter_update(float sensor, float dt, States *s, Matrix *q_t, Matrix *q_w, Covariances *covs, R_error *r_vals)
 {   
     /* sensor is angular velocity */
     float diff = sensor - s->x2;
@@ -167,7 +171,7 @@ void roll_kalman_filter_update(float sensor, float dt, States *s, Matrix *q, Cov
     covs->roll.m21 = c21;
     covs->roll.m22 = c22;
 
-}
+};
 
 void roll_kalman_filter_predict(float input, float dt, States *s, Matrix *q_t, Matrix *q_w, Covariances *covs)
 {
@@ -195,4 +199,4 @@ void roll_kalman_filter_predict(float input, float dt, States *s, Matrix *q_t, M
     covs->roll.m12 = p12 + q_t->m12;
     covs->roll.m21 = p21 + q_t->m21;
     covs->roll.m22 = p22 + q_t->m22;
-}
+};

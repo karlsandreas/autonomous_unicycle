@@ -374,3 +374,6 @@ class PositionState:
 
 def ms_to_rpm(velocity: float, radius: float):
         return (30/(math.pi*radius) * velocity) 
+
+def rpm_to_ms(rpm: float, radius: float):
+        return ((math.pi*radius* rpm)/30)

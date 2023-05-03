@@ -1,5 +1,10 @@
 from typing import Tuple, Optional
 
+import faulthandler
+
+
+faulthandler.enable()
+
 import pygame
 import numpy as np
 import random
@@ -12,7 +17,7 @@ import math
 
 import time
 
-from sim import SimulationState_Pitch, SimulationState_Roll, SimulationState, SimulationParameters, ControlSignals, Simulator_Pitch, Simulator_Roll
+from sim import SimulationState_Pitch, SimulationState_Roll, SimulationState, SimulationParameters, ControlSignals, Simulator_Pitch, Simulator_Roll, ms_to_rpm, rpm_to_ms
 from regulator import Regulator, LookaheadSpeedRegulator, NullRegulator
 from kalman import KalmanFilter
 
@@ -20,9 +25,6 @@ from resim import Resimulator_Pitch
 
 from fmt import fmt_unit
 import initials as init
-
-import initials as init
-
 #Imports for c code
 from ctypes import *
 so_file = Path("STM32/regulator.so")
@@ -44,13 +46,26 @@ class States(Structure):
     _fields_ = [("x1", c_float),
                 ("x2", c_float),
                 ("x3", c_float),
-                ("x4", c_float)]
+                ("x4", c_float),
+                ("x5", c_float),
+                ("x6", c_float)]
 
 class Matrix(Structure):
     _fields_ = [("m11", c_float),
                 ("m12", c_float),
                 ("m21", c_float),
                 ("m22", c_float)]
+    
+class Covariances(Structure):
+    _fields_ = [("pitch", Matrix),
+                ("roll", Matrix),
+                ("wheel", Matrix)]
+
+class R_error(Structure):
+    _fields_ = [("pitch", c_float),
+                ("roll", c_float),
+                ("wheel", c_float)]
+
 
 class SimRenderOptions:
     def __init__(
@@ -255,19 +270,37 @@ class Render:
 
         self.sensor_reading = np.array([0.0,0.0,0.0,0.0])
 
-        ### Initializer pointer objects for the c kalman filter
-        self.c_state = pointer(States(0.0, 0.0, 0.0, 0.0))
+        ### Initialize pointer objects for the c kalman filter
+        self.c_state = pointer(States(init_state_p.top_angle,
+                                      init_state_p.top_angle_d, 
+                                      init_state_p.wheel_position,
+                                      init_state_p.wheel_position_d, 
+                                      init_state_r.top_angle, 
+                                      init_state_r.top_angle_d))
+        
+        self.q_pitch = pointer(Matrix(init.Q_t[0][0] ,init.Q_t[0][1], init.Q_t[1][0], init.Q_t[1][1]))
+        self.q_roll = pointer(Matrix(init.Q_r[0][0] ,init.Q_r[0][1], init.Q_r[1][0], init.Q_r[1][1]))
+        self.q_wheel = pointer(Matrix(init.Q_w[0][0] ,init.Q_w[0][1], init.Q_w[1][0], init.Q_w[1][1]))
+
+        cov_pitch = Matrix(init.P_t[0][0],init.P_t[0][1],init.P_t[1][0],init.P_t[1][1])
+        cov_roll = Matrix(init.P_t[0][0],init.P_t[0][1],init.P_t[1][0],init.P_t[1][1])
+        cov_wheel = Matrix(init.P_w[0][0],init.P_w[0][1],init.P_w[1][0],init.P_w[1][1])
+
+        self.covariances = pointer(Covariances(cov_pitch, cov_roll, cov_wheel))
+
+        self.r_vals = pointer(R_error(0.3, 0.3, 20))
         dt = init.dt
-        self.c_Qs = pointer(Matrix(0.05*dt**2, 0.05*dt, 0.05*dt, 0.05))
 
         self.reg_version = "Python" #C
         self.filter_version = "Python" #C
+
         self.a = 0
+        
         #Variance for noise
         self.var_x = 0.0 #000004 #m/s^2
         self.var_z = 0.0 #000004 #m/s^2
-        self.var_angle = 0.0000000005 #rad/s
-        self.var_wheel = 0.00000001 #rpm
+        self.var_angle = 0.3 #rad/s
+        self.var_wheel = 20 #0.00000001 #rpm
 
     def run(self) -> None:
         last_t = time.time()
@@ -379,25 +412,23 @@ class Render:
         if self.filter_version == "C":
             ######## Kalman filter in C ##########
             #Update the Qs since they depend on dt
-            self.c_Qs.contents.m11 = c_float(2.0 * (dt**4)/4) 
-            self.c_Qs.contents.m12 = c_float(2.0 * (dt**3)/2)
-            self.c_Qs.contents.m21 = c_float(2.0 * (dt**3)/2)
-            self.c_Qs.contents.m22 = c_float(2.0 * dt**2)
+            self.q_pitch.contents.m11 = c_float(init.q_tc * (dt**4)/4) 
+            self.q_pitch.contents.m12 = c_float(init.q_tc * (dt**3)/2)
+            self.q_pitch.contents.m21 = c_float(init.q_tc * (dt**3)/2)
+            self.q_pitch.contents.m22 = c_float(init.q_tc * dt**2)
 
-            self.c_state.contents.x3 = self.filter_state.wheel_position #Update states in pointer since we are not mesuring them
-            self.c_state.contents.x4 = self.filter_state.wheel_position_d
-            
+            self.q_wheel.contents.m11 = c_float(init.q_wc * (dt**4)/4) 
+            self.q_wheel.contents.m12 = c_float(init.q_wc * (dt**3)/2)
+            self.q_wheel.contents.m21 = c_float(init.q_wc * (dt**3)/2)
+            self.q_wheel.contents.m22 = c_float(init.q_wc * dt**2)
 
-            c_kalman.pitch_kalman_filter_predict(c_float(self.a), c_float(dt), self.c_state, self.c_Qs)
+            c_kalman.kalman_filter_predict(c_float(0.0), c_float(dt), self.c_state, self.q_pitch, self.q_wheel, self.covariances)
 
             self.filter_state.top_angle = self.c_state.contents.x1
             self.filter_state.top_angle_d = self.c_state.contents.x2
+            self.filter_state.wheel_position = self.c_state.contents.x3 
+            self.filter_state.wheel_position_d = self.c_state.contents.x4
 
-            #Wheel filter
-            c_kalman_vel = c_kalman.wheel_velocity_kalman_filter_predict
-            c_kalman_vel.restype = c_float  # Set output type from c code
-            #self.filter_state.wheel_position_d = c_kalman_vel(c_float(dt))
-        
             ######################################
     
         if self.filter_version == "Python":
@@ -405,6 +436,8 @@ class Render:
             kalman_out = self.filter.predict(self.a)
             self.filter_state.top_angle = kalman_out[0][0]  
             self.filter_state.top_angle_d = kalman_out[1][0]  
+            self.filter_state.wheel_position = kalman_out[2][0]  
+            self.filter_state.wheel_position_d = kalman_out[3][0]  
             ######################################
 
         if self.reg_version == "Python":
@@ -428,16 +461,14 @@ class Render:
             #############################################
 
 
-        ############ Integration step ###############
+        ############ Copy original state to filter state ###############
         self.filter_state = deepcopy(self.state_p)
 
         ########### Sensor reading and noise #######
         self.sensor_reading = self.sim_p.sensor_reading(self.filter_state, self.current_signals, (self.var_angle, self.var_wheel, self.var_x, self.var_z))
-        #sensor_reading = self.sim_p.sensor_reading(self.state_p, self.current_signals)
         
     
         
-        x_d_w_noise = self.sensor_reading[1]
     
 
         if self.filter_version == "Python":
@@ -445,23 +476,26 @@ class Render:
             #Update arrays that depend on dt
             F = np.array([[1, dt],
                                [0, 1]])
-            Q = 0.05 * np.array([[dt**2, dt],
-                               [dt, 1]])
+            Q =  np.array([[init.q_tc * (dt**4)/4, init.q_tc * (dt**3)/2, 0, 0],
+                     [init.q_tc * (dt**3)/2,  init.q_tc * dt**2, 0, 0],
+                     [0, 0, init.q_wc * (dt**4)/4, init.q_wc * (dt**3)/2],
+                     [0, 0, init.q_wc * (dt**3)/2, init.q_wc * dt**2]])
+            
             R = self.sim_p.params.sensor_position
             G = np.array([(0.5*dt**2)*R,dt*R]).reshape(2,1)
 
-            self.filter.update(self.sensor_reading[0], F = F, Q = Q, G = G)
+            self.filter.update(self.sensor_reading[0:1][0], F = F, Q = Q, G = G)
+            print(self.filter.P)
+            
             ######################################
+
         if self.filter_version == "C":
             ##### C Kalman filter #####
-            c_kalman.pitch_kalman_filter_update(c_float(self.sensor_reading[0]), c_float(dt), self.c_state, self.c_Qs)
-            #c_kalman.wheel_velocity_kalman_filter_update(c_float(x_d_w_noise), c_float(dt));
-            c_kalman_simple = c_kalman.simple_wheel_filter
-            c_kalman_simple.restype = c_float
+            c_kalman.kalman_filter_update(c_float(self.sensor_reading[0]), c_float(self.sensor_reading[1]), c_float(dt), self.c_state, self.q_pitch, self.q_wheel, self.covariances, self.r_vals)
 
-            self.filter_state.wheel_position_d = c_kalman_simple(c_float(x_d_w_noise), c_float(dt))
-            #self.filter_state.wheel_position_d = x_d_w_noise
             ###########################
+
+
 
     def step_reg_filter_roll(self, dt: float):
 
@@ -840,6 +874,6 @@ r = Render(
     kalman_filter= DEFAULT_KALMAN
 )
 
-r.run()
+#r.run()
 
-#r_resim.run()
+r_resim.run()
