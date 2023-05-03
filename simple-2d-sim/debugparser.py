@@ -13,6 +13,8 @@ class DebugParser:
         
         self.last_t = 0 #For calculation of dt of log 
 
+        self.length = 0
+
     def parse(self):
         with open(self.path.resolve()) as f:
             lines = f.readlines()
@@ -44,6 +46,7 @@ class DebugParser:
         for col in divide_by_1000:
             self.df[col] = self.df[col]/1000
 
+        self.length = self.df.shape[0]
 
     def get_Simstate_Pitch(self, i):
         current = self.df.iloc[i]
