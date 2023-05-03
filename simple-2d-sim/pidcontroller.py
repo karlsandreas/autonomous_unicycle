@@ -1,6 +1,6 @@
 from regulator import Regulator
 
-from sim import ControlSignals, SimulationState
+from sim import ControlSignals, SimulationState_Roll as SimulationState
 
 class PIDController(Regulator):
     def __init__(
@@ -35,7 +35,7 @@ class PIDController(Regulator):
 
         out = self.kp * error + self.ki * self.ierror + self.kd * derror    
         
-        return ControlSignals(motor_torque_signal=out)
+        return out
 
 
     def init_limits(self, upper: float, lower: float):   

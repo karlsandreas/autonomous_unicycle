@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from sim import SimulationParameters, SimulationState, ControlSignals
+from sim import SimulationParameters, SimulationState_Pitch as SimulationState, ControlSignals
 
 # Base class for all regulators.
 # Should support a __call__, taking the simulation state and the dt, optionally changing the state of the regulator, giving a ControlSignals
@@ -81,7 +81,7 @@ class LookaheadSpeedRegulator(Regulator):
         x_d_diff = abs(x_d - self.setpoint_x_d)
         return x_d_diff * 0.5 + 1.2
 
-    def __call__(self, st: SimulationState, dt: float) -> ControlSignals:
+    def __call__(self, st: SimulationState, dt: float) -> float:
         theta = st.top_angle
         theta_d = st.top_angle_d
         x = st.wheel_position
@@ -103,5 +103,5 @@ class LookaheadSpeedRegulator(Regulator):
 
         tau = -self.C / self.D * theta + self.last_delta_tau
 
-        return ControlSignals(motor_torque_signal=tau)
+        return tau
 
