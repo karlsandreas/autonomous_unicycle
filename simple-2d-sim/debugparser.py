@@ -44,8 +44,14 @@ class DebugParser:
     
         divide_by_1000 = ["t","I_w","ax","ay","az","theta","theta_d","x","x_d"]
         for col in divide_by_1000:
-            self.df[col] = self.df[col]/1000
 
+            try:
+                if col == "theta_roll_filter":
+                    self.df[col] = self.df[col] * 1000
+                else:
+                    self.df[col] = self.df[col]/1000
+            except:
+                None
         self.length = self.df.shape[0]
 
     def get_Simstate_Pitch(self, i):

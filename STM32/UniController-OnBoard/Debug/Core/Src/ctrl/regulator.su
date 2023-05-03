@@ -1,0 +1,6 @@
+../Core/Src/ctrl/regulator.c:7:7:stop_time_x_d	32	static
+../Core/Src/ctrl/regulator.c:15:7:LookaheadSpeedRegulator	88	static
+../Core/Src/ctrl/regulator.c:35:7:roll_reg_step	48	static
+../Core/Src/ctrl/regulator.c:49:6:init_pid_regulator	24	static
+../Core/Src/ctrl/regulator.c:57:7:pid_regulator	40	static
+../Core/Src/ctrl/regulator.c:71:6:check_angle_limit	16	static

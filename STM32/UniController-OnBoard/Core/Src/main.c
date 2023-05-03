@@ -277,7 +277,7 @@ AccData get_accelerometer_data(I2C_HandleTypeDef *i2c, uint16_t acc_addr) {
 	return (AccData) {
 		.success = true,
 		.gx = gx, .gy = gy, .gz = gz,
-		.ax = ax, .ay = ay_adj, .az = az_adj
+		.ax = ax, .ay = ay, .az = az
 	};
 }
 
@@ -447,21 +447,21 @@ int main(void)
 
 			int dbglen = sprintf(
 				dbgbuf,
-				"msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms "
-				//"ax = %8ld, ay = %8ld, az = %8ld, "
-				//"gx = %7.5f rad/s, gy = %7.5f rad/s, gz = %7.5f rad/s, "
-				"erpm_pitch = %4d, erpm_roll = %4d "
-				"I_w_pitch = %7.5f A, I_w_roll = %7.5f A "
+				"msg = %4d, time steps = %4d, qsz = %4d, switch = %s, t = %8lu ms, "
+				"ax = %8ld mm/s2, ay = %8ld mm/s2, az = %8ld mm/s2, "
+				"gx = %7.5f rad/s, gy = %7.5f rad/s, gz = %7.5f rad/s, "
+				"erpm_pitch = %4d, erpm_roll = %4d, "
+				"I_w_pitch = %7.5f A, I_w_roll = %7.5f A, "
 				//"theta_pitch = %7.5fmrad, theta_d_pitch = %7.5fmrad/s, "
 				// "theta_roll = %7.5fmrad, theta_d_roll = %7.5fmrad/s "
-				"theta_roll(comp) = %7.5fmrad "
+				"theta_roll(comp) = %7.5fmrad, "
 				//"I (filtered) = %6ld mA, I (out) = %6ld mA"
 				"\r\n",
 				dbg_values.msg_idx, dbg_values.n_time_steps_since_last, queue_nelem(&MAIN_QUEUE), dead_mans ? "on" : "off", (int32_t) (us_since_startup() / 1000),
 				(int) CTRL.last_esc_pitch.erpm, (int) CTRL.last_esc_roll.erpm,
 				dbg_values.current_wanted_pitch, dbg_values.current_wanted_roll,
-				//(int32_t) (1000 * CTRL.last_acc.ax), (int32_t) (1000 * CTRL.last_acc.ay), (int32_t) (1000 * CTRL.last_acc.az),
-				//CTRL.last_acc.gx, CTRL.last_acc.gy, CTRL.last_acc.gz,
+				(int32_t) (1000 * CTRL.last_acc.ax), (int32_t) (1000 * CTRL.last_acc.ay), (int32_t) (1000 * CTRL.last_acc.az),
+				CTRL.last_acc.gx, CTRL.last_acc.gy, CTRL.last_acc.gz,
 				//1000 * CTRL.st.x1, 1000 * CTRL.st.x2,
 				// 1000 * CTRL.st.x5, 1000 * CTRL.st.x6
 				1000 * roll_angle
@@ -520,13 +520,15 @@ int main(void)
 			float sensor_acc_roll = CTRL.last_acc.ay;
 			float acc_predicted_angle = -sensor_acc_roll / 9.82 * (3.14 / 2);
 			float gain = 10 * dt;
-			roll_angle = (1 - gain) * roll_angle + dt * sensor_acc_roll + gain * acc_predicted_angle;
+
+			//roll_angle = (1 - gain) * roll_angle + dt * sensor_acc_roll + gain * acc_predicted_angle;
+			roll_angle = (0.98) * roll_angle + dt * sensor_gyro_roll + 0.02 * sensor_acc_roll;
 
 			kalman_filter_predict(0, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w, &CTRL.covs);
 			roll_kalman_filter_predict(0, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w, &CTRL.covs);
 
 			float tau_pitch = LookaheadSpeedRegulator(0, CTRL.st.x1, CTRL.st.x2, CTRL.st.x4, dt);
-			float tau_roll = roll_reg_step(&roll_reg, dt, roll_angle, sensor_acc_roll, wheel_rpm_roll);
+			float tau_roll = roll_reg_step(&roll_reg, dt, roll_angle, sensor_gyro_roll, wheel_rpm_roll);
 
 #if MOTOR_DIRECTION == MOTOR_CW
 			float current_wanted_pitch = tau_pitch / 0.59; // see notes

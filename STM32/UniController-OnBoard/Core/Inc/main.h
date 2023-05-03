@@ -74,7 +74,7 @@ void Error_Handler(void);
 /* USER CODE BEGIN Private defines */
 
 
-#define GYRO_FS_CFG 3
+#define GYRO_FS_CFG 0
 
 // Gyroscope scale
 
@@ -92,7 +92,7 @@ void Error_Handler(void);
 
 // Accelerometer scale
 
-#define ACC_FS_CFG 3
+#define ACC_FS_CFG 0
 
 #if ACC_FS_CFG == 0
 	#define ACC_FS_G 2

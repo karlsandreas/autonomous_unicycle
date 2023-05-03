@@ -1,0 +1,6 @@
+../Core/Src/queue.c:12:6:queue_init	16	static
+../Core/Src/queue.c:19:8:queue_nelem	16	static
+../Core/Src/queue.c:23:6:queue_can_put	16	static
+../Core/Src/queue.c:28:6:queue_put	24	static,ignoring_inline_asm
+../Core/Src/queue.c:47:6:queue_has	16	static
+../Core/Src/queue.c:52:9:queue_pop	88	static,ignoring_inline_asm
