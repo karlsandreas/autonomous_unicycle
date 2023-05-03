@@ -31,7 +31,6 @@ typedef struct r_error R_error;
 //r_vals = (R_error) {.pitch = 0.3, .roll = 0.3, .wheel = 20};
 
 
-
 void kalman_filter_predict(float input, float dt, States *s, Matrix *q_t, Matrix *q_w, Covariances *covs)
 {
     float X11 = s->x1 + dt * s->x2;
@@ -83,6 +82,7 @@ void kalman_filter_predict(float input, float dt, States *s, Matrix *q_t, Matrix
     covs->wheel.m21 = p43 + q_w->m21;
     covs->wheel.m22 = p44 + q_w->m22;
     //printf("Covs: %0.15f %0.15f %0.15f %0.15f\n", covs->pitch.m11, covs->pitch.m12, covs->pitch.m21, covs->pitch.m22);
+
     printf("Covs after predict pitch: %0.15f %0.15f %0.15f %0.15f\n", covs->pitch.m11, covs->pitch.m12, covs->pitch.m21, covs->pitch.m22);
     printf("Covs after predict wheel: %0.15f %0.15f %0.15f %0.15f\n", covs->roll.m11, covs->roll.m12, covs->roll.m21, covs->roll.m22);
 

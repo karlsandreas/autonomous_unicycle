@@ -98,8 +98,18 @@ void dead_mans_switch_update_led();
 
 static Queue MAIN_QUEUE;
 
+#define VESC_PITCH_ID 1
+#define VESC_ROLL_ID 2
+
 static VESC vesc_pitch;
 static VESC vesc_roll;
+
+VESC_Current_Reg vcr_pitch = (VESC_Current_Reg) {
+	.k_p = 1.,
+};
+VESC_Current_Reg vcr_roll = (VESC_Current_Reg) {
+	.k_p = 1.,
+};
 
 uint32_t ms_counter;
 
@@ -259,27 +269,37 @@ AccData get_accelerometer_data(I2C_HandleTypeDef *i2c, uint16_t acc_addr) {
     float az_adj = (az - az_mid) / az_range * 9.82;
     float ay_adj = (ay - ay_mid) / ay_range * 9.82;
 
-    // TODO: Adjust y and z
-    // TODO: This should be dynamically set based on start up values
-    float gx_adj = gx + 0.045; // zero point compensation
-
+    // Calibration constants
+    gx += 0.034;
+    gy -= 0.023;
+    gz -= 0.002;
 
 	return (AccData) {
 		.success = true,
-		.gx = gx_adj, .gy = gy, .gz = gz,
+		.gx = gx, .gy = gy, .gz = gz,
 		.ax = ax, .ay = ay_adj, .az = az_adj
 	};
 }
 
 
 struct {
-	EscData last_esc;
+	EscData last_esc_pitch;
+	EscData last_esc_roll;
+
 	AccData last_acc;
 
 	States st;
 	Matrix q_w, q_t;
-	float a;
+	Covariances covs;
+	R_error r_vals;
+
 } CTRL;
+
+RollRegulator roll_reg = (RollRegulator) {
+	.kp1 = -50,
+	.kd1 = -70,
+	.kp2 = 0.0004
+};
 
 const float Q_T = 80.0;
 const float Q_W = 100.0;
@@ -287,7 +307,7 @@ const float Q_W = 100.0;
 #define MOTOR_CW 0
 #define MOTOR_CCW 1
 
-#define MOTOR_DIRECTION MOTOR_CCW
+#define MOTOR_DIRECTION MOTOR_CW
 
 // #define QUEUE_DEBUG
 
@@ -351,14 +371,16 @@ int main(void)
 	HAL_TIM_Base_Start_IT(&TIM_REALTIME);
 	HAL_TIM_Base_Start_IT(&TIM_SCHEDULER);
 
-	vesc_init(&vesc_pitch, &UART_VESC_PITCH, UART_IRQ_VESC_PITCH, &MAIN_QUEUE);
-	vesc_init(&vesc_roll, &UART_VESC_ROLL, UART_IRQ_VESC_ROLL, &MAIN_QUEUE);
+	vesc_init(&vesc_pitch, VESC_PITCH_ID, &UART_VESC_PITCH, UART_IRQ_VESC_PITCH, &MAIN_QUEUE);
+	vesc_init(&vesc_roll, VESC_ROLL_ID, &UART_VESC_ROLL, UART_IRQ_VESC_ROLL, &MAIN_QUEUE);
 
 	setup_mpu(&I2C_MPU, MPU_ADDR);
 
 	struct {
 		float dt;
-		float current_w, current_o;
+		float current_wanted_pitch, current_out_pitch;
+		float current_wanted_roll, current_out_roll;
+
 		float wheel_pos_d;
 		unsigned int msgs_since_last;
 
@@ -369,13 +391,17 @@ int main(void)
 	dbg_values.msg_idx = 0;
 	dbg_values.n_time_steps_since_last = 0;
 
-	VESC_Current_Reg vcr = (VESC_Current_Reg) {
-		.k_p = 1.,
-	};
 
 	// For Kalman + control system
 
-	CTRL.a = 0;
+	CTRL.covs = (Covariances) {.pitch.m11 = 10.0, .pitch.m12 = 0.0, .pitch.m21 = 10.0, .pitch.m22 = 0.0,
+	                      .roll.m11 = 10.0, .roll.m12 = 0.0, .roll.m21 = 10.0, .roll.m22 = 0.0,
+	                      .wheel.m11 = 10.0, .wheel.m12 = 0.0, .wheel.m21 = 0.0, .wheel.m22 = 10.0};
+
+
+	//Measurement error
+	CTRL.r_vals = (R_error) {.pitch = 0.3, .roll = 0.3, .wheel = 20};
+
 	CTRL.st = (States) { .x1 = 0, .x2 = 0, .x3 = 0, .x4 = 0 };
 
 
@@ -418,16 +444,22 @@ int main(void)
 
 			int dbglen = sprintf(
 				dbgbuf,
-				"msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms. I_w = %6ld mA, erpm = %8ld, "
-				"ax = %8ld, ay = %8ld, az = %8ld, "
-				"gx = %7.5f rad/s, "
-				"theta = %8ld mrad, theta_d = %8ld mrad, x = %8ld, x_d = %8ld"
+				"msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms "
+				//"ax = %8ld, ay = %8ld, az = %8ld, "
+				//"gx = %7.5f rad/s, gy = %7.5f rad/s, gz = %7.5f rad/s, "
+				"erpm_pitch = %4d, erpm_roll = %4d "
+				"I_w_pitch = %7.5f A, I_w_roll = %7.5f A "
+				//"theta_pitch = %7.5fmrad, theta_d_pitch = %7.5fmrad/s, "
+				"theta_roll = %7.5fmrad, theta_d_roll = %7.5fmrad/s "
 				//"I (filtered) = %6ld mA, I (out) = %6ld mA"
 				"\r\n",
-				dbg_values.msg_idx, dbg_values.n_time_steps_since_last, queue_nelem(&MAIN_QUEUE), dead_mans ? "on" : "off", (int32_t) (us_since_startup() / 1000), (int32_t) (1000 * dbg_values.current_w), (int32_t) (CTRL.last_esc.erpm),
-				(int32_t) (1000 * CTRL.last_acc.ax), (int32_t) (1000 * CTRL.last_acc.ay), (int32_t) (1000 * CTRL.last_acc.az),
-				CTRL.last_acc.gx,
-				(int32_t) (1000 * CTRL.st.x1), (int32_t) (1000 * CTRL.st.x2), (int32_t) (1000 * CTRL.st.x3), (int32_t) (1000 * CTRL.st.x4)
+				dbg_values.msg_idx, dbg_values.n_time_steps_since_last, queue_nelem(&MAIN_QUEUE), dead_mans ? "on" : "off", (int32_t) (us_since_startup() / 1000),
+				(int) CTRL.last_esc_pitch.erpm, (int) CTRL.last_esc_roll.erpm,
+				dbg_values.current_wanted_pitch, dbg_values.current_wanted_roll,
+				//(int32_t) (1000 * CTRL.last_acc.ax), (int32_t) (1000 * CTRL.last_acc.ay), (int32_t) (1000 * CTRL.last_acc.az),
+				//CTRL.last_acc.gx, CTRL.last_acc.gy, CTRL.last_acc.gz,
+				//1000 * CTRL.st.x1, 1000 * CTRL.st.x2,
+				1000 * CTRL.st.x5, 1000 * CTRL.st.x6
 				//(int32_t) (1000 * vcr.input_filtered), (int32_t) (1000 * dbg_values.current_o)
 			);
 			dbg_values.msg_idx++;
@@ -458,12 +490,14 @@ int main(void)
 			dbg_values.dt = dt;
 
 #if MOTOR_DIRECTION == MOTOR_CW
-			float wheel_rpm = CTRL.last_esc.erpm / 22.9;
+			float wheel_rpm_pitch = CTRL.last_esc_pitch.erpm / 22.9;
 #elif MOTOR_DIRECTION == MOTOR_CCW
-			float wheel_rpm = CTRL.last_esc.erpm / -22.9;
+			float wheel_rpm_pitch = CTRL.last_esc_pitch.erpm / -22.9;
 #else
 #error "Invalid motor direction"
 #endif
+
+			float wheel_rpm_roll = CTRL.last_esc_pitch.erpm / 29.92;
 
 			CTRL.q_t.m11 = Q_T * dt*dt*dt*dt / 4;
 			CTRL.q_t.m12 = Q_T * dt*dt*dt / 2;
@@ -475,37 +509,51 @@ int main(void)
 			CTRL.q_w.m21 = Q_W * dt*dt*dt / 2;
 			CTRL.q_w.m22 = Q_W * dt*dt / 2;
 
-			kalman_filter_predict(0, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w);
+			float sensor_gyro_pitch = CTRL.last_acc.gy;
+			float sensor_gyro_roll = CTRL.last_acc.gx;
 
-			float tau = LookaheadSpeedRegulator(0, CTRL.st.x1, CTRL.st.x2, CTRL.st.x4, dt);
+			kalman_filter_predict(0, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w, &CTRL.covs);
+			roll_kalman_filter_predict(0, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w, &CTRL.covs);
+
+			float tau_pitch = LookaheadSpeedRegulator(0, CTRL.st.x1, CTRL.st.x2, CTRL.st.x4, dt);
+			float tau_roll = roll_reg_step(&roll_reg, dt, CTRL.st.x5, CTRL.st.x6, wheel_rpm_roll);
+
 #if MOTOR_DIRECTION == MOTOR_CW
-			float current_wanted = tau / 0.59; // see notes
+			float current_wanted_pitch = tau_pitch / 0.59; // see notes
+			float current_wanted_roll = tau_roll / 0.5; // TODO: guh
 #elif MOTOR_DIRECTION == MOTOR_CCW
-			float current_wanted = tau / -0.59; // see notes
+			float current_wanted_pitch = tau_pitch / -0.59; // see notes
+			float current_wanted_roll = tau_roll / -0.5; // TODO: guh
 #else
 #error "Invalid motor direction"
 #endif
-			//current_wanted *= 0.7;
 
-			dbg_values.current_w = current_wanted;
 
-			kalman_filter_update(-CTRL.last_acc.gx, wheel_rpm, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w);
+			dbg_values.current_wanted_pitch = current_wanted_pitch;
+			dbg_values.current_wanted_roll = current_wanted_roll;
 
-			float current_out;
+			kalman_filter_update(sensor_gyro_pitch, wheel_rpm_pitch, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w, &CTRL.covs, &CTRL.r_vals);
+			roll_kalman_filter_update(sensor_gyro_roll, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w, &CTRL.covs, &CTRL.r_vals);
+
+			float current_out_pitch, current_out_roll;
 			if (dead_mans_switch_activated()) {
-				vcr.setpoint = current_wanted;
-				current_out = vcr_step(&vcr, dt, CTRL.last_esc.current_motor);
+				vcr_pitch.setpoint = current_wanted_pitch;
+				vcr_roll.setpoint = current_wanted_roll;
+
+				current_out_pitch = vcr_step(&vcr_pitch, dt, CTRL.last_esc_pitch.current_motor);
+				current_out_roll = vcr_step(&vcr_roll, dt, CTRL.last_esc_roll.current_motor);
 			} else {
-				vcr.input_filtered = 0;
-				vcr.setpoint = 0;
-				current_out = 0;
+				vcr_pitch.input_filtered = 0;
+				vcr_pitch.setpoint = 0;
+				vcr_roll.input_filtered = 0;
+				vcr_roll.setpoint = 0;
+
+				current_out_pitch = 0;
 			}
-			dbg_values.current_o = current_out;
 
-			vesc_set_current(&vesc_pitch, current_out);
 
-			// TODO: Roll regulator
-			vesc_set_current(&vesc_roll, 10 * CTRL.last_acc.gy);
+			//vesc_set_current(&vesc_pitch, current_out_pitch);
+			vesc_set_current(&vesc_roll, current_out_roll);
 
 			dbg_values.n_time_steps_since_last++;
 
@@ -610,7 +658,12 @@ int main(void)
 #endif
 
 			EscData esc_data = msg.esc_data;
-			CTRL.last_esc = esc_data;
+			if (esc_data.vesc_id == VESC_PITCH_ID) {
+				CTRL.last_esc_pitch = esc_data;
+			}
+			if (esc_data.vesc_id == VESC_ROLL_ID) {
+				CTRL.last_esc_roll = esc_data;
+			}
 
 			break;
 		}

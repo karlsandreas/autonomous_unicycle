@@ -18,6 +18,8 @@
 #define UART_RXSZ 128
 
 typedef struct {
+	uint8_t vesc_id;
+
 	uint8_t tx_data[1024];
 	size_t current_offset;
 	volatile bool tx_waiting;
@@ -34,7 +36,7 @@ typedef struct {
 	volatile bool rx_queued;
 } VESC;
 
-void vesc_init(VESC *vesc, UART_HandleTypeDef *vesc_uart, IRQn_Type uart_irq, Queue *q);
+void vesc_init(VESC *vesc, uint8_t vesc_id, UART_HandleTypeDef *vesc_uart, IRQn_Type uart_irq, Queue *q);
 
 // Half of the buffer size, what is sent to the queue
 

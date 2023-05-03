@@ -127,7 +127,8 @@ static inline float read_f32(uint8_t **data, uint32_t scale) {
 }
 
 
-void vesc_init(VESC *vesc, UART_HandleTypeDef *vesc_uart, IRQn_Type uart_irq, Queue *q) {
+void vesc_init(VESC *vesc, uint8_t vesc_id, UART_HandleTypeDef *vesc_uart, IRQn_Type uart_irq, Queue *q) {
+	vesc->vesc_id = vesc_id;
 	vesc->vesc_uart = vesc_uart;
 	vesc->uart_irq = uart_irq;
 
@@ -291,7 +292,15 @@ void vesc_got_data(VESC *vesc) {
 			/*float watt_hours = */read_f32(&pkt_ptr, 1e4);
 			/*float watt_hours_charged = */read_f32(&pkt_ptr, 1e4);
 
-			Message msg = (Message) { .ty = MSG_GOT_ESC_DATA, .esc_data = { .temp_mos = temp_mos, .erpm = rpm, .current_motor = current_motor } };
+			Message msg = (Message) {
+				.ty = MSG_GOT_ESC_DATA,
+				.esc_data = {
+					.vesc_id = vesc->vesc_id,
+					.temp_mos = temp_mos,
+					.erpm = rpm,
+					.current_motor = current_motor
+				}
+			};
 
 			queue_put(vesc->q, msg);
 #ifdef DEBUG_COMM

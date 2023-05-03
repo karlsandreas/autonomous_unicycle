@@ -25,6 +25,8 @@ typedef struct {
 } AccData;
 
 typedef struct {
+	uint8_t vesc_id;
+
 	float temp_mos;
 	float erpm;
 	float current_motor;
