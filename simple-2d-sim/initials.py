@@ -157,6 +157,8 @@ K = np.dot(-np.linalg.inv(E),J)
 #Control input
 B = np.array([0,K[0][0],0,K[1][0]/DEFAULT_PARAMETERS.pitch_wheel_rad]).reshape(4,1)
 
+#Acceleration input
+G = np.array([dt * DEFAULT_PARAMETERS.sensor_position])
 
 
 DEFAULT_KALMAN_WHEEL = KalmanFilter(

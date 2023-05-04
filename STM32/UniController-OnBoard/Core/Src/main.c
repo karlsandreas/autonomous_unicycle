@@ -278,7 +278,7 @@ AccData get_accelerometer_data(I2C_HandleTypeDef *i2c, uint16_t acc_addr) {
 	return (AccData) {
 		.success = true,
 		.gx = gx, .gy = gy, .gz = gz,
-		.ax = ax, .ay = ay_adj, .az = az_adj
+		.ax = ax, .ay = ay, .az = az
 	};
 }
 
@@ -465,7 +465,6 @@ int main(void)
 				CTRL.last_acc.gx, CTRL.last_acc.gy, CTRL.last_acc.gz,
 				(int) CTRL.last_esc_pitch.erpm, (int) CTRL.last_esc_roll.erpm,
 				dbg_values.current_wanted_pitch, dbg_values.current_wanted_roll,
-				//1000 * CTRL.st.x1, 1000 * CTRL.st.x2,
 				// 1000 * CTRL.st.x5, 1000 * CTRL.st.x6
 				1000 * roll_angle
 				//(int32_t) (1000 * vcr.input_filtered), (int32_t) (1000 * dbg_values.current_o)

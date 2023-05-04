@@ -1,0 +1,6 @@
+regulator.c:7:7:stop_time_x_d	1
+regulator.c:15:7:LookaheadSpeedRegulator	1
+regulator.c:35:7:roll_reg_step	1
+regulator.c:49:6:init_pid_regulator	1
+regulator.c:57:7:pid_regulator	1
+regulator.c:71:6:check_angle_limit	3

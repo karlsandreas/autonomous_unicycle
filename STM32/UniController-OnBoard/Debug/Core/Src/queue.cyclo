@@ -1,0 +1,6 @@
+queue.c:12:6:queue_init	1
+queue.c:19:8:queue_nelem	1
+queue.c:23:6:queue_can_put	1
+queue.c:28:6:queue_put	3
+queue.c:47:6:queue_has	1
+queue.c:52:9:queue_pop	3

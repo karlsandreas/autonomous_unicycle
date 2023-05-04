@@ -1,0 +1,1240 @@
+13:59:56 **** Build of configuration Debug for project UniController-OnBoard ****
+make -j8 all 
+arm-none-eabi-gcc "../USB_DEVICE/Target/usbd_conf.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"USB_DEVICE/Target/usbd_conf.d" -MT"USB_DEVICE/Target/usbd_conf.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "USB_DEVICE/Target/usbd_conf.o"
+arm-none-eabi-gcc "../USB_DEVICE/App/usb_device.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"USB_DEVICE/App/usb_device.d" -MT"USB_DEVICE/App/usb_device.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "USB_DEVICE/App/usb_device.o"
+arm-none-eabi-gcc "../USB_DEVICE/App/usbd_cdc_if.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"USB_DEVICE/App/usbd_cdc_if.d" -MT"USB_DEVICE/App/usbd_cdc_if.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "USB_DEVICE/App/usbd_cdc_if.o"
+arm-none-eabi-gcc "../USB_DEVICE/App/usbd_desc.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"USB_DEVICE/App/usbd_desc.d" -MT"USB_DEVICE/App/usbd_desc.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "USB_DEVICE/App/usbd_desc.o"
+arm-none-eabi-gcc "../Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_core.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_core.d" -MT"Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_core.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_core.o"
+arm-none-eabi-gcc "../Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.d" -MT"Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.o"
+arm-none-eabi-gcc "../Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ioreq.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ioreq.d" -MT"Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ioreq.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ioreq.o"
+arm-none-eabi-gcc "../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_cdc.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_cdc.d" -MT"Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_cdc.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_cdc.o"
+arm-none-eabi-gcc "../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.d" -MT"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.o"
+arm-none-eabi-gcc "../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.d" -MT"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.o"
+arm-none-eabi-gcc "../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma.d" -MT"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma.o"
+arm-none-eabi-gcc "../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma_ex.d" -MT"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_exti.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_exti.d" -MT"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_exti.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_exti.o"
+arm-none-eabi-gcc "../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash.d" -MT"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash.o"
+arm-none-eabi-gcc "../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ex.d" -MT"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ramfunc.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ramfunc.d" -MT"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ramfunc.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ramfunc.o"
+arm-none-eabi-gcc "../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_gpio.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_gpio.d" -MT"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_gpio.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_gpio.o"
+arm-none-eabi-gcc "../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c.d" -MT"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c.o"
+arm-none-eabi-gcc "../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c_ex.d" -MT"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pcd.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pcd.d" -MT"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pcd.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pcd.o"
+arm-none-eabi-gcc "../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pcd_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pcd_ex.d" -MT"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pcd_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pcd_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr.d" -MT"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr.o"
+arm-none-eabi-gcc "../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr_ex.d" -MT"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.d" -MT"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.o"
+arm-none-eabi-gcc "../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.d" -MT"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.d" -MT"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.o"
+arm-none-eabi-gcc "../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.d" -MT"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.d" -MT"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.o"
+arm-none-eabi-gcc "../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_usb.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_usb.d" -MT"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_usb.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_usb.o"
+arm-none-eabi-gcc -mcpu=cortex-m4 -g3 -DDEBUG -c -x assembler-with-cpp -MMD -MP -MF"Core/Startup/startup_stm32f405rgtx.d" -MT"Core/Startup/startup_stm32f405rgtx.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Startup/startup_stm32f405rgtx.o" "../Core/Startup/startup_stm32f405rgtx.s"
+arm-none-eabi-gcc "../Core/Src/ctrl/kalman_filter.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/ctrl/kalman_filter.d" -MT"Core/Src/ctrl/kalman_filter.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/ctrl/kalman_filter.o"
+arm-none-eabi-gcc "../Core/Src/ctrl/regulator.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/ctrl/regulator.d" -MT"Core/Src/ctrl/regulator.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/ctrl/regulator.o"
+arm-none-eabi-gcc "../Core/Src/buf.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/buf.d" -MT"Core/Src/buf.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/buf.o"
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc "../Core/Src/queue.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/queue.d" -MT"Core/Src/queue.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/queue.o"
+arm-none-eabi-gcc "../Core/Src/stm32f4xx_hal_msp.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/stm32f4xx_hal_msp.d" -MT"Core/Src/stm32f4xx_hal_msp.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/stm32f4xx_hal_msp.o"
+arm-none-eabi-gcc "../Core/Src/stm32f4xx_it.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/stm32f4xx_it.d" -MT"Core/Src/stm32f4xx_it.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/stm32f4xx_it.o"
+arm-none-eabi-gcc "../Core/Src/syscalls.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/syscalls.d" -MT"Core/Src/syscalls.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/syscalls.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:538:10: warning: variable 'current_out_pitch' set but not used [-Wunused-but-set-variable]
+  538 |    float current_out_pitch, current_out_roll;
+      |          ^~~~~~~~~~~~~~~~~
+arm-none-eabi-gcc "../Core/Src/sysmem.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/sysmem.d" -MT"Core/Src/sysmem.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/sysmem.o"
+arm-none-eabi-gcc "../Core/Src/system_stm32f4xx.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/system_stm32f4xx.d" -MT"Core/Src/system_stm32f4xx.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/system_stm32f4xx.o"
+arm-none-eabi-gcc "../Core/Src/vesc_com.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/vesc_com.d" -MT"Core/Src/vesc_com.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/vesc_com.o"
+arm-none-eabi-gcc "../Core/Src/vesc_current_reg.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/vesc_current_reg.d" -MT"Core/Src/vesc_current_reg.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/vesc_current_reg.o"
+../Core/Src/vesc_com.c: In function 'vesc_got_data':
+../Core/Src/vesc_com.c:274:21: warning: initialization discards 'volatile' qualifier from pointer target type [-Wdiscarded-qualifiers]
+  274 |   uint8_t *packet = &vesc->rx_data[offset + 2];
+      |                     ^
+arm-none-eabi-gcc -o "UniController-OnBoard.elf" @"objects.list"   -mcpu=cortex-m4 -T"/home/andreas/School-local/Kandidatarbete/autonomous_unicycle/STM32/UniController-OnBoard/STM32F405RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="UniController-OnBoard.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: UniController-OnBoard.elf
+ 
+arm-none-eabi-size   UniController-OnBoard.elf 
+arm-none-eabi-objdump -h -S  UniController-OnBoard.elf  > "UniController-OnBoard.list"
+   text	   data	    bss	    dec	    hex	filename
+  68940	    904	  46200	 116044	  1c54c	UniController-OnBoard.elf
+Finished building: default.size.stdout
+ 
+Finished building: UniController-OnBoard.list
+ 
+14:15:21 **** Incremental Build of configuration Debug for project UniController-OnBoard ****
+make -j8 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:538:10: warning: variable 'current_out_pitch' set but not used [-Wunused-but-set-variable]
+  538 |    float current_out_pitch, current_out_roll;
+      |          ^~~~~~~~~~~~~~~~~
+arm-none-eabi-gcc -o "UniController-OnBoard.elf" @"objects.list"   -mcpu=cortex-m4 -T"/home/andreas/School-local/Kandidatarbete/autonomous_unicycle/STM32/UniController-OnBoard/STM32F405RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="UniController-OnBoard.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: UniController-OnBoard.elf
+ 
+arm-none-eabi-size   UniController-OnBoard.elf 
+arm-none-eabi-objdump -h -S  UniController-OnBoard.elf  > "UniController-OnBoard.list"
+   text	   data	    bss	    dec	    hex	filename
+  68940	    904	  46200	 116044	  1c54c	UniController-OnBoard.elf
+Finished building: default.size.stdout
+ 
+Finished building: UniController-OnBoard.list
+ 
+15:12:53 **** Incremental Build of configuration Debug for project UniController-OnBoard ****
+make -j8 all 
+arm-none-eabi-size   UniController-OnBoard.elf 
+   text	   data	    bss	    dec	    hex	filename
+  68940	    904	  46200	 116044	  1c54c	UniController-OnBoard.elf
+Finished building: default.size.stdout
+ 
+15:13:25 **** Incremental Build of configuration Debug for project UniController-OnBoard ****
+make -j8 all 
+arm-none-eabi-size   UniController-OnBoard.elf 
+   text	   data	    bss	    dec	    hex	filename
+  68940	    904	  46200	 116044	  1c54c	UniController-OnBoard.elf
+Finished building: default.size.stdout
+ 
+15:14:16 **** Clean-only build of configuration Debug for project UniController-OnBoard ****
+make -j8 clean 
+rm -rf ./USB_DEVICE/Target/usbd_conf.cyclo ./USB_DEVICE/Target/usbd_conf.d ./USB_DEVICE/Target/usbd_conf.o ./USB_DEVICE/Target/usbd_conf.su
+rm -rf ./USB_DEVICE/App/usb_device.cyclo ./USB_DEVICE/App/usb_device.d ./USB_DEVICE/App/usb_device.o ./USB_DEVICE/App/usb_device.su ./USB_DEVICE/App/usbd_cdc_if.cyclo ./USB_DEVICE/App/usbd_cdc_if.d ./USB_DEVICE/App/usbd_cdc_if.o ./USB_DEVICE/App/usbd_cdc_if.su ./USB_DEVICE/App/usbd_desc.cyclo ./USB_DEVICE/App/usbd_desc.d ./USB_DEVICE/App/usbd_desc.o ./USB_DEVICE/App/usbd_desc.su
+rm -rf ./Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_core.cyclo ./Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_core.d ./Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_core.o ./Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_core.su ./Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.cyclo ./Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.d ./Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.o ./Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.su ./Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ioreq.cyclo ./Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ioreq.d ./Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ioreq.o ./Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ioreq.su
+rm -rf ./Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_cdc.cyclo ./Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_cdc.d ./Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_cdc.o ./Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_cdc.su
+rm -rf ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.cyclo ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.d ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.o ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.su ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.cyclo ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.d ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.o ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.su ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma.cyclo ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma.d ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma.o ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma.su ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma_ex.cyclo ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma_ex.d ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma_ex.o ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma_ex.su ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_exti.cyclo ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_exti.d ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_exti.o ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_exti.su ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash.cyclo ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash.d ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash.o ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash.su ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ex.cyclo ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ex.d ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ex.o ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ex.su ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ramfunc.cyclo ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ramfunc.d ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ramfunc.o ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ramfunc.su ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_gpio.cyclo ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_gpio.d ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_gpio.o ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_gpio.su ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c.cyclo ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c.d ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c.o ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c.su ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c_ex.cyclo ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c_ex.d ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c_ex.o ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c_ex.su ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pcd.cyclo ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pcd.d ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pcd.o ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pcd.su ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pcd_ex.cyclo ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pcd_ex.d ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pcd_ex.o ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pcd_ex.su ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr.cyclo ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr.d ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr.o ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr.su ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr_ex.cyclo ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr_ex.d ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr_ex.o ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr_ex.su ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.cyclo ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.d ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.o ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.su ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.cyclo ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.d ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.o ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.su ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.cyclo ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.d ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.o ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.su ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.cyclo ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.d ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.o ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.su ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.cyclo ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.d ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.o ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.su ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_usb.cyclo ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_usb.d ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_usb.o ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_usb.su
+rm -rf ./Core/Startup/startup_stm32f405rgtx.d ./Core/Startup/startup_stm32f405rgtx.o
+rm -rf ./Core/Src/ctrl/kalman_filter.cyclo ./Core/Src/ctrl/kalman_filter.d ./Core/Src/ctrl/kalman_filter.o ./Core/Src/ctrl/kalman_filter.su ./Core/Src/ctrl/regulator.cyclo ./Core/Src/ctrl/regulator.d ./Core/Src/ctrl/regulator.o ./Core/Src/ctrl/regulator.su
+rm -rf ./Core/Src/buf.cyclo ./Core/Src/buf.d ./Core/Src/buf.o ./Core/Src/buf.su ./Core/Src/main.cyclo ./Core/Src/main.d ./Core/Src/main.o ./Core/Src/main.su ./Core/Src/queue.cyclo ./Core/Src/queue.d ./Core/Src/queue.o ./Core/Src/queue.su ./Core/Src/stm32f4xx_hal_msp.cyclo ./Core/Src/stm32f4xx_hal_msp.d ./Core/Src/stm32f4xx_hal_msp.o ./Core/Src/stm32f4xx_hal_msp.su ./Core/Src/stm32f4xx_it.cyclo ./Core/Src/stm32f4xx_it.d ./Core/Src/stm32f4xx_it.o ./Core/Src/stm32f4xx_it.su ./Core/Src/syscalls.cyclo ./Core/Src/syscalls.d ./Core/Src/syscalls.o ./Core/Src/syscalls.su ./Core/Src/sysmem.cyclo ./Core/Src/sysmem.d ./Core/Src/sysmem.o ./Core/Src/sysmem.su ./Core/Src/system_stm32f4xx.cyclo ./Core/Src/system_stm32f4xx.d ./Core/Src/system_stm32f4xx.o ./Core/Src/system_stm32f4xx.su ./Core/Src/vesc_com.cyclo ./Core/Src/vesc_com.d ./Core/Src/vesc_com.o ./Core/Src/vesc_com.su ./Core/Src/vesc_current_reg.cyclo ./Core/Src/vesc_current_reg.d ./Core/Src/vesc_current_reg.o ./Core/Src/vesc_current_reg.su
+rm -rf UniController-OnBoard.elf UniController-OnBoard.list UniController-OnBoard.map default.size.stdout
+ 
+15:14:17 **** Build of configuration Debug for project UniController-OnBoard ****
+make -j8 all 
+arm-none-eabi-gcc "../USB_DEVICE/Target/usbd_conf.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"USB_DEVICE/Target/usbd_conf.d" -MT"USB_DEVICE/Target/usbd_conf.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "USB_DEVICE/Target/usbd_conf.o"
+arm-none-eabi-gcc "../USB_DEVICE/App/usb_device.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"USB_DEVICE/App/usb_device.d" -MT"USB_DEVICE/App/usb_device.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "USB_DEVICE/App/usb_device.o"
+arm-none-eabi-gcc "../USB_DEVICE/App/usbd_cdc_if.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"USB_DEVICE/App/usbd_cdc_if.d" -MT"USB_DEVICE/App/usbd_cdc_if.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "USB_DEVICE/App/usbd_cdc_if.o"
+arm-none-eabi-gcc "../USB_DEVICE/App/usbd_desc.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"USB_DEVICE/App/usbd_desc.d" -MT"USB_DEVICE/App/usbd_desc.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "USB_DEVICE/App/usbd_desc.o"
+arm-none-eabi-gcc "../Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_core.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_core.d" -MT"Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_core.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_core.o"
+arm-none-eabi-gcc "../Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.d" -MT"Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.o"
+arm-none-eabi-gcc "../Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ioreq.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ioreq.d" -MT"Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ioreq.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ioreq.o"
+arm-none-eabi-gcc "../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_cdc.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_cdc.d" -MT"Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_cdc.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_cdc.o"
+arm-none-eabi-gcc "../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.d" -MT"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.o"
+arm-none-eabi-gcc "../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.d" -MT"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.o"
+arm-none-eabi-gcc "../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma.d" -MT"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma.o"
+arm-none-eabi-gcc "../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma_ex.d" -MT"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_exti.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_exti.d" -MT"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_exti.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_exti.o"
+arm-none-eabi-gcc "../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash.d" -MT"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash.o"
+arm-none-eabi-gcc "../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ex.d" -MT"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ramfunc.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ramfunc.d" -MT"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ramfunc.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ramfunc.o"
+arm-none-eabi-gcc "../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_gpio.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_gpio.d" -MT"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_gpio.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_gpio.o"
+arm-none-eabi-gcc "../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c.d" -MT"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c.o"
+arm-none-eabi-gcc "../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c_ex.d" -MT"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pcd.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pcd.d" -MT"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pcd.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pcd.o"
+arm-none-eabi-gcc "../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pcd_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pcd_ex.d" -MT"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pcd_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pcd_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr.d" -MT"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr.o"
+arm-none-eabi-gcc "../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr_ex.d" -MT"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.d" -MT"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.o"
+arm-none-eabi-gcc "../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.d" -MT"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.d" -MT"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.o"
+arm-none-eabi-gcc "../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.d" -MT"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.d" -MT"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.o"
+arm-none-eabi-gcc "../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_usb.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_usb.d" -MT"Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_usb.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_usb.o"
+arm-none-eabi-gcc -mcpu=cortex-m4 -g3 -DDEBUG -c -x assembler-with-cpp -MMD -MP -MF"Core/Startup/startup_stm32f405rgtx.d" -MT"Core/Startup/startup_stm32f405rgtx.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Startup/startup_stm32f405rgtx.o" "../Core/Startup/startup_stm32f405rgtx.s"
+arm-none-eabi-gcc "../Core/Src/ctrl/kalman_filter.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/ctrl/kalman_filter.d" -MT"Core/Src/ctrl/kalman_filter.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/ctrl/kalman_filter.o"
+arm-none-eabi-gcc "../Core/Src/ctrl/regulator.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/ctrl/regulator.d" -MT"Core/Src/ctrl/regulator.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/ctrl/regulator.o"
+arm-none-eabi-gcc "../Core/Src/buf.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/buf.d" -MT"Core/Src/buf.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/buf.o"
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc "../Core/Src/queue.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/queue.d" -MT"Core/Src/queue.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/queue.o"
+arm-none-eabi-gcc "../Core/Src/stm32f4xx_hal_msp.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/stm32f4xx_hal_msp.d" -MT"Core/Src/stm32f4xx_hal_msp.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/stm32f4xx_hal_msp.o"
+arm-none-eabi-gcc "../Core/Src/stm32f4xx_it.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/stm32f4xx_it.d" -MT"Core/Src/stm32f4xx_it.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/stm32f4xx_it.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:538:10: warning: variable 'current_out_pitch' set but not used [-Wunused-but-set-variable]
+  538 |    float current_out_pitch, current_out_roll;
+      |          ^~~~~~~~~~~~~~~~~
+arm-none-eabi-gcc "../Core/Src/syscalls.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/syscalls.d" -MT"Core/Src/syscalls.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/syscalls.o"
+arm-none-eabi-gcc "../Core/Src/sysmem.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/sysmem.d" -MT"Core/Src/sysmem.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/sysmem.o"
+arm-none-eabi-gcc "../Core/Src/system_stm32f4xx.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/system_stm32f4xx.d" -MT"Core/Src/system_stm32f4xx.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/system_stm32f4xx.o"
+arm-none-eabi-gcc "../Core/Src/vesc_com.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/vesc_com.d" -MT"Core/Src/vesc_com.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/vesc_com.o"
+arm-none-eabi-gcc "../Core/Src/vesc_current_reg.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/vesc_current_reg.d" -MT"Core/Src/vesc_current_reg.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/vesc_current_reg.o"
+../Core/Src/vesc_com.c: In function 'vesc_got_data':
+../Core/Src/vesc_com.c:274:21: warning: initialization discards 'volatile' qualifier from pointer target type [-Wdiscarded-qualifiers]
+  274 |   uint8_t *packet = &vesc->rx_data[offset + 2];
+      |                     ^
+arm-none-eabi-gcc -o "UniController-OnBoard.elf" @"objects.list"   -mcpu=cortex-m4 -T"/home/andreas/School-local/Kandidatarbete/autonomous_unicycle/STM32/UniController-OnBoard/STM32F405RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="UniController-OnBoard.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: UniController-OnBoard.elf
+ 
+arm-none-eabi-size   UniController-OnBoard.elf 
+arm-none-eabi-objdump -h -S  UniController-OnBoard.elf  > "UniController-OnBoard.list"
+   text	   data	    bss	    dec	    hex	filename
+  68940	    904	  46200	 116044	  1c54c	UniController-OnBoard.elf
+Finished building: default.size.stdout
+ 
+Finished building: UniController-OnBoard.list
+ 
+15:26:18 **** Incremental Build of configuration Debug for project UniController-OnBoard ****
+make -j8 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:548:10: warning: variable 'current_out_pitch' set but not used [-Wunused-but-set-variable]
+  548 |    float current_out_pitch, current_out_roll;
+      |          ^~~~~~~~~~~~~~~~~
+../Core/Src/main.c:522:10: warning: unused variable 'gain' [-Wunused-variable]
+  522 |    float gain = 10 * dt;
+      |          ^~~~
+../Core/Src/main.c:521:10: warning: unused variable 'acc_predicted_angle' [-Wunused-variable]
+  521 |    float acc_predicted_angle = -sensor_acc_roll / 9.82 * (3.14 / 2);
+      |          ^~~~~~~~~~~~~~~~~~~
+arm-none-eabi-gcc -o "UniController-OnBoard.elf" @"objects.list"   -mcpu=cortex-m4 -T"/home/andreas/School-local/Kandidatarbete/autonomous_unicycle/STM32/UniController-OnBoard/STM32F405RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="UniController-OnBoard.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: UniController-OnBoard.elf
+ 
+arm-none-eabi-size   UniController-OnBoard.elf 
+arm-none-eabi-objdump -h -S  UniController-OnBoard.elf  > "UniController-OnBoard.list"
+   text	   data	    bss	    dec	    hex	filename
+  69140	    904	  46200	 116244	  1c614	UniController-OnBoard.elf
+Finished building: default.size.stdout
+ 
+Finished building: UniController-OnBoard.list
+ 
+15:26:21 **** Incremental Build of configuration Debug for project UniController-OnBoard ****
+make -j8 all 
+arm-none-eabi-size   UniController-OnBoard.elf 
+   text	   data	    bss	    dec	    hex	filename
+  69140	    904	  46200	 116244	  1c614	UniController-OnBoard.elf
+Finished building: default.size.stdout
+ 
+15:41:25 **** Incremental Build of configuration Debug for project UniController-OnBoard ****
+make -j8 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:450:5: warning: format '%ld' expects argument of type 'long int', but argument 8 has type 'int' [-Wformat=]
+  450 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  461 |     (int) CTRL.last_esc_pitch.erpm, (int) CTRL.last_esc_roll.erpm,
+      |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |     |
+      |     int
+../Core/Src/main.c:451:14: note: format string is defined here
+  451 |     "ax = %8ld, ay = %8ld, az = %8ld, "
+      |           ~~~^
+      |              |
+      |              long int
+      |           %8d
+../Core/Src/main.c:450:5: warning: format '%ld' expects argument of type 'long int', but argument 9 has type 'int' [-Wformat=]
+  450 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  461 |     (int) CTRL.last_esc_pitch.erpm, (int) CTRL.last_esc_roll.erpm,
+      |                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                     |
+      |                                     int
+../Core/Src/main.c:451:25: note: format string is defined here
+  451 |     "ax = %8ld, ay = %8ld, az = %8ld, "
+      |                      ~~~^
+      |                         |
+      |                         long int
+      |                      %8d
+../Core/Src/main.c:450:5: warning: format '%ld' expects argument of type 'long int', but argument 10 has type 'double' [-Wformat=]
+  450 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  462 |     dbg_values.current_wanted_pitch, dbg_values.current_wanted_roll,
+      |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |               |
+      |               double
+../Core/Src/main.c:451:36: note: format string is defined here
+  451 |     "ax = %8ld, ay = %8ld, az = %8ld, "
+      |                                 ~~~^
+      |                                    |
+      |                                    long int
+      |                                 %8f
+../Core/Src/main.c:450:5: warning: format '%f' expects argument of type 'double', but argument 12 has type 'long int' [-Wformat=]
+  450 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  463 |     (int32_t) (1000 * CTRL.last_acc.ax), (int32_t) (1000 * CTRL.last_acc.ay), (int32_t) (1000 * CTRL.last_acc.az),
+      |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |     |
+      |     long int
+../Core/Src/main.c:452:33: note: format string is defined here
+  452 |     "gx = %7.5f rad/s, gy = %7.5f rad/s, gz = %7.5f rad/s, "
+      |                             ~~~~^
+      |                                 |
+      |                                 double
+      |                             %7.5ld
+../Core/Src/main.c:450:5: warning: format '%f' expects argument of type 'double', but argument 13 has type 'long int' [-Wformat=]
+  450 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  463 |     (int32_t) (1000 * CTRL.last_acc.ax), (int32_t) (1000 * CTRL.last_acc.ay), (int32_t) (1000 * CTRL.last_acc.az),
+      |                                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                          |
+      |                                          long int
+../Core/Src/main.c:452:51: note: format string is defined here
+  452 |     "gx = %7.5f rad/s, gy = %7.5f rad/s, gz = %7.5f rad/s, "
+      |                                               ~~~~^
+      |                                                   |
+      |                                                   double
+      |                                               %7.5ld
+../Core/Src/main.c:450:5: warning: format '%d' expects argument of type 'int', but argument 14 has type 'long int' [-Wformat=]
+  450 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  463 |     (int32_t) (1000 * CTRL.last_acc.ax), (int32_t) (1000 * CTRL.last_acc.ay), (int32_t) (1000 * CTRL.last_acc.az),
+      |                                                                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                                                               |
+      |                                                                               long int
+../Core/Src/main.c:453:21: note: format string is defined here
+  453 |     "erpm_pitch = %4d, erpm_roll = %4d "
+      |                   ~~^
+      |                     |
+      |                     int
+      |                   %4ld
+../Core/Src/main.c:450:5: warning: format '%d' expects argument of type 'int', but argument 15 has type 'double' [-Wformat=]
+  450 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  464 |     CTRL.last_acc.gx, CTRL.last_acc.gy, CTRL.last_acc.gz,
+      |     ~~~~~~~~~~~~~~~~
+      |                  |
+      |                  double
+../Core/Src/main.c:453:38: note: format string is defined here
+  453 |     "erpm_pitch = %4d, erpm_roll = %4d "
+      |                                    ~~^
+      |                                      |
+      |                                      int
+      |                                    %4f
+../Core/Src/main.c:548:10: warning: variable 'current_out_pitch' set but not used [-Wunused-but-set-variable]
+  548 |    float current_out_pitch, current_out_roll;
+      |          ^~~~~~~~~~~~~~~~~
+../Core/Src/main.c:522:10: warning: unused variable 'gain' [-Wunused-variable]
+  522 |    float gain = 10 * dt;
+      |          ^~~~
+../Core/Src/main.c:521:10: warning: unused variable 'acc_predicted_angle' [-Wunused-variable]
+  521 |    float acc_predicted_angle = -sensor_acc_roll / 9.82 * (3.14 / 2);
+      |          ^~~~~~~~~~~~~~~~~~~
+arm-none-eabi-gcc -o "UniController-OnBoard.elf" @"objects.list"   -mcpu=cortex-m4 -T"/home/andreas/School-local/Kandidatarbete/autonomous_unicycle/STM32/UniController-OnBoard/STM32F405RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="UniController-OnBoard.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: UniController-OnBoard.elf
+ 
+arm-none-eabi-size   UniController-OnBoard.elf 
+arm-none-eabi-objdump -h -S  UniController-OnBoard.elf  > "UniController-OnBoard.list"
+   text	   data	    bss	    dec	    hex	filename
+  69380	    904	  46200	 116484	  1c704	UniController-OnBoard.elf
+Finished building: default.size.stdout
+ 
+Finished building: UniController-OnBoard.list
+ 
+15:41:52 **** Incremental Build of configuration Debug for project UniController-OnBoard ****
+make -j8 all 
+arm-none-eabi-size   UniController-OnBoard.elf 
+   text	   data	    bss	    dec	    hex	filename
+  69380	    904	  46200	 116484	  1c704	UniController-OnBoard.elf
+Finished building: default.size.stdout
+ 
+15:51:59 **** Incremental Build of configuration Debug for project UniController-OnBoard ****
+make -j8 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:457:5: warning: format '%ld' expects argument of type 'long int', but argument 8 has type 'int' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  468 |     (int) CTRL.last_esc_pitch.erpm, (int) CTRL.last_esc_roll.erpm,
+      |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |     |
+      |     int
+../Core/Src/main.c:458:14: note: format string is defined here
+  458 |     "ax = %8ld, ay = %8ld, az = %8ld, "
+      |           ~~~^
+      |              |
+      |              long int
+      |           %8d
+../Core/Src/main.c:457:5: warning: format '%ld' expects argument of type 'long int', but argument 9 has type 'int' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  468 |     (int) CTRL.last_esc_pitch.erpm, (int) CTRL.last_esc_roll.erpm,
+      |                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                     |
+      |                                     int
+../Core/Src/main.c:458:25: note: format string is defined here
+  458 |     "ax = %8ld, ay = %8ld, az = %8ld, "
+      |                      ~~~^
+      |                         |
+      |                         long int
+      |                      %8d
+../Core/Src/main.c:457:5: warning: format '%ld' expects argument of type 'long int', but argument 10 has type 'double' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  469 |     dbg_values.current_wanted_pitch, dbg_values.current_wanted_roll,
+      |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |               |
+      |               double
+../Core/Src/main.c:458:36: note: format string is defined here
+  458 |     "ax = %8ld, ay = %8ld, az = %8ld, "
+      |                                 ~~~^
+      |                                    |
+      |                                    long int
+      |                                 %8f
+../Core/Src/main.c:457:5: warning: format '%f' expects argument of type 'double', but argument 12 has type 'long int' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  470 |     (int32_t) (1000 * CTRL.last_acc.ax), (int32_t) (1000 * CTRL.last_acc.ay), (int32_t) (1000 * CTRL.last_acc.az),
+      |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |     |
+      |     long int
+../Core/Src/main.c:459:33: note: format string is defined here
+  459 |     "gx = %7.5f rad/s, gy = %7.5f rad/s, gz = %7.5f rad/s, "
+      |                             ~~~~^
+      |                                 |
+      |                                 double
+      |                             %7.5ld
+../Core/Src/main.c:457:5: warning: format '%f' expects argument of type 'double', but argument 13 has type 'long int' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  470 |     (int32_t) (1000 * CTRL.last_acc.ax), (int32_t) (1000 * CTRL.last_acc.ay), (int32_t) (1000 * CTRL.last_acc.az),
+      |                                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                          |
+      |                                          long int
+../Core/Src/main.c:459:51: note: format string is defined here
+  459 |     "gx = %7.5f rad/s, gy = %7.5f rad/s, gz = %7.5f rad/s, "
+      |                                               ~~~~^
+      |                                                   |
+      |                                                   double
+      |                                               %7.5ld
+../Core/Src/main.c:457:5: warning: format '%d' expects argument of type 'int', but argument 14 has type 'long int' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  470 |     (int32_t) (1000 * CTRL.last_acc.ax), (int32_t) (1000 * CTRL.last_acc.ay), (int32_t) (1000 * CTRL.last_acc.az),
+      |                                                                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                                                               |
+      |                                                                               long int
+../Core/Src/main.c:460:21: note: format string is defined here
+  460 |     "erpm_pitch = %4d, erpm_roll = %4d "
+      |                   ~~^
+      |                     |
+      |                     int
+      |                   %4ld
+../Core/Src/main.c:457:5: warning: format '%d' expects argument of type 'int', but argument 15 has type 'double' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  471 |     CTRL.last_acc.gx, CTRL.last_acc.gy, CTRL.last_acc.gz,
+      |     ~~~~~~~~~~~~~~~~
+      |                  |
+      |                  double
+../Core/Src/main.c:460:38: note: format string is defined here
+  460 |     "erpm_pitch = %4d, erpm_roll = %4d "
+      |                                    ~~^
+      |                                      |
+      |                                      int
+      |                                    %4f
+../Core/Src/main.c:555:10: warning: variable 'current_out_pitch' set but not used [-Wunused-but-set-variable]
+  555 |    float current_out_pitch, current_out_roll;
+      |          ^~~~~~~~~~~~~~~~~
+../Core/Src/main.c:529:10: warning: unused variable 'gain' [-Wunused-variable]
+  529 |    float gain = 10 * dt;
+      |          ^~~~
+../Core/Src/main.c:528:10: warning: unused variable 'acc_predicted_angle' [-Wunused-variable]
+  528 |    float acc_predicted_angle = -sensor_acc_roll / 9.82 * (3.14 / 2);
+      |          ^~~~~~~~~~~~~~~~~~~
+arm-none-eabi-gcc -o "UniController-OnBoard.elf" @"objects.list"   -mcpu=cortex-m4 -T"/home/andreas/School-local/Kandidatarbete/autonomous_unicycle/STM32/UniController-OnBoard/STM32F405RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="UniController-OnBoard.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: UniController-OnBoard.elf
+ 
+arm-none-eabi-size   UniController-OnBoard.elf 
+arm-none-eabi-objdump -h -S  UniController-OnBoard.elf  > "UniController-OnBoard.list"
+   text	   data	    bss	    dec	    hex	filename
+  69316	    904	  46200	 116420	  1c6c4	UniController-OnBoard.elf
+Finished building: default.size.stdout
+ 
+Finished building: UniController-OnBoard.list
+ 
+15:52:03 **** Incremental Build of configuration Debug for project UniController-OnBoard ****
+make -j8 all 
+arm-none-eabi-size   UniController-OnBoard.elf 
+   text	   data	    bss	    dec	    hex	filename
+  69316	    904	  46200	 116420	  1c6c4	UniController-OnBoard.elf
+Finished building: default.size.stdout
+ 
+15:52:10 **** Incremental Build of configuration Debug for project UniController-OnBoard ****
+make -j8 all 
+arm-none-eabi-size   UniController-OnBoard.elf 
+   text	   data	    bss	    dec	    hex	filename
+  69316	    904	  46200	 116420	  1c6c4	UniController-OnBoard.elf
+Finished building: default.size.stdout
+ 
+16:06:03 **** Incremental Build of configuration Debug for project UniController-OnBoard ****
+make -j8 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'get_accelerometer_data':
+../Core/Src/main.c:277:11: warning: unused variable 'ay_adj' [-Wunused-variable]
+  277 |     float ay_adj = (ay - ay_mid) / ay_range * 9.82;
+      |           ^~~~~~
+../Core/Src/main.c:276:11: warning: unused variable 'az_adj' [-Wunused-variable]
+  276 |     float az_adj = (az - az_mid) / az_range * 9.82;
+      |           ^~~~~~
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:457:5: warning: format '%ld' expects argument of type 'long int', but argument 8 has type 'int' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  468 |     (int) CTRL.last_esc_pitch.erpm, (int) CTRL.last_esc_roll.erpm,
+      |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |     |
+      |     int
+../Core/Src/main.c:458:14: note: format string is defined here
+  458 |     "ax = %8ld, ay = %8ld, az = %8ld, "
+      |           ~~~^
+      |              |
+      |              long int
+      |           %8d
+../Core/Src/main.c:457:5: warning: format '%ld' expects argument of type 'long int', but argument 9 has type 'int' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  468 |     (int) CTRL.last_esc_pitch.erpm, (int) CTRL.last_esc_roll.erpm,
+      |                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                     |
+      |                                     int
+../Core/Src/main.c:458:25: note: format string is defined here
+  458 |     "ax = %8ld, ay = %8ld, az = %8ld, "
+      |                      ~~~^
+      |                         |
+      |                         long int
+      |                      %8d
+../Core/Src/main.c:457:5: warning: format '%ld' expects argument of type 'long int', but argument 10 has type 'double' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  469 |     dbg_values.current_wanted_pitch, dbg_values.current_wanted_roll,
+      |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |               |
+      |               double
+../Core/Src/main.c:458:36: note: format string is defined here
+  458 |     "ax = %8ld, ay = %8ld, az = %8ld, "
+      |                                 ~~~^
+      |                                    |
+      |                                    long int
+      |                                 %8f
+../Core/Src/main.c:457:5: warning: format '%f' expects argument of type 'double', but argument 12 has type 'long int' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  470 |     (int32_t) (1000 * CTRL.last_acc.ax), (int32_t) (1000 * CTRL.last_acc.ay), (int32_t) (1000 * CTRL.last_acc.az),
+      |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |     |
+      |     long int
+../Core/Src/main.c:459:33: note: format string is defined here
+  459 |     "gx = %7.5f rad/s, gy = %7.5f rad/s, gz = %7.5f rad/s, "
+      |                             ~~~~^
+      |                                 |
+      |                                 double
+      |                             %7.5ld
+../Core/Src/main.c:457:5: warning: format '%f' expects argument of type 'double', but argument 13 has type 'long int' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  470 |     (int32_t) (1000 * CTRL.last_acc.ax), (int32_t) (1000 * CTRL.last_acc.ay), (int32_t) (1000 * CTRL.last_acc.az),
+      |                                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                          |
+      |                                          long int
+../Core/Src/main.c:459:51: note: format string is defined here
+  459 |     "gx = %7.5f rad/s, gy = %7.5f rad/s, gz = %7.5f rad/s, "
+      |                                               ~~~~^
+      |                                                   |
+      |                                                   double
+      |                                               %7.5ld
+../Core/Src/main.c:457:5: warning: format '%d' expects argument of type 'int', but argument 14 has type 'long int' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  470 |     (int32_t) (1000 * CTRL.last_acc.ax), (int32_t) (1000 * CTRL.last_acc.ay), (int32_t) (1000 * CTRL.last_acc.az),
+      |                                                                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                                                               |
+      |                                                                               long int
+../Core/Src/main.c:460:21: note: format string is defined here
+  460 |     "erpm_pitch = %4d, erpm_roll = %4d "
+      |                   ~~^
+      |                     |
+      |                     int
+      |                   %4ld
+../Core/Src/main.c:457:5: warning: format '%d' expects argument of type 'int', but argument 15 has type 'double' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  471 |     CTRL.last_acc.gx, CTRL.last_acc.gy, CTRL.last_acc.gz,
+      |     ~~~~~~~~~~~~~~~~
+      |                  |
+      |                  double
+../Core/Src/main.c:460:38: note: format string is defined here
+  460 |     "erpm_pitch = %4d, erpm_roll = %4d "
+      |                                    ~~^
+      |                                      |
+      |                                      int
+      |                                    %4f
+../Core/Src/main.c:555:10: warning: variable 'current_out_pitch' set but not used [-Wunused-but-set-variable]
+  555 |    float current_out_pitch, current_out_roll;
+      |          ^~~~~~~~~~~~~~~~~
+../Core/Src/main.c:529:10: warning: unused variable 'gain' [-Wunused-variable]
+  529 |    float gain = 10 * dt;
+      |          ^~~~
+../Core/Src/main.c:528:10: warning: unused variable 'acc_predicted_angle' [-Wunused-variable]
+  528 |    float acc_predicted_angle = -sensor_acc_roll / 9.82 * (3.14 / 2);
+      |          ^~~~~~~~~~~~~~~~~~~
+arm-none-eabi-gcc -o "UniController-OnBoard.elf" @"objects.list"   -mcpu=cortex-m4 -T"/home/andreas/School-local/Kandidatarbete/autonomous_unicycle/STM32/UniController-OnBoard/STM32F405RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="UniController-OnBoard.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: UniController-OnBoard.elf
+ 
+arm-none-eabi-size   UniController-OnBoard.elf 
+arm-none-eabi-objdump -h -S  UniController-OnBoard.elf  > "UniController-OnBoard.list"
+   text	   data	    bss	    dec	    hex	filename
+  69196	    904	  46200	 116300	  1c64c	UniController-OnBoard.elf
+Finished building: default.size.stdout
+ 
+Finished building: UniController-OnBoard.list
+ 
+16:06:50 **** Incremental Build of configuration Debug for project UniController-OnBoard ****
+make -j8 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'get_accelerometer_data':
+../Core/Src/main.c:277:11: warning: unused variable 'ay_adj' [-Wunused-variable]
+  277 |     float ay_adj = (ay - ay_mid) / ay_range * 9.82;
+      |           ^~~~~~
+../Core/Src/main.c:276:11: warning: unused variable 'az_adj' [-Wunused-variable]
+  276 |     float az_adj = (az - az_mid) / az_range * 9.82;
+      |           ^~~~~~
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:457:5: warning: format '%ld' expects argument of type 'long int', but argument 8 has type 'int' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  468 |     (int) CTRL.last_esc_pitch.erpm, (int) CTRL.last_esc_roll.erpm,
+      |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |     |
+      |     int
+../Core/Src/main.c:458:14: note: format string is defined here
+  458 |     "ax = %8ld, ay = %8ld, az = %8ld, "
+      |           ~~~^
+      |              |
+      |              long int
+      |           %8d
+../Core/Src/main.c:457:5: warning: format '%ld' expects argument of type 'long int', but argument 9 has type 'int' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  468 |     (int) CTRL.last_esc_pitch.erpm, (int) CTRL.last_esc_roll.erpm,
+      |                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                     |
+      |                                     int
+../Core/Src/main.c:458:25: note: format string is defined here
+  458 |     "ax = %8ld, ay = %8ld, az = %8ld, "
+      |                      ~~~^
+      |                         |
+      |                         long int
+      |                      %8d
+../Core/Src/main.c:457:5: warning: format '%ld' expects argument of type 'long int', but argument 10 has type 'double' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  469 |     dbg_values.current_wanted_pitch, dbg_values.current_wanted_roll,
+      |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |               |
+      |               double
+../Core/Src/main.c:458:36: note: format string is defined here
+  458 |     "ax = %8ld, ay = %8ld, az = %8ld, "
+      |                                 ~~~^
+      |                                    |
+      |                                    long int
+      |                                 %8f
+../Core/Src/main.c:457:5: warning: format '%f' expects argument of type 'double', but argument 12 has type 'long int' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  470 |     (int32_t) (1000 * CTRL.last_acc.ax), (int32_t) (1000 * CTRL.last_acc.ay), (int32_t) (1000 * CTRL.last_acc.az),
+      |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |     |
+      |     long int
+../Core/Src/main.c:459:33: note: format string is defined here
+  459 |     "gx = %7.5f rad/s, gy = %7.5f rad/s, gz = %7.5f rad/s, "
+      |                             ~~~~^
+      |                                 |
+      |                                 double
+      |                             %7.5ld
+../Core/Src/main.c:457:5: warning: format '%f' expects argument of type 'double', but argument 13 has type 'long int' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  470 |     (int32_t) (1000 * CTRL.last_acc.ax), (int32_t) (1000 * CTRL.last_acc.ay), (int32_t) (1000 * CTRL.last_acc.az),
+      |                                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                          |
+      |                                          long int
+../Core/Src/main.c:459:51: note: format string is defined here
+  459 |     "gx = %7.5f rad/s, gy = %7.5f rad/s, gz = %7.5f rad/s, "
+      |                                               ~~~~^
+      |                                                   |
+      |                                                   double
+      |                                               %7.5ld
+../Core/Src/main.c:457:5: warning: format '%d' expects argument of type 'int', but argument 14 has type 'long int' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  470 |     (int32_t) (1000 * CTRL.last_acc.ax), (int32_t) (1000 * CTRL.last_acc.ay), (int32_t) (1000 * CTRL.last_acc.az),
+      |                                                                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                                                               |
+      |                                                                               long int
+../Core/Src/main.c:460:21: note: format string is defined here
+  460 |     "erpm_pitch = %4d, erpm_roll = %4d "
+      |                   ~~^
+      |                     |
+      |                     int
+      |                   %4ld
+../Core/Src/main.c:457:5: warning: format '%d' expects argument of type 'int', but argument 15 has type 'double' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  471 |     CTRL.last_acc.gx, CTRL.last_acc.gy, CTRL.last_acc.gz,
+      |     ~~~~~~~~~~~~~~~~
+      |                  |
+      |                  double
+../Core/Src/main.c:460:38: note: format string is defined here
+  460 |     "erpm_pitch = %4d, erpm_roll = %4d "
+      |                                    ~~^
+      |                                      |
+      |                                      int
+      |                                    %4f
+../Core/Src/main.c:555:10: warning: variable 'current_out_pitch' set but not used [-Wunused-but-set-variable]
+  555 |    float current_out_pitch, current_out_roll;
+      |          ^~~~~~~~~~~~~~~~~
+../Core/Src/main.c:529:10: warning: unused variable 'gain' [-Wunused-variable]
+  529 |    float gain = 10 * dt;
+      |          ^~~~
+../Core/Src/main.c:528:10: warning: unused variable 'acc_predicted_angle' [-Wunused-variable]
+  528 |    float acc_predicted_angle = -sensor_acc_roll / 9.82 * (3.14 / 2);
+      |          ^~~~~~~~~~~~~~~~~~~
+arm-none-eabi-gcc -o "UniController-OnBoard.elf" @"objects.list"   -mcpu=cortex-m4 -T"/home/andreas/School-local/Kandidatarbete/autonomous_unicycle/STM32/UniController-OnBoard/STM32F405RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="UniController-OnBoard.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: UniController-OnBoard.elf
+ 
+arm-none-eabi-size   UniController-OnBoard.elf 
+arm-none-eabi-objdump -h -S  UniController-OnBoard.elf  > "UniController-OnBoard.list"
+   text	   data	    bss	    dec	    hex	filename
+  69284	    904	  46200	 116388	  1c6a4	UniController-OnBoard.elf
+Finished building: default.size.stdout
+ 
+Finished building: UniController-OnBoard.list
+ 
+16:06:53 **** Incremental Build of configuration Debug for project UniController-OnBoard ****
+make -j8 all 
+arm-none-eabi-size   UniController-OnBoard.elf 
+   text	   data	    bss	    dec	    hex	filename
+  69284	    904	  46200	 116388	  1c6a4	UniController-OnBoard.elf
+Finished building: default.size.stdout
+ 
+16:17:39 **** Incremental Build of configuration Debug for project UniController-OnBoard ****
+make -j8 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'get_accelerometer_data':
+../Core/Src/main.c:277:11: warning: unused variable 'ay_adj' [-Wunused-variable]
+  277 |     float ay_adj = (ay - ay_mid) / ay_range * 9.82;
+      |           ^~~~~~
+../Core/Src/main.c:276:11: warning: unused variable 'az_adj' [-Wunused-variable]
+  276 |     float az_adj = (az - az_mid) / az_range * 9.82;
+      |           ^~~~~~
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:457:5: warning: format '%ld' expects argument of type 'long int', but argument 8 has type 'int' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  468 |     (int) CTRL.last_esc_pitch.erpm, (int) CTRL.last_esc_roll.erpm,
+      |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |     |
+      |     int
+../Core/Src/main.c:458:14: note: format string is defined here
+  458 |     "ax = %8ld, ay = %8ld, az = %8ld, "
+      |           ~~~^
+      |              |
+      |              long int
+      |           %8d
+../Core/Src/main.c:457:5: warning: format '%ld' expects argument of type 'long int', but argument 9 has type 'int' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  468 |     (int) CTRL.last_esc_pitch.erpm, (int) CTRL.last_esc_roll.erpm,
+      |                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                     |
+      |                                     int
+../Core/Src/main.c:458:25: note: format string is defined here
+  458 |     "ax = %8ld, ay = %8ld, az = %8ld, "
+      |                      ~~~^
+      |                         |
+      |                         long int
+      |                      %8d
+../Core/Src/main.c:457:5: warning: format '%ld' expects argument of type 'long int', but argument 10 has type 'double' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  469 |     dbg_values.current_wanted_pitch, dbg_values.current_wanted_roll,
+      |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |               |
+      |               double
+../Core/Src/main.c:458:36: note: format string is defined here
+  458 |     "ax = %8ld, ay = %8ld, az = %8ld, "
+      |                                 ~~~^
+      |                                    |
+      |                                    long int
+      |                                 %8f
+../Core/Src/main.c:457:5: warning: format '%ld' expects argument of type 'long int', but argument 11 has type 'double' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  469 |     dbg_values.current_wanted_pitch, dbg_values.current_wanted_roll,
+      |                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                                |
+      |                                                double
+../Core/Src/main.c:459:14: note: format string is defined here
+  459 |     "gx = %8ld rad/s, gy = %8ld rad/s, gz = %8ld rad/s, "
+      |           ~~~^
+      |              |
+      |              long int
+      |           %8f
+../Core/Src/main.c:457:5: warning: format '%d' expects argument of type 'int', but argument 14 has type 'long int' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  470 |     (int32_t) (1000 * CTRL.last_acc.ax), (int32_t) (1000 * CTRL.last_acc.ay), (int32_t) (1000 * CTRL.last_acc.az),
+      |                                                                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                                                               |
+      |                                                                               long int
+../Core/Src/main.c:460:21: note: format string is defined here
+  460 |     "erpm_pitch = %4d, erpm_roll = %4d "
+      |                   ~~^
+      |                     |
+      |                     int
+      |                   %4ld
+../Core/Src/main.c:457:5: warning: format '%d' expects argument of type 'int', but argument 15 has type 'long int' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  471 |     (int32_t) (1000 * CTRL.last_acc.gx), (int32_t) (1000 * CTRL.last_acc.gy), (int32_t) (1000 * CTRL.last_acc.gz),
+      |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |     |
+      |     long int
+../Core/Src/main.c:460:38: note: format string is defined here
+  460 |     "erpm_pitch = %4d, erpm_roll = %4d "
+      |                                    ~~^
+      |                                      |
+      |                                      int
+      |                                    %4ld
+../Core/Src/main.c:457:5: warning: format '%f' expects argument of type 'double', but argument 16 has type 'long int' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  471 |     (int32_t) (1000 * CTRL.last_acc.gx), (int32_t) (1000 * CTRL.last_acc.gy), (int32_t) (1000 * CTRL.last_acc.gz),
+      |                                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                          |
+      |                                          long int
+../Core/Src/main.c:461:22: note: format string is defined here
+  461 |     "I_w_pitch = %7.5f A, I_w_roll = %7.5f A "
+      |                  ~~~~^
+      |                      |
+      |                      double
+      |                  %7.5ld
+../Core/Src/main.c:457:5: warning: format '%f' expects argument of type 'double', but argument 17 has type 'long int' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  471 |     (int32_t) (1000 * CTRL.last_acc.gx), (int32_t) (1000 * CTRL.last_acc.gy), (int32_t) (1000 * CTRL.last_acc.gz),
+      |                                                                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                                                               |
+      |                                                                               long int
+../Core/Src/main.c:461:42: note: format string is defined here
+  461 |     "I_w_pitch = %7.5f A, I_w_roll = %7.5f A "
+      |                                      ~~~~^
+      |                                          |
+      |                                          double
+      |                                      %7.5ld
+../Core/Src/main.c:555:10: warning: variable 'current_out_pitch' set but not used [-Wunused-but-set-variable]
+  555 |    float current_out_pitch, current_out_roll;
+      |          ^~~~~~~~~~~~~~~~~
+../Core/Src/main.c:529:10: warning: unused variable 'gain' [-Wunused-variable]
+  529 |    float gain = 10 * dt;
+      |          ^~~~
+../Core/Src/main.c:528:10: warning: unused variable 'acc_predicted_angle' [-Wunused-variable]
+  528 |    float acc_predicted_angle = -sensor_acc_roll / 9.82 * (3.14 / 2);
+      |          ^~~~~~~~~~~~~~~~~~~
+arm-none-eabi-gcc -o "UniController-OnBoard.elf" @"objects.list"   -mcpu=cortex-m4 -T"/home/andreas/School-local/Kandidatarbete/autonomous_unicycle/STM32/UniController-OnBoard/STM32F405RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="UniController-OnBoard.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: UniController-OnBoard.elf
+ 
+arm-none-eabi-size   UniController-OnBoard.elf 
+arm-none-eabi-objdump -h -S  UniController-OnBoard.elf  > "UniController-OnBoard.list"
+   text	   data	    bss	    dec	    hex	filename
+  69300	    904	  46200	 116404	  1c6b4	UniController-OnBoard.elf
+Finished building: default.size.stdout
+ 
+Finished building: UniController-OnBoard.list
+ 
+16:20:17 **** Incremental Build of configuration Debug for project UniController-OnBoard ****
+make -j8 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'get_accelerometer_data':
+../Core/Src/main.c:277:11: warning: unused variable 'ay_adj' [-Wunused-variable]
+  277 |     float ay_adj = (ay - ay_mid) / ay_range * 9.82;
+      |           ^~~~~~
+../Core/Src/main.c:276:11: warning: unused variable 'az_adj' [-Wunused-variable]
+  276 |     float az_adj = (az - az_mid) / az_range * 9.82;
+      |           ^~~~~~
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:457:5: warning: format '%f' expects argument of type 'double', but argument 8 has type 'int' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  468 |     (int) CTRL.last_esc_pitch.erpm, (int) CTRL.last_esc_roll.erpm,
+      |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |     |
+      |     int
+../Core/Src/main.c:458:15: note: format string is defined here
+  458 |     "ax = %7.5f, ay = %7.5f, az = %7.5f, "
+      |           ~~~~^
+      |               |
+      |               double
+      |           %7.5d
+../Core/Src/main.c:457:5: warning: format '%f' expects argument of type 'double', but argument 9 has type 'int' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  468 |     (int) CTRL.last_esc_pitch.erpm, (int) CTRL.last_esc_roll.erpm,
+      |                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                     |
+      |                                     int
+../Core/Src/main.c:458:27: note: format string is defined here
+  458 |     "ax = %7.5f, ay = %7.5f, az = %7.5f, "
+      |                       ~~~~^
+      |                           |
+      |                           double
+      |                       %7.5d
+../Core/Src/main.c:457:5: warning: format '%d' expects argument of type 'int', but argument 14 has type 'double' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  470 |     CTRL.last_acc.ax,CTRL.last_acc.ay, CTRL.last_acc.az,
+      |                                        ~~~~~~~~~~~~~~~~
+      |                                                     |
+      |                                                     double
+../Core/Src/main.c:460:21: note: format string is defined here
+  460 |     "erpm_pitch = %4d, erpm_roll = %4d "
+      |                   ~~^
+      |                     |
+      |                     int
+      |                   %4f
+../Core/Src/main.c:457:5: warning: format '%d' expects argument of type 'int', but argument 15 has type 'double' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s. t = %8lu ms "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  471 |     CTRL.last_acc.gx, CTRL.last_acc.gy, CTRL.last_acc.gz,
+      |     ~~~~~~~~~~~~~~~~
+      |                  |
+      |                  double
+../Core/Src/main.c:460:38: note: format string is defined here
+  460 |     "erpm_pitch = %4d, erpm_roll = %4d "
+      |                                    ~~^
+      |                                      |
+      |                                      int
+      |                                    %4f
+../Core/Src/main.c:555:10: warning: variable 'current_out_pitch' set but not used [-Wunused-but-set-variable]
+  555 |    float current_out_pitch, current_out_roll;
+      |          ^~~~~~~~~~~~~~~~~
+../Core/Src/main.c:529:10: warning: unused variable 'gain' [-Wunused-variable]
+  529 |    float gain = 10 * dt;
+      |          ^~~~
+../Core/Src/main.c:528:10: warning: unused variable 'acc_predicted_angle' [-Wunused-variable]
+  528 |    float acc_predicted_angle = -sensor_acc_roll / 9.82 * (3.14 / 2);
+      |          ^~~~~~~~~~~~~~~~~~~
+arm-none-eabi-gcc -o "UniController-OnBoard.elf" @"objects.list"   -mcpu=cortex-m4 -T"/home/andreas/School-local/Kandidatarbete/autonomous_unicycle/STM32/UniController-OnBoard/STM32F405RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="UniController-OnBoard.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: UniController-OnBoard.elf
+ 
+arm-none-eabi-size   UniController-OnBoard.elf 
+arm-none-eabi-objdump -h -S  UniController-OnBoard.elf  > "UniController-OnBoard.list"
+   text	   data	    bss	    dec	    hex	filename
+  69276	    904	  46200	 116380	  1c69c	UniController-OnBoard.elf
+Finished building: default.size.stdout
+ 
+Finished building: UniController-OnBoard.list
+ 
+16:20:22 **** Incremental Build of configuration Debug for project UniController-OnBoard ****
+make -j8 all 
+arm-none-eabi-size   UniController-OnBoard.elf 
+   text	   data	    bss	    dec	    hex	filename
+  69276	    904	  46200	 116380	  1c69c	UniController-OnBoard.elf
+Finished building: default.size.stdout
+ 
+16:25:31 **** Incremental Build of configuration Debug for project UniController-OnBoard ****
+make -j8 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'get_accelerometer_data':
+../Core/Src/main.c:277:11: warning: unused variable 'ay_adj' [-Wunused-variable]
+  277 |     float ay_adj = (ay - ay_mid) / ay_range * 9.82;
+      |           ^~~~~~
+../Core/Src/main.c:276:11: warning: unused variable 'az_adj' [-Wunused-variable]
+  276 |     float az_adj = (az - az_mid) / az_range * 9.82;
+      |           ^~~~~~
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:457:5: warning: format '%ld' expects argument of type 'long int', but argument 8 has type 'int' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s, t = %8lu ms, "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  468 |     (int) CTRL.last_esc_pitch.erpm, (int) CTRL.last_esc_roll.erpm,
+      |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |     |
+      |     int
+../Core/Src/main.c:458:14: note: format string is defined here
+  458 |     "ax = %8ld mm/s2, ay = %8ld mm/s2, az = %8ld mm/s2, "
+      |           ~~~^
+      |              |
+      |              long int
+      |           %8d
+../Core/Src/main.c:457:5: warning: format '%ld' expects argument of type 'long int', but argument 9 has type 'int' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s, t = %8lu ms, "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  468 |     (int) CTRL.last_esc_pitch.erpm, (int) CTRL.last_esc_roll.erpm,
+      |                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                     |
+      |                                     int
+../Core/Src/main.c:458:31: note: format string is defined here
+  458 |     "ax = %8ld mm/s2, ay = %8ld mm/s2, az = %8ld mm/s2, "
+      |                            ~~~^
+      |                               |
+      |                               long int
+      |                            %8d
+../Core/Src/main.c:457:5: warning: format '%ld' expects argument of type 'long int', but argument 10 has type 'double' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s, t = %8lu ms, "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  469 |     dbg_values.current_wanted_pitch, dbg_values.current_wanted_roll,
+      |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |               |
+      |               double
+../Core/Src/main.c:458:48: note: format string is defined here
+  458 |     "ax = %8ld mm/s2, ay = %8ld mm/s2, az = %8ld mm/s2, "
+      |                                             ~~~^
+      |                                                |
+      |                                                long int
+      |                                             %8f
+../Core/Src/main.c:457:5: warning: format '%ld' expects argument of type 'long int', but argument 11 has type 'double' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s, t = %8lu ms, "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  469 |     dbg_values.current_wanted_pitch, dbg_values.current_wanted_roll,
+      |                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                                |
+      |                                                double
+../Core/Src/main.c:459:14: note: format string is defined here
+  459 |     "gx = %8ld mrad/s, gy = %8ld rad/s, gz = %8ld rad/s, "
+      |           ~~~^
+      |              |
+      |              long int
+      |           %8f
+../Core/Src/main.c:457:5: warning: format '%d' expects argument of type 'int', but argument 14 has type 'long int' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s, t = %8lu ms, "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  470 |     (int32_t) (1000 * CTRL.last_acc.ax), (int32_t) (1000 * CTRL.last_acc.ay), (int32_t) (1000 * CTRL.last_acc.az),
+      |                                                                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                                                               |
+      |                                                                               long int
+../Core/Src/main.c:460:21: note: format string is defined here
+  460 |     "erpm_pitch = %4d, erpm_roll = %4d, "
+      |                   ~~^
+      |                     |
+      |                     int
+      |                   %4ld
+../Core/Src/main.c:457:5: warning: format '%d' expects argument of type 'int', but argument 15 has type 'long int' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s, t = %8lu ms, "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  471 |     (int32_t) (1000 * CTRL.last_acc.gx), (int32_t) (1000 * CTRL.last_acc.gy), (int32_t) (1000 * CTRL.last_acc.gz),
+      |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |     |
+      |     long int
+../Core/Src/main.c:460:38: note: format string is defined here
+  460 |     "erpm_pitch = %4d, erpm_roll = %4d, "
+      |                                    ~~^
+      |                                      |
+      |                                      int
+      |                                    %4ld
+../Core/Src/main.c:457:5: warning: format '%f' expects argument of type 'double', but argument 16 has type 'long int' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s, t = %8lu ms, "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  471 |     (int32_t) (1000 * CTRL.last_acc.gx), (int32_t) (1000 * CTRL.last_acc.gy), (int32_t) (1000 * CTRL.last_acc.gz),
+      |                                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                          |
+      |                                          long int
+../Core/Src/main.c:461:22: note: format string is defined here
+  461 |     "I_w_pitch = %7.5f A, I_w_roll = %7.5f A, "
+      |                  ~~~~^
+      |                      |
+      |                      double
+      |                  %7.5ld
+../Core/Src/main.c:457:5: warning: format '%f' expects argument of type 'double', but argument 17 has type 'long int' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s, t = %8lu ms, "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  471 |     (int32_t) (1000 * CTRL.last_acc.gx), (int32_t) (1000 * CTRL.last_acc.gy), (int32_t) (1000 * CTRL.last_acc.gz),
+      |                                                                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                                                               |
+      |                                                                               long int
+../Core/Src/main.c:461:42: note: format string is defined here
+  461 |     "I_w_pitch = %7.5f A, I_w_roll = %7.5f A, "
+      |                                      ~~~~^
+      |                                          |
+      |                                          double
+      |                                      %7.5ld
+../Core/Src/main.c:555:10: warning: variable 'current_out_pitch' set but not used [-Wunused-but-set-variable]
+  555 |    float current_out_pitch, current_out_roll;
+      |          ^~~~~~~~~~~~~~~~~
+../Core/Src/main.c:529:10: warning: unused variable 'gain' [-Wunused-variable]
+  529 |    float gain = 10 * dt;
+      |          ^~~~
+../Core/Src/main.c:528:10: warning: unused variable 'acc_predicted_angle' [-Wunused-variable]
+  528 |    float acc_predicted_angle = -sensor_acc_roll / 9.82 * (3.14 / 2);
+      |          ^~~~~~~~~~~~~~~~~~~
+arm-none-eabi-gcc -o "UniController-OnBoard.elf" @"objects.list"   -mcpu=cortex-m4 -T"/home/andreas/School-local/Kandidatarbete/autonomous_unicycle/STM32/UniController-OnBoard/STM32F405RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="UniController-OnBoard.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: UniController-OnBoard.elf
+ 
+arm-none-eabi-size   UniController-OnBoard.elf 
+arm-none-eabi-objdump -h -S  UniController-OnBoard.elf  > "UniController-OnBoard.list"
+   text	   data	    bss	    dec	    hex	filename
+  69324	    904	  46200	 116428	  1c6cc	UniController-OnBoard.elf
+Finished building: default.size.stdout
+ 
+Finished building: UniController-OnBoard.list
+ 
+16:29:30 **** Incremental Build of configuration Debug for project UniController-OnBoard ****
+make -j8 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'get_accelerometer_data':
+../Core/Src/main.c:277:11: warning: unused variable 'ay_adj' [-Wunused-variable]
+  277 |     float ay_adj = (ay - ay_mid) / ay_range * 9.82;
+      |           ^~~~~~
+../Core/Src/main.c:276:11: warning: unused variable 'az_adj' [-Wunused-variable]
+  276 |     float az_adj = (az - az_mid) / az_range * 9.82;
+      |           ^~~~~~
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:457:5: warning: format '%ld' expects argument of type 'long int', but argument 8 has type 'int' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s, t = %8lu ms, "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  468 |     (int) CTRL.last_esc_pitch.erpm, (int) CTRL.last_esc_roll.erpm,
+      |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |     |
+      |     int
+../Core/Src/main.c:458:14: note: format string is defined here
+  458 |     "ax = %8ld mm/s2, ay = %8ld mm/s2, az = %8ld mm/s2, "
+      |           ~~~^
+      |              |
+      |              long int
+      |           %8d
+../Core/Src/main.c:457:5: warning: format '%ld' expects argument of type 'long int', but argument 9 has type 'int' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s, t = %8lu ms, "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  468 |     (int) CTRL.last_esc_pitch.erpm, (int) CTRL.last_esc_roll.erpm,
+      |                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                     |
+      |                                     int
+../Core/Src/main.c:458:31: note: format string is defined here
+  458 |     "ax = %8ld mm/s2, ay = %8ld mm/s2, az = %8ld mm/s2, "
+      |                            ~~~^
+      |                               |
+      |                               long int
+      |                            %8d
+../Core/Src/main.c:457:5: warning: format '%ld' expects argument of type 'long int', but argument 10 has type 'double' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s, t = %8lu ms, "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  469 |     dbg_values.current_wanted_pitch, dbg_values.current_wanted_roll,
+      |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |               |
+      |               double
+../Core/Src/main.c:458:48: note: format string is defined here
+  458 |     "ax = %8ld mm/s2, ay = %8ld mm/s2, az = %8ld mm/s2, "
+      |                                             ~~~^
+      |                                                |
+      |                                                long int
+      |                                             %8f
+../Core/Src/main.c:457:5: warning: format '%f' expects argument of type 'double', but argument 12 has type 'long int' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s, t = %8lu ms, "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  470 |     (int32_t) (1000 * CTRL.last_acc.ax), (int32_t) (1000 * CTRL.last_acc.ay), (int32_t) (1000 * CTRL.last_acc.az),
+      |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |     |
+      |     long int
+../Core/Src/main.c:459:33: note: format string is defined here
+  459 |     "gx = %7.5f rad/s, gy = %7.5f rad/s, gz = %7.5f rad/s, "
+      |                             ~~~~^
+      |                                 |
+      |                                 double
+      |                             %7.5ld
+../Core/Src/main.c:457:5: warning: format '%f' expects argument of type 'double', but argument 13 has type 'long int' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s, t = %8lu ms, "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  470 |     (int32_t) (1000 * CTRL.last_acc.ax), (int32_t) (1000 * CTRL.last_acc.ay), (int32_t) (1000 * CTRL.last_acc.az),
+      |                                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                          |
+      |                                          long int
+../Core/Src/main.c:459:51: note: format string is defined here
+  459 |     "gx = %7.5f rad/s, gy = %7.5f rad/s, gz = %7.5f rad/s, "
+      |                                               ~~~~^
+      |                                                   |
+      |                                                   double
+      |                                               %7.5ld
+../Core/Src/main.c:457:5: warning: format '%d' expects argument of type 'int', but argument 14 has type 'long int' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s, t = %8lu ms, "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  470 |     (int32_t) (1000 * CTRL.last_acc.ax), (int32_t) (1000 * CTRL.last_acc.ay), (int32_t) (1000 * CTRL.last_acc.az),
+      |                                                                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                                                               |
+      |                                                                               long int
+../Core/Src/main.c:460:21: note: format string is defined here
+  460 |     "erpm_pitch = %4d, erpm_roll = %4d, "
+      |                   ~~^
+      |                     |
+      |                     int
+      |                   %4ld
+../Core/Src/main.c:457:5: warning: format '%d' expects argument of type 'int', but argument 15 has type 'double' [-Wformat=]
+  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s, t = %8lu ms, "
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+......
+  471 |     CTRL.last_acc.gx, CTRL.last_acc.gy, CTRL.last_acc.gz,
+      |     ~~~~~~~~~~~~~~~~
+      |                  |
+      |                  double
+../Core/Src/main.c:460:38: note: format string is defined here
+  460 |     "erpm_pitch = %4d, erpm_roll = %4d, "
+      |                                    ~~^
+      |                                      |
+      |                                      int
+      |                                    %4f
+../Core/Src/main.c:555:10: warning: variable 'current_out_pitch' set but not used [-Wunused-but-set-variable]
+  555 |    float current_out_pitch, current_out_roll;
+      |          ^~~~~~~~~~~~~~~~~
+../Core/Src/main.c:529:10: warning: unused variable 'gain' [-Wunused-variable]
+  529 |    float gain = 10 * dt;
+      |          ^~~~
+../Core/Src/main.c:528:10: warning: unused variable 'acc_predicted_angle' [-Wunused-variable]
+  528 |    float acc_predicted_angle = -sensor_acc_roll / 9.82 * (3.14 / 2);
+      |          ^~~~~~~~~~~~~~~~~~~
+arm-none-eabi-gcc -o "UniController-OnBoard.elf" @"objects.list"   -mcpu=cortex-m4 -T"/home/andreas/School-local/Kandidatarbete/autonomous_unicycle/STM32/UniController-OnBoard/STM32F405RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="UniController-OnBoard.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: UniController-OnBoard.elf
+ 
+arm-none-eabi-size   UniController-OnBoard.elf 
+arm-none-eabi-objdump -h -S  UniController-OnBoard.elf  > "UniController-OnBoard.list"
+   text	   data	    bss	    dec	    hex	filename
+  69308	    904	  46200	 116412	  1c6bc	UniController-OnBoard.elf
+Finished building: default.size.stdout
+ 
+Finished building: UniController-OnBoard.list
+ 
