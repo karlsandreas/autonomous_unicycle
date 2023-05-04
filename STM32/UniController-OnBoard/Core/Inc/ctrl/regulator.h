@@ -9,6 +9,7 @@ float LookaheadSpeedRegulator(float setpoint_x_d, float theta, float theta_d, fl
 
 // Nested φ'-P θ-PD
 typedef struct {
+	float setpoint_theta_0;
 	float kp1, kd1; // PD for roll angle
 	float kp2; // P for wheel
 } RollRegulator;

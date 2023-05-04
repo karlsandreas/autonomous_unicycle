@@ -34,7 +34,8 @@ float LookaheadSpeedRegulator(float setpoint_x_d, float theta, float theta_d, fl
 
 float roll_reg_step(RollRegulator *roll_reg, float dt, float theta, float theta_d, float wheel_rpm) {
 	float phi_d = wheel_rpm / 60 * 6.28;
-	float setpoint_theta = roll_reg->kp2 * (0 - phi_d);
+	float setpoint_theta = roll_reg->setpoint_theta_0 + roll_reg->kp2 * (0 - phi_d);
+
 	float error = setpoint_theta - theta;
 
 	return error * roll_reg->kp1 + (0 - theta_d) * roll_reg->kd1;
