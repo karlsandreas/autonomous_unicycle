@@ -6,6 +6,7 @@ let
 
     pygame
     numpy
+    pandas
   ];
 in
 pkgs.mkShell {
