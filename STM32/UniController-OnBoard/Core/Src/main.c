@@ -304,7 +304,7 @@ RollRegulator roll_reg = (RollRegulator) {
 	.kp1 = -70,
 	.kd1 = -90,
 
-	.kp2 = -0.008.
+	.kp2 = -0.025,
 };
 
 const float Q_T = 80.0;

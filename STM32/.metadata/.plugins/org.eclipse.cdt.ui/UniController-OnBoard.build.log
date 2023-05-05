@@ -1,132 +1,28 @@
-16:29:30 **** Incremental Build of configuration Debug for project UniController-OnBoard ****
+10:26:59 **** Incremental Build of configuration Debug for project UniController-OnBoard ****
 make -j8 all 
 arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
 ../Core/Src/main.c: In function 'get_accelerometer_data':
-../Core/Src/main.c:277:11: warning: unused variable 'ay_adj' [-Wunused-variable]
-  277 |     float ay_adj = (ay - ay_mid) / ay_range * 9.82;
+../Core/Src/main.c:271:11: warning: unused variable 'ay_adj' [-Wunused-variable]
+  271 |     float ay_adj = (ay - ay_mid) / ay_range * 9.82;
       |           ^~~~~~
-../Core/Src/main.c:276:11: warning: unused variable 'az_adj' [-Wunused-variable]
-  276 |     float az_adj = (az - az_mid) / az_range * 9.82;
+../Core/Src/main.c:270:11: warning: unused variable 'az_adj' [-Wunused-variable]
+  270 |     float az_adj = (az - az_mid) / az_range * 9.82;
       |           ^~~~~~
 ../Core/Src/main.c: In function 'main':
-../Core/Src/main.c:457:5: warning: format '%ld' expects argument of type 'long int', but argument 8 has type 'int' [-Wformat=]
-  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s, t = %8lu ms, "
-      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-......
-  468 |     (int) CTRL.last_esc_pitch.erpm, (int) CTRL.last_esc_roll.erpm,
-      |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      |     |
-      |     int
-../Core/Src/main.c:458:14: note: format string is defined here
-  458 |     "ax = %8ld mm/s2, ay = %8ld mm/s2, az = %8ld mm/s2, "
-      |           ~~~^
-      |              |
-      |              long int
-      |           %8d
-../Core/Src/main.c:457:5: warning: format '%ld' expects argument of type 'long int', but argument 9 has type 'int' [-Wformat=]
-  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s, t = %8lu ms, "
-      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-......
-  468 |     (int) CTRL.last_esc_pitch.erpm, (int) CTRL.last_esc_roll.erpm,
-      |                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      |                                     |
-      |                                     int
-../Core/Src/main.c:458:31: note: format string is defined here
-  458 |     "ax = %8ld mm/s2, ay = %8ld mm/s2, az = %8ld mm/s2, "
-      |                            ~~~^
-      |                               |
-      |                               long int
-      |                            %8d
-../Core/Src/main.c:457:5: warning: format '%ld' expects argument of type 'long int', but argument 10 has type 'double' [-Wformat=]
-  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s, t = %8lu ms, "
-      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-......
-  469 |     dbg_values.current_wanted_pitch, dbg_values.current_wanted_roll,
-      |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      |               |
-      |               double
-../Core/Src/main.c:458:48: note: format string is defined here
-  458 |     "ax = %8ld mm/s2, ay = %8ld mm/s2, az = %8ld mm/s2, "
-      |                                             ~~~^
-      |                                                |
-      |                                                long int
-      |                                             %8f
-../Core/Src/main.c:457:5: warning: format '%f' expects argument of type 'double', but argument 12 has type 'long int' [-Wformat=]
-  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s, t = %8lu ms, "
-      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-......
-  470 |     (int32_t) (1000 * CTRL.last_acc.ax), (int32_t) (1000 * CTRL.last_acc.ay), (int32_t) (1000 * CTRL.last_acc.az),
-      |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      |     |
-      |     long int
-../Core/Src/main.c:459:33: note: format string is defined here
-  459 |     "gx = %7.5f rad/s, gy = %7.5f rad/s, gz = %7.5f rad/s, "
-      |                             ~~~~^
-      |                                 |
-      |                                 double
-      |                             %7.5ld
-../Core/Src/main.c:457:5: warning: format '%f' expects argument of type 'double', but argument 13 has type 'long int' [-Wformat=]
-  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s, t = %8lu ms, "
-      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-......
-  470 |     (int32_t) (1000 * CTRL.last_acc.ax), (int32_t) (1000 * CTRL.last_acc.ay), (int32_t) (1000 * CTRL.last_acc.az),
-      |                                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      |                                          |
-      |                                          long int
-../Core/Src/main.c:459:51: note: format string is defined here
-  459 |     "gx = %7.5f rad/s, gy = %7.5f rad/s, gz = %7.5f rad/s, "
-      |                                               ~~~~^
-      |                                                   |
-      |                                                   double
-      |                                               %7.5ld
-../Core/Src/main.c:457:5: warning: format '%d' expects argument of type 'int', but argument 14 has type 'long int' [-Wformat=]
-  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s, t = %8lu ms, "
-      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-......
-  470 |     (int32_t) (1000 * CTRL.last_acc.ax), (int32_t) (1000 * CTRL.last_acc.ay), (int32_t) (1000 * CTRL.last_acc.az),
-      |                                                                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      |                                                                               |
-      |                                                                               long int
-../Core/Src/main.c:460:21: note: format string is defined here
-  460 |     "erpm_pitch = %4d, erpm_roll = %4d, "
-      |                   ~~^
-      |                     |
-      |                     int
-      |                   %4ld
-../Core/Src/main.c:457:5: warning: format '%d' expects argument of type 'int', but argument 15 has type 'double' [-Wformat=]
-  457 |     "msg = %4d, time steps = %4d, qsz = %4d, switch = %s, t = %8lu ms, "
-      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-......
-  471 |     CTRL.last_acc.gx, CTRL.last_acc.gy, CTRL.last_acc.gz,
-      |     ~~~~~~~~~~~~~~~~
-      |                  |
-      |                  double
-../Core/Src/main.c:460:38: note: format string is defined here
-  460 |     "erpm_pitch = %4d, erpm_roll = %4d, "
-      |                                    ~~^
-      |                                      |
-      |                                      int
-      |                                    %4f
-../Core/Src/main.c:555:10: warning: variable 'current_out_pitch' set but not used [-Wunused-but-set-variable]
-  555 |    float current_out_pitch, current_out_roll;
+../Core/Src/main.c:550:10: warning: variable 'current_out_pitch' set but not used [-Wunused-but-set-variable]
+  550 |    float current_out_pitch, current_out_roll;
       |          ^~~~~~~~~~~~~~~~~
-../Core/Src/main.c:529:10: warning: unused variable 'gain' [-Wunused-variable]
-  529 |    float gain = 10 * dt;
-      |          ^~~~
-../Core/Src/main.c:528:10: warning: unused variable 'acc_predicted_angle' [-Wunused-variable]
-  528 |    float acc_predicted_angle = -sensor_acc_roll / 9.82 * (3.14 / 2);
-      |          ^~~~~~~~~~~~~~~~~~~
 arm-none-eabi-gcc -o "UniController-OnBoard.elf" @"objects.list"   -mcpu=cortex-m4 -T"/home/andreas/School-local/Kandidatarbete/autonomous_unicycle/STM32/UniController-OnBoard/STM32F405RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="UniController-OnBoard.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
 Finished building target: UniController-OnBoard.elf
  
 arm-none-eabi-size   UniController-OnBoard.elf 
 arm-none-eabi-objdump -h -S  UniController-OnBoard.elf  > "UniController-OnBoard.list"
    text	   data	    bss	    dec	    hex	filename
-  69308	    904	  46200	 116412	  1c6bc	UniController-OnBoard.elf
+  70612	    908	  46204	 117724	  1cbdc	UniController-OnBoard.elf
 Finished building: default.size.stdout
  
 Finished building: UniController-OnBoard.list
  
 
-16:29:30 Build Finished. 0 errors, 12 warnings. (took 523ms)
+10:26:59 Build Finished. 0 errors, 3 warnings. (took 465ms)
 
