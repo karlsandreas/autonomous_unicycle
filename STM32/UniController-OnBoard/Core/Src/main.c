@@ -109,7 +109,7 @@ VESC_Current_Reg vcr_pitch = (VESC_Current_Reg) {
 	.k_p = 1.,
 };
 VESC_Current_Reg vcr_roll = (VESC_Current_Reg) {
-	.k_p = 1.,
+	.k_p = 0.1,
 };
 
 uint32_t ms_counter;
@@ -299,12 +299,12 @@ struct {
 float roll_angle = 0.;
 
 RollRegulator roll_reg = (RollRegulator) {
-	.setpoint_theta_0 = -0.04,
+	.setpoint_theta_0 = -0.045,
 
 	.kp1 = -80,
-	.kd1 = -90,
+	.kd1 = -70,
 
-	.kp2 = 0.0001,
+	.kp2 = -0.0004,
 };
 
 const float Q_T = 80.0;
@@ -453,8 +453,8 @@ int main(void)
 				dbgbuf,
 				"msg = %4d, time steps = %4d, qsz = %4d, switch = %s, t = %8lu ms, "
 				//"kp1 = %7.4f, kd1 = %7.4f, kp2 = %7.4f, setpoint_theta_0 = %7.4f, "
-				"ax = %7.4f, ay = %7.4f, az = %7.4f, "
-				"gx = %7.4f rad/s, gy = %7.4f rad/s, gz = %7.4f rad/s, "
+				//"ax = %7.4f, ay = %7.4f, az = %7.4f, "
+				//"gx = %7.4f rad/s, gy = %7.4f rad/s, gz = %7.4f rad/s, "
 				"erpm_pitch = %4d, erpm_roll = %4d, "
 				"I_w_pitch = %7.4f A, I_w_roll = %7.4f A, "
 				//"theta_pitch = %7.5fmrad, theta_d_pitch = %7.5fmrad/s, "
@@ -465,8 +465,8 @@ int main(void)
 				"\r\n",
 				dbg_values.msg_idx, dbg_values.n_time_steps_since_last, queue_nelem(&MAIN_QUEUE), dead_mans ? "on" : "off", (int32_t) (us_since_startup() / 1000),
 				//roll_reg.kp1, roll_reg.kd1, roll_reg.kp2, roll_reg.setpoint_theta_0,
-				CTRL.last_acc.ax, CTRL.last_acc.ay, CTRL.last_acc.az,
-				CTRL.last_acc.gx, CTRL.last_acc.gy, CTRL.last_acc.gz,
+				//CTRL.last_acc.ax, CTRL.last_acc.ay, CTRL.last_acc.az,
+				//CTRL.last_acc.gx, CTRL.last_acc.gy, CTRL.last_acc.gz,
 				(int) CTRL.last_esc_pitch.erpm, (int) CTRL.last_esc_roll.erpm,
 				dbg_values.current_wanted_pitch, dbg_values.current_wanted_roll,
 				// 1000 * CTRL.st.x5, 1000 * CTRL.st.x6
@@ -539,10 +539,10 @@ int main(void)
 
 #if MOTOR_DIRECTION == MOTOR_CW
 			float current_wanted_pitch = tau_pitch / 0.59; // see notes
-			float current_wanted_roll = tau_roll / 0.5; // TODO: guh
+			float current_wanted_roll = tau_roll / 0.2; // TODO: guh
 #elif MOTOR_DIRECTION == MOTOR_CCW
 			float current_wanted_pitch = tau_pitch / -0.59; // see notes
-			float current_wanted_roll = tau_roll / -0.5; // TODO: guh
+			float current_wanted_roll = tau_roll / -0.2; // TODO: guh
 #else
 #error "Invalid motor direction"
 #endif
