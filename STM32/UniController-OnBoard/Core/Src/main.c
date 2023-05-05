@@ -304,7 +304,7 @@ RollRegulator roll_reg = (RollRegulator) {
 	.kp1 = -70,
 	.kd1 = -90,
 
-	.kp2 = -0.008.
+	.kp2 = -0.025,
 };
 
 const float Q_T = 80.0;
@@ -457,7 +457,7 @@ int main(void)
 				"I_w_pitch = %7.4f A, I_w_roll = %7.4f A, "
 				//"theta_pitch = %7.5fmrad, theta_d_pitch = %7.5fmrad/s, "
 				// "theta_roll = %7.5fmrad, theta_d_roll = %7.5fmrad/s "
-				"theta_roll(comp) = %7.4f mrad "
+				"theta_roll_comp = %7.4f mrad "
 				//"I (filtered) = %6ld mA, I (out) = %6ld mA"
 				"\r\n",
 				dbg_values.msg_idx, dbg_values.n_time_steps_since_last, queue_nelem(&MAIN_QUEUE), dead_mans ? "on" : "off", (int32_t) (us_since_startup() / 1000),
