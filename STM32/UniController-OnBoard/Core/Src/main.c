@@ -297,6 +297,7 @@ struct {
 } CTRL;
 
 float roll_angle = 0.;
+float pitch_angle = 0.;
 
 RollRegulator roll_reg = (RollRegulator) {
 	.setpoint_theta_0 = -0.045,
@@ -313,7 +314,8 @@ const float Q_W = 100.0;
 #define MOTOR_CW 0
 #define MOTOR_CCW 1
 
-#define MOTOR_DIRECTION MOTOR_CCW
+#define MOTOR_DIRECTION_PITCH MOTOR_CW
+#define MOTOR_DIRECTION_ROLL MOTOR_CCW
 
 // #define QUEUE_DEBUG
 
@@ -453,32 +455,35 @@ int main(void)
 				dbgbuf,
 				"msg = %4d, time steps = %4d, qsz = %4d, switch = %s, t = %8lu ms, "
 				//"kp1 = %7.4f, kd1 = %7.4f, kp2 = %7.4f, setpoint_theta_0 = %7.4f, "
-				//"ax = %7.4f, ay = %7.4f, az = %7.4f, "
-				//"gx = %7.4f rad/s, gy = %7.4f rad/s, gz = %7.4f rad/s, "
+				"ax = %7.4f, ay = %7.4f, az = %7.4f, "
+				"gx = %7.4f rad/s, gy = %7.4f rad/s, gz = %7.4f rad/s, "
 				"erpm_pitch = %4d, erpm_roll = %4d, "
 				"I_w_pitch = %7.4f A, I_w_roll = %7.4f A, "
-				//"theta_pitch = %7.5fmrad, theta_d_pitch = %7.5fmrad/s, "
-				// "theta_roll = %7.5fmrad, theta_d_roll = %7.5fmrad/s "
+				"theta_pitch = %7.5fmrad, "
 				"theta_roll_comp = %7.4f mrad, "
-				"theta_setpoint = %7.4f mrad, "
+				//"theta_setpoint = %7.4f mrad, "
 				//"I (filtered) = %6ld mA, I (out) = %6ld mA"
 				"\r\n",
 				dbg_values.msg_idx, dbg_values.n_time_steps_since_last, queue_nelem(&MAIN_QUEUE), dead_mans ? "on" : "off", (int32_t) (us_since_startup() / 1000),
 				//roll_reg.kp1, roll_reg.kd1, roll_reg.kp2, roll_reg.setpoint_theta_0,
-				//CTRL.last_acc.ax, CTRL.last_acc.ay, CTRL.last_acc.az,
-				//CTRL.last_acc.gx, CTRL.last_acc.gy, CTRL.last_acc.gz,
+				CTRL.last_acc.ax, CTRL.last_acc.ay, CTRL.last_acc.az,
+				CTRL.last_acc.gx, CTRL.last_acc.gy, CTRL.last_acc.gz,
 				(int) CTRL.last_esc_pitch.erpm, (int) CTRL.last_esc_roll.erpm,
 				dbg_values.current_wanted_pitch, dbg_values.current_wanted_roll,
+				1000 * pitch_angle,
 				// 1000 * CTRL.st.x5, 1000 * CTRL.st.x6
-				1000 * roll_angle,
-				1000 * dbg_values.setpoint_theta
+				1000 * roll_angle
+				// 1000 * dbg_values.setpoint_theta
 				//(int32_t) (1000 * vcr.input_filtered), (int32_t) (1000 * dbg_values.current_o)
 			);
+
+			CDC_Transmit_FS((uint8_t *) dbgbuf, dbglen);
+
+
 			dbg_values.msg_idx++;
 			dbg_values.n_time_steps_since_last = 0;
 
 
-			CDC_Transmit_FS((uint8_t *) dbgbuf, dbglen);
 			// Use below if you are debug printing other things
 			// HAL_UART_Transmit(&huart3, (uint8_t *) dbgbuf, dbglen, 10000);
 
@@ -501,15 +506,15 @@ int main(void)
 
 			dbg_values.dt = dt;
 
-#if MOTOR_DIRECTION == MOTOR_CW
+#if MOTOR_DIRECTION_PITCH == MOTOR_CW
 			float wheel_rpm_pitch = CTRL.last_esc_pitch.erpm / 22.9;
-#elif MOTOR_DIRECTION == MOTOR_CCW
+#elif MOTOR_DIRECTION_PITCH == MOTOR_CCW
 			float wheel_rpm_pitch = CTRL.last_esc_pitch.erpm / -22.9;
 #else
 #error "Invalid motor direction"
 #endif
 
-			float wheel_rpm_roll = CTRL.last_esc_roll .erpm / 29.92;
+			float wheel_rpm_roll = CTRL.last_esc_roll.erpm / 29.92;
 
 			CTRL.q_t.m11 = Q_T * dt*dt*dt*dt / 4;
 			CTRL.q_t.m12 = Q_T * dt*dt*dt / 2;
@@ -524,24 +529,32 @@ int main(void)
 			float sensor_gyro_pitch = CTRL.last_acc.gy;
 			float sensor_gyro_roll = CTRL.last_acc.gx;
 
-			float acc_predicted_angle = atan2(CTRL.last_acc.ay, CTRL.last_acc.az);
+			float acc_predicted_angle_pitch = -atan2(CTRL.last_acc.ax, CTRL.last_acc.az);
+			float acc_predicted_angle_roll = atan2(CTRL.last_acc.ay, CTRL.last_acc.az);
 
 			float gain = 1 * dt;
-			roll_angle = (1 - gain) * roll_angle + dt * sensor_gyro_roll + gain * acc_predicted_angle;
+			roll_angle = (1 - gain) * roll_angle + dt * sensor_gyro_roll + gain * acc_predicted_angle_roll;
+			pitch_angle = (1 - gain) * pitch_angle + dt * sensor_gyro_pitch + gain * acc_predicted_angle_pitch;
 
-			//kalman_filter_predict(0, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w, &CTRL.covs);
-			//roll_kalman_filter_predict(0, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w, &CTRL.covs);
+			// kalman_filter_predict(0, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w, &CTRL.covs);
+			// roll_kalman_filter_predict(0, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w, &CTRL.covs);
 
 			dbg_values.setpoint_theta = roll_reg_setpoint_theta(&roll_reg, dt, roll_angle, sensor_gyro_roll, wheel_rpm_roll);
 
-			float tau_pitch = LookaheadSpeedRegulator(0, CTRL.st.x1, CTRL.st.x2, CTRL.st.x4, dt);
+			float tau_pitch = LookaheadSpeedRegulator(0, pitch_angle, sensor_gyro_pitch, wheel_rpm_pitch / 60 * 6.28, dt);
 			float tau_roll = roll_reg_step(&roll_reg, dt, roll_angle, sensor_gyro_roll, wheel_rpm_roll);
 
-#if MOTOR_DIRECTION == MOTOR_CW
+#if MOTOR_DIRECTION_PITCH == MOTOR_CW
 			float current_wanted_pitch = tau_pitch / 0.59; // see notes
-			float current_wanted_roll = tau_roll / 0.2; // TODO: guh
-#elif MOTOR_DIRECTION == MOTOR_CCW
+#elif MOTOR_DIRECTION_ROLL == MOTOR_CCW
 			float current_wanted_pitch = tau_pitch / -0.59; // see notes
+#else
+#error "Invalid motor direction"
+#endif
+
+#if MOTOR_DIRECTION_ROLL == MOTOR_CW
+			float current_wanted_roll = tau_roll / 0.2; // TODO: guh
+#elif MOTOR_DIRECTION_ROLL == MOTOR_CCW
 			float current_wanted_roll = tau_roll / -0.2; // TODO: guh
 #else
 #error "Invalid motor direction"
@@ -551,7 +564,7 @@ int main(void)
 			dbg_values.current_wanted_pitch = current_wanted_pitch;
 			dbg_values.current_wanted_roll = current_wanted_roll;
 
-			//kalman_filter_update(sensor_gyro_pitch, wheel_rpm_pitch, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w, &CTRL.covs, &CTRL.r_vals);
+			// kalman_filter_update(sensor_gyro_pitch, wheel_rpm_pitch, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w, &CTRL.covs, &CTRL.r_vals);
 			//roll_kalman_filter_update(sensor_gyro_roll, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w, &CTRL.covs, &CTRL.r_vals);
 
 			float current_out_pitch, current_out_roll;
@@ -571,7 +584,7 @@ int main(void)
 			}
 
 
-			//vesc_set_current(&vesc_pitch, current_out_pitch);
+			vesc_set_current(&vesc_pitch, current_out_pitch);
 			vesc_set_current(&vesc_roll, current_out_roll);
 
 			dbg_values.n_time_steps_since_last++;
