@@ -299,12 +299,12 @@ struct {
 float roll_angle = 0.;
 
 RollRegulator roll_reg = (RollRegulator) {
-	.setpoint_theta_0 = -0.06,
+	.setpoint_theta_0 = -0.04,
 
-	.kp1 = -70,
+	.kp1 = -80,
 	.kd1 = -90,
 
-	.kp2 = -0.025,
+	.kp2 = 0.0001,
 };
 
 const float Q_T = 80.0;
@@ -386,6 +386,7 @@ int main(void)
 		float dt;
 		float current_wanted_pitch, current_out_pitch;
 		float current_wanted_roll, current_out_roll;
+		float setpoint_theta;
 
 		float wheel_pos_d;
 		unsigned int msgs_since_last;
@@ -451,22 +452,26 @@ int main(void)
 			int dbglen = sprintf(
 				dbgbuf,
 				"msg = %4d, time steps = %4d, qsz = %4d, switch = %s, t = %8lu ms, "
+				//"kp1 = %7.4f, kd1 = %7.4f, kp2 = %7.4f, setpoint_theta_0 = %7.4f, "
 				"ax = %7.4f, ay = %7.4f, az = %7.4f, "
 				"gx = %7.4f rad/s, gy = %7.4f rad/s, gz = %7.4f rad/s, "
 				"erpm_pitch = %4d, erpm_roll = %4d, "
 				"I_w_pitch = %7.4f A, I_w_roll = %7.4f A, "
 				//"theta_pitch = %7.5fmrad, theta_d_pitch = %7.5fmrad/s, "
 				// "theta_roll = %7.5fmrad, theta_d_roll = %7.5fmrad/s "
-				"theta_roll_comp = %7.4f mrad "
+				"theta_roll_comp = %7.4f mrad, "
+				"theta_setpoint = %7.4f mrad, "
 				//"I (filtered) = %6ld mA, I (out) = %6ld mA"
 				"\r\n",
 				dbg_values.msg_idx, dbg_values.n_time_steps_since_last, queue_nelem(&MAIN_QUEUE), dead_mans ? "on" : "off", (int32_t) (us_since_startup() / 1000),
+				//roll_reg.kp1, roll_reg.kd1, roll_reg.kp2, roll_reg.setpoint_theta_0,
 				CTRL.last_acc.ax, CTRL.last_acc.ay, CTRL.last_acc.az,
 				CTRL.last_acc.gx, CTRL.last_acc.gy, CTRL.last_acc.gz,
 				(int) CTRL.last_esc_pitch.erpm, (int) CTRL.last_esc_roll.erpm,
 				dbg_values.current_wanted_pitch, dbg_values.current_wanted_roll,
 				// 1000 * CTRL.st.x5, 1000 * CTRL.st.x6
-				1000 * roll_angle
+				1000 * roll_angle,
+				1000 * dbg_values.setpoint_theta
 				//(int32_t) (1000 * vcr.input_filtered), (int32_t) (1000 * dbg_values.current_o)
 			);
 			dbg_values.msg_idx++;
@@ -504,7 +509,7 @@ int main(void)
 #error "Invalid motor direction"
 #endif
 
-			float wheel_rpm_roll = CTRL.last_esc_pitch.erpm / 29.92;
+			float wheel_rpm_roll = CTRL.last_esc_roll .erpm / 29.92;
 
 			CTRL.q_t.m11 = Q_T * dt*dt*dt*dt / 4;
 			CTRL.q_t.m12 = Q_T * dt*dt*dt / 2;
@@ -524,8 +529,10 @@ int main(void)
 			float gain = 1 * dt;
 			roll_angle = (1 - gain) * roll_angle + dt * sensor_gyro_roll + gain * acc_predicted_angle;
 
-			kalman_filter_predict(0, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w, &CTRL.covs);
-			roll_kalman_filter_predict(0, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w, &CTRL.covs);
+			//kalman_filter_predict(0, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w, &CTRL.covs);
+			//roll_kalman_filter_predict(0, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w, &CTRL.covs);
+
+			dbg_values.setpoint_theta = roll_reg_setpoint_theta(&roll_reg, dt, roll_angle, sensor_gyro_roll, wheel_rpm_roll);
 
 			float tau_pitch = LookaheadSpeedRegulator(0, CTRL.st.x1, CTRL.st.x2, CTRL.st.x4, dt);
 			float tau_roll = roll_reg_step(&roll_reg, dt, roll_angle, sensor_gyro_roll, wheel_rpm_roll);
@@ -544,8 +551,8 @@ int main(void)
 			dbg_values.current_wanted_pitch = current_wanted_pitch;
 			dbg_values.current_wanted_roll = current_wanted_roll;
 
-			kalman_filter_update(sensor_gyro_pitch, wheel_rpm_pitch, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w, &CTRL.covs, &CTRL.r_vals);
-			roll_kalman_filter_update(sensor_gyro_roll, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w, &CTRL.covs, &CTRL.r_vals);
+			//kalman_filter_update(sensor_gyro_pitch, wheel_rpm_pitch, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w, &CTRL.covs, &CTRL.r_vals);
+			//roll_kalman_filter_update(sensor_gyro_roll, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w, &CTRL.covs, &CTRL.r_vals);
 
 			float current_out_pitch, current_out_roll;
 			if (dead_mans_switch_activated()) {

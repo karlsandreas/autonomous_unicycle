@@ -42,14 +42,11 @@ class DebugParser:
             self.df[col] = self.df[col].astype('float', errors='ignore')
 
     
-        divide_by_1000 = ["t","I_w","ax","ay","az","theta","theta_d","x","x_d"]
+        divide_by_1000 = ["t","I_w","ax","ay","az","theta","theta_d","x","x_d","theta_roll_comp"]
         for col in divide_by_1000:
 
             try:
-                if col == "theta_roll_filter":
-                    self.df[col] = self.df[col] * 1000
-                else:
-                    self.df[col] = self.df[col]/1000
+                self.df[col] = self.df[col]/1000
             except:
                 None
         self.length = self.df.shape[0]

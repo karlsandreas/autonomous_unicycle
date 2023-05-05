@@ -14,4 +14,6 @@ typedef struct {
 	float kp2; // P for wheel
 } RollRegulator;
 
+float roll_reg_setpoint_theta(RollRegulator *roll_reg, float dt, float theta, float theta_d, float wheel_rpm);
 float roll_reg_step(RollRegulator *roll_reg, float dt, float theta, float theta_d, float wheel_rpm);
+
