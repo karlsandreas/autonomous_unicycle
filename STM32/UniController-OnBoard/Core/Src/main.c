@@ -296,8 +296,18 @@ struct {
 
 } CTRL;
 
+// For complementary filter
 float roll_angle = 0.;
 float pitch_angle = 0.;
+
+float complementary_filter_gain = 1.;
+
+PitchRegulator pitch_reg = (PitchRegulator) {
+	.kp1 = 8,
+	.kd1 = 3,
+
+	.kp2 = -0.05,
+};
 
 RollRegulator roll_reg = (RollRegulator) {
 	.setpoint_theta_0 = -0.045,
@@ -511,7 +521,7 @@ int main(void)
 #error "Invalid motor direction"
 #endif
 
-			float wheel_rpm_roll = CTRL.last_esc_roll.erpm / 29.92;
+			float ground_speed_pitch = wheel_rpm_pitch / 60 * 6.28 * 0.28;
 
 			float wheel_rpm_roll = CTRL.last_esc_roll.erpm / 29.92;
 
@@ -522,13 +532,13 @@ int main(void)
 			float acc_predicted_angle_pitch = -atan2(CTRL.last_acc.ax, CTRL.last_acc.az);
 			float acc_predicted_angle_roll = atan2(CTRL.last_acc.ay, CTRL.last_acc.az);
 
-			float gain = 1 * dt;
-			roll_angle = (1 - gain) * roll_angle + dt * sensor_gyro_roll + gain * acc_predicted_angle_roll;
-			pitch_angle = (1 - gain) * pitch_angle + dt * sensor_gyro_pitch + gain * acc_predicted_angle_pitch;
+			float dgain = complementary_filter_gain * dt;
+			roll_angle = (1 - dgain) * roll_angle + dt * sensor_gyro_roll + dgain * acc_predicted_angle_roll;
+			pitch_angle = (1 - dgain) * pitch_angle + dt * sensor_gyro_pitch + dgain * acc_predicted_angle_pitch;
 
 			dbg_values.setpoint_theta = roll_reg_setpoint_theta(&roll_reg, dt, roll_angle, sensor_gyro_roll, wheel_rpm_roll);
 
-			float tau_pitch = LookaheadSpeedRegulator(0, pitch_angle, sensor_gyro_pitch, wheel_rpm_pitch / 60 * 6.28, dt);
+			float tau_pitch = pitch_reg_step(&pitch_reg, dt, pitch_angle, sensor_gyro_pitch, ground_speed_pitch);
 			float tau_roll = roll_reg_step(&roll_reg, dt, roll_angle, sensor_gyro_roll, wheel_rpm_roll);
 
 #if MOTOR_DIRECTION_PITCH == MOTOR_CW
