@@ -165,7 +165,7 @@ void vesc_uart_cb_rxcplt(VESC *vesc, UART_HandleTypeDef *_huart) {
 	}
 
 	if (!vesc->rx_queued) {
-		queue_put(vesc->q, (Message) { .ty = MSG_VESC_UART_GOT_DATA });
+		queue_put(vesc->q, (Message) { .ty = MSG_VESC_UART_GOT_DATA, .vesc_id = vesc->vesc_id });
 		vesc->rx_queued = true;
 	}
 

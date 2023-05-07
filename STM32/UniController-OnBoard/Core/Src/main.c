@@ -617,8 +617,12 @@ int main(void)
 			CDC_Transmit_FS((uint8_t *) dbgbuf, dbglen);
 #endif
 
-			vesc_got_data(&vesc_pitch);
-			vesc_got_data(&vesc_roll);
+			if (msg.vesc_id == VESC_PITCH_ID) {
+				vesc_got_data(&vesc_pitch);
+			}
+			if (msg.vesc_id == VESC_ROLL_ID) {
+				vesc_got_data(&vesc_roll);
+			}
 			break;
 		}
 
