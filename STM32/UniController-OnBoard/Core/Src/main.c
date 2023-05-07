@@ -308,9 +308,6 @@ RollRegulator roll_reg = (RollRegulator) {
 	.kp2 = -0.0004,
 };
 
-const float Q_T = 80.0;
-const float Q_W = 100.0;
-
 #define MOTOR_CW 0
 #define MOTOR_CCW 1
 
@@ -516,15 +513,8 @@ int main(void)
 
 			float wheel_rpm_roll = CTRL.last_esc_roll.erpm / 29.92;
 
-			CTRL.q_t.m11 = Q_T * dt*dt*dt*dt / 4;
-			CTRL.q_t.m12 = Q_T * dt*dt*dt / 2;
-			CTRL.q_t.m21 = Q_T * dt*dt*dt / 2;
-			CTRL.q_t.m22 = Q_T * dt*dt / 2;
+			float wheel_rpm_roll = CTRL.last_esc_roll.erpm / 29.92;
 
-			CTRL.q_w.m11 = Q_W * dt*dt*dt*dt / 4;
-			CTRL.q_w.m12 = Q_W * dt*dt*dt / 2;
-			CTRL.q_w.m21 = Q_W * dt*dt*dt / 2;
-			CTRL.q_w.m22 = Q_W * dt*dt / 2;
 
 			float sensor_gyro_pitch = CTRL.last_acc.gy;
 			float sensor_gyro_roll = CTRL.last_acc.gx;
@@ -535,9 +525,6 @@ int main(void)
 			float gain = 1 * dt;
 			roll_angle = (1 - gain) * roll_angle + dt * sensor_gyro_roll + gain * acc_predicted_angle_roll;
 			pitch_angle = (1 - gain) * pitch_angle + dt * sensor_gyro_pitch + gain * acc_predicted_angle_pitch;
-
-			// kalman_filter_predict(0, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w, &CTRL.covs);
-			// roll_kalman_filter_predict(0, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w, &CTRL.covs);
 
 			dbg_values.setpoint_theta = roll_reg_setpoint_theta(&roll_reg, dt, roll_angle, sensor_gyro_roll, wheel_rpm_roll);
 
@@ -563,9 +550,6 @@ int main(void)
 
 			dbg_values.current_wanted_pitch = current_wanted_pitch;
 			dbg_values.current_wanted_roll = current_wanted_roll;
-
-			// kalman_filter_update(sensor_gyro_pitch, wheel_rpm_pitch, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w, &CTRL.covs, &CTRL.r_vals);
-			//roll_kalman_filter_update(sensor_gyro_roll, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w, &CTRL.covs, &CTRL.r_vals);
 
 			float current_out_pitch, current_out_roll;
 			if (dead_mans_switch_activated()) {
