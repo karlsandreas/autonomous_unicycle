@@ -542,7 +542,7 @@ int main(void)
 			float tau_roll = roll_reg_step(&roll_reg, dt, roll_angle, sensor_gyro_roll, wheel_rpm_roll);
 
 #if MOTOR_DIRECTION_PITCH == MOTOR_CW
-			float current_wanted_pitch = tau_pitch / 0.59; // see notes
+			float current_wanted_pitch = tau_pitch / 0.59; // see notes // what notes???
 #elif MOTOR_DIRECTION_ROLL == MOTOR_CCW
 			float current_wanted_pitch = tau_pitch / -0.59; // see notes
 #else
@@ -550,7 +550,7 @@ int main(void)
 #endif
 
 #if MOTOR_DIRECTION_ROLL == MOTOR_CW
-			float current_wanted_roll = tau_roll / 0.2; // TODO: guh
+			float current_wanted_roll = tau_roll / 0.2; // TODO: guh // ?
 #elif MOTOR_DIRECTION_ROLL == MOTOR_CCW
 			float current_wanted_roll = tau_roll / -0.2; // TODO: guh
 #else
