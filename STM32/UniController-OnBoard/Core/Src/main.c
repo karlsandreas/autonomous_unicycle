@@ -347,14 +347,14 @@ RollRegulator roll_reg = (RollRegulator) {
 	.kp1 = -80,
 	.kd1 = -70,
 
-	.kp2 = -0.0004,
+	.kp2 = 0.0004,
 };
 
 #define MOTOR_CW 0
 #define MOTOR_CCW 1
 
-#define MOTOR_DIRECTION_PITCH MOTOR_CW
-#define MOTOR_DIRECTION_ROLL MOTOR_CCW
+#define MOTOR_DIRECTION_PITCH MOTOR_CCW
+#define MOTOR_DIRECTION_ROLL MOTOR_CW
 
 // #define QUEUE_DEBUG
 
@@ -430,6 +430,7 @@ int main(void)
 		float setpoint_theta;
 
 		float wheel_pos_d;
+		float pitch_rpm, roll_rpm;
 		unsigned int msgs_since_last;
 
 		int msg_idx, n_time_steps_since_last;
@@ -496,23 +497,23 @@ int main(void)
 				//"kp1 = %7.4f, kd1 = %7.4f, kp2 = %7.4f, setpoint_theta_0 = %7.4f, "
 				"ax = %7.4f, ay = %7.4f, az = %7.4f, "
 				"gx = %7.4f rad/s, gy = %7.4f rad/s, gz = %7.4f rad/s, "
-				"erpm_pitch = %4d, erpm_roll = %4d, "
+				"rpm_pitch = %7.4f, rpm_roll = %7.4f, "
 				"I_w_pitch = %7.4f A, I_w_roll = %7.4f A, "
 				"theta_pitch = %7.5fmrad, "
 				"theta_roll_comp = %7.4f mrad, "
-				//"theta_setpoint = %7.4f mrad, "
+				"theta_setpoint = %7.4f mrad, "
 				//"I (filtered) = %6ld mA, I (out) = %6ld mA"
 				"\r\n",
 				dbg_values.msg_idx, uart_error_count_pitch, uart_error_count_roll, dbg_values.n_time_steps_since_last, queue_nelem(&MAIN_QUEUE), dead_mans ? "on" : "off", (int32_t) (us_since_startup() / 1000),
 				//roll_reg.kp1, roll_reg.kd1, roll_reg.kp2, roll_reg.setpoint_theta_0,
 				CTRL.last_acc.ax, CTRL.last_acc.ay, CTRL.last_acc.az,
 				CTRL.last_acc.gx, CTRL.last_acc.gy, CTRL.last_acc.gz,
-				(int) CTRL.last_esc_pitch.erpm, (int) CTRL.last_esc_roll.erpm,
+				dbg_values.pitch_rpm, dbg_values.roll_rpm,
 				dbg_values.current_wanted_pitch, dbg_values.current_wanted_roll,
 				1000 * pitch_angle,
 				// 1000 * CTRL.st.x5, 1000 * CTRL.st.x6
-				1000 * roll_angle
-				// 1000 * dbg_values.setpoint_theta
+				1000 * roll_angle,
+				1000 * dbg_values.setpoint_theta
 				//(int32_t) (1000 * vcr.input_filtered), (int32_t) (1000 * dbg_values.current_o)
 			);
 
@@ -546,16 +547,25 @@ int main(void)
 			dbg_values.dt = dt;
 
 #if MOTOR_DIRECTION_PITCH == MOTOR_CW
-			float wheel_rpm_pitch = CTRL.last_esc_pitch.erpm / 22.9;
-#elif MOTOR_DIRECTION_PITCH == MOTOR_CCW
 			float wheel_rpm_pitch = CTRL.last_esc_pitch.erpm / -22.9;
+#elif MOTOR_DIRECTION_PITCH == MOTOR_CCW
+			float wheel_rpm_pitch = CTRL.last_esc_pitch.erpm / 22.9;
 #else
 #error "Invalid motor direction"
 #endif
 
-			float ground_speed_pitch = wheel_rpm_pitch / 60 * 6.28 * 0.28;
-
+#if MOTOR_DIRECTION_ROLL == MOTOR_CW
+			float wheel_rpm_roll = CTRL.last_esc_roll.erpm / -29.92;
+#elif MOTOR_DIRECTION_ROLL == MOTOR_CCW
 			float wheel_rpm_roll = CTRL.last_esc_roll.erpm / 29.92;
+#else
+#error "Invalid motor direction"
+#endif
+
+			dbg_values.pitch_rpm = wheel_rpm_pitch;
+			dbg_values.roll_rpm = wheel_rpm_roll;
+
+			float ground_speed_pitch = wheel_rpm_pitch / 60 * 6.28 * 0.28;
 
 
 			float sensor_gyro_pitch = CTRL.last_acc.gy;
@@ -573,21 +583,8 @@ int main(void)
 			float tau_pitch = pitch_reg_step(&pitch_reg, dt, pitch_angle, sensor_gyro_pitch, ground_speed_pitch);
 			float tau_roll = roll_reg_step(&roll_reg, dt, roll_angle, sensor_gyro_roll, wheel_rpm_roll);
 
-#if MOTOR_DIRECTION_PITCH == MOTOR_CW
-			float current_wanted_pitch = tau_pitch / 0.59; // see notes // what notes???
-#elif MOTOR_DIRECTION_ROLL == MOTOR_CCW
-			float current_wanted_pitch = tau_pitch / -0.59; // see notes
-#else
-#error "Invalid motor direction"
-#endif
-
-#if MOTOR_DIRECTION_ROLL == MOTOR_CW
-			float current_wanted_roll = tau_roll / 0.2; // TODO: guh // ?
-#elif MOTOR_DIRECTION_ROLL == MOTOR_CCW
-			float current_wanted_roll = tau_roll / -0.2; // TODO: guh
-#else
-#error "Invalid motor direction"
-#endif
+			float current_wanted_pitch = tau_pitch / 0.2;
+			float current_wanted_roll = tau_roll / 0.2;
 
 
 			dbg_values.current_wanted_pitch = current_wanted_pitch;
@@ -610,8 +607,23 @@ int main(void)
 			}
 
 
+#if MOTOR_DIRECTION_PITCH == MOTOR_CW
+			vesc_set_current(&vesc_pitch, -current_out_pitch);
+#elif MOTOR_DIRECTION_PITCH == MOTOR_CCW
 			vesc_set_current(&vesc_pitch, current_out_pitch);
+#else
+#error "Invalid motor direction"
+#endif
+
+#if MOTOR_DIRECTION_ROLL == MOTOR_CW
+			vesc_set_current(&vesc_roll, -current_out_roll);
+#elif MOTOR_DIRECTION_ROLL == MOTOR_CCW
 			vesc_set_current(&vesc_roll, current_out_roll);
+#else
+#error "Invalid motor direction"
+#endif
+
+
 
 			dbg_values.n_time_steps_since_last++;
 
