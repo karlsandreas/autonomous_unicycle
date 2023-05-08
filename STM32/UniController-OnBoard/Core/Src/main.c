@@ -186,12 +186,17 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 }
 
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart) {
-	if (huart == &UART_VESC_PITCH) {
-		vesc_uart_cb_rxcplt(&vesc_pitch, huart);
-	}
-	if (huart == &UART_VESC_ROLL) {
-		vesc_uart_cb_rxcplt(&vesc_roll, huart);
-	}
+	abort_vesc();
+}
+
+void abort_vesc() {
+	HAL_UART_Abort(&UART_VESC_PITCH);
+	vesc_pitch.tx_waiting = false;
+	vesc_pitch.rx_queued = false;
+
+	HAL_UART_Abort(&UART_VESC_ROLL);
+	vesc_roll.tx_waiting = false;
+	vesc_roll.rx_queued = false;
 }
 
 bool dead_mans_switch_activated() {

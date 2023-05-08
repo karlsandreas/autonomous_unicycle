@@ -132,7 +132,7 @@ void vesc_init(VESC *vesc, uint8_t vesc_id, UART_HandleTypeDef *vesc_uart, IRQn_
 	vesc->vesc_uart = vesc_uart;
 	vesc->uart_irq = uart_irq;
 
-	vesc->tx_waiting = 0;
+	vesc->tx_waiting = false;
 	vesc->rx_queued = false;
 
 	vesc->q = q;
@@ -151,7 +151,11 @@ void vesc_uart_cb_txcplt(VESC *vesc, UART_HandleTypeDef *huart) {
 }
 
 void vesc_start_recv(VESC *vesc) {
+	__disable_irq();
+
 	HAL_UART_Receive_IT(vesc->vesc_uart, vesc->rx_buf, UART_RXSZ);
+
+	__enable_irq();
 }
 
 void vesc_uart_cb_rxcplt(VESC *vesc, UART_HandleTypeDef *_huart) {
