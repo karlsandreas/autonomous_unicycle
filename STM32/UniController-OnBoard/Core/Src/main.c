@@ -335,19 +335,20 @@ float pitch_angle = 0.;
 float complementary_filter_gain = 1.;
 
 PitchRegulator pitch_reg = (PitchRegulator) {
-	.kp1 = 8,
-	.kd1 = 3,
+	.setpoint_theta_0 = -0.010,
+	.kp1 = 30,
+	.kd1 = 8,
 
-	.kp2 = -0.05,
+	.kp2 = 0.3,
 };
 
 RollRegulator roll_reg = (RollRegulator) {
-	.setpoint_theta_0 = -0.045,
+	.setpoint_theta_0 = -0.040,
 
 	.kp1 = -80,
 	.kd1 = -70,
 
-	.kp2 = 0.0004,
+	.kp2 = 0.0006,
 };
 
 #define MOTOR_CW 0
