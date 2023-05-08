@@ -197,6 +197,9 @@ void abort_vesc() {
 	HAL_UART_Abort(&UART_VESC_ROLL);
 	vesc_roll.tx_waiting = false;
 	vesc_roll.rx_queued = false;
+
+	vesc_start_recv(&vesc_pitch);
+	vesc_start_recv(&vesc_roll);
 }
 
 bool dead_mans_switch_activated() {
