@@ -185,21 +185,45 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 	}
 }
 
+int uart_error_count_pitch = 0;
+int uart_error_count_roll = 0;
+
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart) {
-	abort_vesc();
+	if (huart == &UART_VESC_PITCH) {
+		uart_error_count_pitch++;
+		vesc_pitch.cooldown = 3;
+
+		HAL_UART_Abort_IT(&UART_VESC_PITCH);
+		__HAL_UART_CLEAR_OREFLAG(&UART_VESC_PITCH);
+
+		vesc_pitch.tx_waiting = false;
+		vesc_pitch.rx_queued = false;
+	}
+	if (huart == &UART_VESC_ROLL) {
+		uart_error_count_roll++;
+		vesc_roll.cooldown = 3;
+
+		HAL_UART_Abort_IT(&UART_VESC_ROLL);
+		__HAL_UART_CLEAR_OREFLAG(&UART_VESC_ROLL);
+
+		vesc_roll.tx_waiting = false;
+		vesc_roll.rx_queued = false;
+	}
+	// abort_vesc();
 }
 
 void abort_vesc() {
-	HAL_UART_Abort(&UART_VESC_PITCH);
+	HAL_UART_Abort_IT(&UART_VESC_PITCH);
 	vesc_pitch.tx_waiting = false;
 	vesc_pitch.rx_queued = false;
 
-	HAL_UART_Abort(&UART_VESC_ROLL);
+	HAL_UART_Abort_IT(&UART_VESC_ROLL);
 	vesc_roll.tx_waiting = false;
 	vesc_roll.rx_queued = false;
-
+/*
 	vesc_start_recv(&vesc_pitch);
 	vesc_start_recv(&vesc_roll);
+*/
 }
 
 bool dead_mans_switch_activated() {
@@ -468,7 +492,7 @@ int main(void)
 
 			int dbglen = sprintf(
 				dbgbuf,
-				"msg = %4d, time steps = %4d, qsz = %4d, switch = %s, t = %8lu ms, "
+				"msg = %4d, nerr = %4dp/%4dr, time steps = %4d, qsz = %4d, switch = %s, t = %8lu ms, "
 				//"kp1 = %7.4f, kd1 = %7.4f, kp2 = %7.4f, setpoint_theta_0 = %7.4f, "
 				"ax = %7.4f, ay = %7.4f, az = %7.4f, "
 				"gx = %7.4f rad/s, gy = %7.4f rad/s, gz = %7.4f rad/s, "
@@ -479,7 +503,7 @@ int main(void)
 				//"theta_setpoint = %7.4f mrad, "
 				//"I (filtered) = %6ld mA, I (out) = %6ld mA"
 				"\r\n",
-				dbg_values.msg_idx, dbg_values.n_time_steps_since_last, queue_nelem(&MAIN_QUEUE), dead_mans ? "on" : "off", (int32_t) (us_since_startup() / 1000),
+				dbg_values.msg_idx, uart_error_count_pitch, uart_error_count_roll, dbg_values.n_time_steps_since_last, queue_nelem(&MAIN_QUEUE), dead_mans ? "on" : "off", (int32_t) (us_since_startup() / 1000),
 				//roll_reg.kp1, roll_reg.kd1, roll_reg.kp2, roll_reg.setpoint_theta_0,
 				CTRL.last_acc.ax, CTRL.last_acc.ay, CTRL.last_acc.az,
 				CTRL.last_acc.gx, CTRL.last_acc.gy, CTRL.last_acc.gz,
@@ -900,7 +924,7 @@ static void MX_USART2_UART_Init(void)
   huart2.Init.Parity = UART_PARITY_NONE;
   huart2.Init.Mode = UART_MODE_TX_RX;
   huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart2.Init.OverSampling = UART_OVERSAMPLING_8;
   if (HAL_UART_Init(&huart2) != HAL_OK)
   {
     Error_Handler();
@@ -933,7 +957,7 @@ static void MX_USART3_UART_Init(void)
   huart3.Init.Parity = UART_PARITY_NONE;
   huart3.Init.Mode = UART_MODE_TX_RX;
   huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart3.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart3.Init.OverSampling = UART_OVERSAMPLING_8;
   if (HAL_UART_Init(&huart3) != HAL_OK)
   {
     Error_Handler();

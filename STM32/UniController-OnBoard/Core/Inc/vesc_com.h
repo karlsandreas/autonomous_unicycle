@@ -34,6 +34,8 @@ typedef struct {
 	volatile uint8_t rx_data[RX_DATA_LEN];
 	volatile size_t rx_offset;
 	volatile bool rx_queued;
+
+	uint8_t cooldown;
 } VESC;
 
 void vesc_init(VESC *vesc, uint8_t vesc_id, UART_HandleTypeDef *vesc_uart, IRQn_Type uart_irq, Queue *q);
