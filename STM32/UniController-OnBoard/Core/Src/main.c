@@ -119,7 +119,7 @@ uint32_t ms_counter;
 
 #define ACC_FREQ 100
 #define VESC_FREQ 50
-#define DUMP_FREQ 50
+#define DUMP_FREQ 100
 #define STEP_FREQ 500
 
 // (will take many hours to overflow)
@@ -249,6 +249,8 @@ void dead_mans_switch_update_led() {
 }
 
 #define I2C_TIMEOUT 20
+
+#define ACC_SANITY 40
 
 // Puts the MPU6050 into active mode, with the appropriate CFGs from main.h set
 void setup_mpu(I2C_HandleTypeDef *i2c, uint16_t acc_addr) {
@@ -575,6 +577,12 @@ int main(void)
 			float acc_predicted_angle_pitch = -atan2(CTRL.last_acc.ax, CTRL.last_acc.az);
 			float acc_predicted_angle_roll = atan2(CTRL.last_acc.ay, CTRL.last_acc.az);
 
+			// Sanity check: sometimes the accelerometer gives bogus values, we shouldn't ever go over 1 radian in angle
+			if (fabs(acc_predicted_angle_pitch) > 1 || fabs(acc_predicted_angle_roll) > 1) {
+				acc_predicted_angle_pitch = pitch_angle;
+				acc_predicted_angle_roll = roll_angle;
+			}
+
 			float dgain = complementary_filter_gain * dt;
 			roll_angle = (1 - dgain) * roll_angle + dt * sensor_gyro_roll + dgain * acc_predicted_angle_roll;
 			pitch_angle = (1 - dgain) * pitch_angle + dt * sensor_gyro_pitch + dgain * acc_predicted_angle_pitch;
@@ -716,7 +724,9 @@ int main(void)
 #endif
 
 			AccData acc_data = msg.acc_data;
-			CTRL.last_acc = acc_data;
+			if (fabs(acc_data.ax) < ACC_SANITY && fabs(acc_data.ay) < ACC_SANITY && fabs(acc_data.az) < ACC_SANITY) {
+				CTRL.last_acc = acc_data;
+			}
 
 			break;
 		}
