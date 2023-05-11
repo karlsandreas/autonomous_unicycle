@@ -25,9 +25,9 @@ INIT_STATE_R = SimulationState_Roll(
 )
 
 DEFAULT_PARAMETERS = SimulationParameters(
-    chassi_mass= 3.0,
+    chassi_mass=3.0,
     pitch_wheel_mass= 9.292,
-    roll_wheel_mass= 4.0,
+    roll_wheel_mass= 8.0,
     yaw_wheel_mass= 0.0,
     
     pitch_wheel_rad= 0.28,
