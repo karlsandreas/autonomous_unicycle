@@ -19,6 +19,7 @@ float roll_reg_step(RollRegulator *roll_reg, float dt, float theta, float theta_
 
 // Nested, x'-P θ-PD
 typedef struct {
+	float setpoint_speed;
 	float setpoint_theta_0;
 	float kp1, kd1; // PD for pitch angle θ
 	float kp2; // P for x'

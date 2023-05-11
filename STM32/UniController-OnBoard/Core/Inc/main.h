@@ -73,6 +73,8 @@ void abort_vesc(void);
 #define DEADMAN_LED_GPIO_Port GPIOC
 #define LED1_Pin GPIO_PIN_12
 #define LED1_GPIO_Port GPIOC
+#define CONTROLLER_PWM_Pin GPIO_PIN_8
+#define CONTROLLER_PWM_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 
 

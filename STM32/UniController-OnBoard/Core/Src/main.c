@@ -125,6 +125,9 @@ uint32_t ms_counter;
 // (will take many hours to overflow)
 uint32_t scheduler_ctr = 0;
 
+float controller_lp_tau = 0.3;
+float controller_val_pitch = 0;
+
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if (htim == &TIM_REALTIME) { // TIM_REALTIME ticks once every us, elapses once every ms
 		ms_counter++;
@@ -146,7 +149,18 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		if (scheduler_ctr % (SCHEDULER_FREQ / STEP_FREQ) == 0) {
 			queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_TIME_STEP });
 		}
+
+		float controller_val_instant = HAL_GPIO_ReadPin(CONTROLLER_PWM_GPIO_Port, CONTROLLER_PWM_Pin);
+		controller_val_pitch = (1 - 1 / (controller_lp_tau * SCHEDULER_FREQ)) * controller_val_pitch
+				+ (1 / (controller_lp_tau * SCHEDULER_FREQ)) * controller_val_instant;
 	}
+}
+
+float controller_mapped() {
+	if (controller_val_pitch < 0.04) {
+		return 0;
+	}
+	return (controller_val_pitch - 0.1) / (0.033333);
 }
 
 
@@ -337,15 +351,16 @@ float pitch_angle = 0.;
 float complementary_filter_gain = 1.;
 
 PitchRegulator pitch_reg = (PitchRegulator) {
-	.setpoint_theta_0 = -0.010,
+	.setpoint_speed = 0.,
+	.setpoint_theta_0 = -0.030,
 	.kp1 = 30,
 	.kd1 = 8,
 
-	.kp2 = 0.3,
+	.kp2 = 0.2,
 };
 
 RollRegulator roll_reg = (RollRegulator) {
-	.setpoint_theta_0 = -0.040,
+	.setpoint_theta_0 = -0.010,
 
 	.kp1 = -80,
 	.kd1 = -70,
@@ -505,6 +520,7 @@ int main(void)
 				"theta_pitch = %7.5fmrad, "
 				"theta_roll_comp = %7.4f mrad, "
 				"theta_setpoint = %7.4f mrad, "
+				"ctrl duty = %7.4f%%, ctrl amount = %7.4f "
 				//"I (filtered) = %6ld mA, I (out) = %6ld mA"
 				"\r\n",
 				dbg_values.msg_idx, uart_error_count_pitch, uart_error_count_roll, dbg_values.n_time_steps_since_last, queue_nelem(&MAIN_QUEUE), dead_mans ? "on" : "off", (int32_t) (us_since_startup() / 1000),
@@ -516,7 +532,8 @@ int main(void)
 				1000 * pitch_angle,
 				// 1000 * CTRL.st.x5, 1000 * CTRL.st.x6
 				1000 * roll_angle,
-				1000 * dbg_values.setpoint_theta
+				1000 * dbg_values.setpoint_theta,
+				100 * controller_val_pitch, controller_mapped()
 				//(int32_t) (1000 * vcr.input_filtered), (int32_t) (1000 * dbg_values.current_o)
 			);
 
@@ -588,6 +605,8 @@ int main(void)
 			pitch_angle = (1 - dgain) * pitch_angle + dt * sensor_gyro_pitch + dgain * acc_predicted_angle_pitch;
 
 			dbg_values.setpoint_theta = roll_reg_setpoint_theta(&roll_reg, dt, roll_angle, sensor_gyro_roll, wheel_rpm_roll);
+
+			pitch_reg.setpoint_speed = controller_mapped() * 0.2;
 
 			float tau_pitch = pitch_reg_step(&pitch_reg, dt, pitch_angle, sensor_gyro_pitch, ground_speed_pitch);
 			float tau_roll = roll_reg_step(&roll_reg, dt, roll_angle, sensor_gyro_roll, wheel_rpm_roll);
@@ -1024,6 +1043,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(DEADMAN_SW_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : CONTROLLER_PWM_Pin */
+  GPIO_InitStruct.Pin = CONTROLLER_PWM_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(CONTROLLER_PWM_GPIO_Port, &GPIO_InitStruct);
 
 }
 

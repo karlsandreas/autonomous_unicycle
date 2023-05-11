@@ -47,7 +47,7 @@ float roll_reg_step(RollRegulator *roll_reg, float dt, float theta, float theta_
 }
 
 float pitch_reg_step(PitchRegulator *pitch_reg, float dt, float theta, float theta_d, float ground_speed) {
-	float setpoint_theta = pitch_reg->setpoint_theta_0 + pitch_reg->kp2 * ground_speed;
+	float setpoint_theta = pitch_reg->setpoint_theta_0 + pitch_reg->kp2 * (ground_speed - pitch_reg->setpoint_speed);
 
 	float error = setpoint_theta - theta;
 
