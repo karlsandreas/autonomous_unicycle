@@ -8,6 +8,11 @@
 
 #include "queue.h"
 #include "cmsis_gcc.h"
+#include "main.h"
+
+// Set a breakpoint here to debug queue filling up
+void queue_half_full() {
+}
 
 void queue_init(Queue *q) {
 	q->read_idx = 0;
@@ -17,7 +22,7 @@ void queue_init(Queue *q) {
 }
 
 size_t queue_nelem(Queue *q) {
-	return (q->write_idx - q->read_idx) % CHANNEL_SIZE;
+	return (CHANNEL_SIZE + q->write_idx - q->read_idx) % CHANNEL_SIZE;
 }
 
 bool queue_can_put(Queue *q) {
@@ -40,6 +45,10 @@ bool queue_put(Queue *q, Message msg) {
 
 	q->is_writing = false;
 	__enable_irq();
+
+	if (queue_nelem(q) > CHANNEL_SIZE / 2) {
+		queue_half_full();
+	}
 
 	return true;
 }

@@ -132,10 +132,12 @@ void vesc_init(VESC *vesc, uint8_t vesc_id, UART_HandleTypeDef *vesc_uart, IRQn_
 	vesc->vesc_uart = vesc_uart;
 	vesc->uart_irq = uart_irq;
 
-	vesc->tx_waiting = 0;
+	vesc->tx_waiting = false;
 	vesc->rx_queued = false;
 
 	vesc->q = q;
+
+	vesc->cooldown = 0;
 
 	vesc_start_recv(vesc);
 }
@@ -151,7 +153,16 @@ void vesc_uart_cb_txcplt(VESC *vesc, UART_HandleTypeDef *huart) {
 }
 
 void vesc_start_recv(VESC *vesc) {
+	if (vesc->cooldown > 0) {
+		vesc->cooldown--;
+		return;
+	}
+
+	__disable_irq();
+
 	HAL_UART_Receive_IT(vesc->vesc_uart, vesc->rx_buf, UART_RXSZ);
+
+	__enable_irq();
 }
 
 void vesc_uart_cb_rxcplt(VESC *vesc, UART_HandleTypeDef *_huart) {
@@ -165,7 +176,7 @@ void vesc_uart_cb_rxcplt(VESC *vesc, UART_HandleTypeDef *_huart) {
 	}
 
 	if (!vesc->rx_queued) {
-		queue_put(vesc->q, (Message) { .ty = MSG_VESC_UART_GOT_DATA });
+		queue_put(vesc->q, (Message) { .ty = MSG_VESC_UART_GOT_DATA, .vesc_id = vesc->vesc_id });
 		vesc->rx_queued = true;
 	}
 
@@ -376,6 +387,12 @@ void vesc_queue_packet(VESC *vesc, uint8_t *content, size_t len, size_t response
 }
 
 void vesc_transmit_and_recv(VESC *vesc) {
+	if (vesc->cooldown > 0) {
+		vesc->cooldown--;
+		vesc->current_offset = 0;
+		return;
+	}
+
 	if (vesc->current_offset == 0) {
 		return;
 	}

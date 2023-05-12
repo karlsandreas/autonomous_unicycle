@@ -109,7 +109,7 @@ VESC_Current_Reg vcr_pitch = (VESC_Current_Reg) {
 	.k_p = 1.,
 };
 VESC_Current_Reg vcr_roll = (VESC_Current_Reg) {
-	.k_p = 1.,
+	.k_p = 0.1,
 };
 
 uint32_t ms_counter;
@@ -119,11 +119,14 @@ uint32_t ms_counter;
 
 #define ACC_FREQ 100
 #define VESC_FREQ 50
-#define DUMP_FREQ 50
+#define DUMP_FREQ 100
 #define STEP_FREQ 500
 
 // (will take many hours to overflow)
 uint32_t scheduler_ctr = 0;
+
+float controller_lp_tau = 0.3;
+float controller_val_pitch = 0;
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if (htim == &TIM_REALTIME) { // TIM_REALTIME ticks once every us, elapses once every ms
@@ -146,7 +149,18 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		if (scheduler_ctr % (SCHEDULER_FREQ / STEP_FREQ) == 0) {
 			queue_put(&MAIN_QUEUE, (Message) { .ty = MSG_TIME_STEP });
 		}
+
+		float controller_val_instant = HAL_GPIO_ReadPin(CONTROLLER_PWM_GPIO_Port, CONTROLLER_PWM_Pin);
+		controller_val_pitch = (1 - 1 / (controller_lp_tau * SCHEDULER_FREQ)) * controller_val_pitch
+				+ (1 / (controller_lp_tau * SCHEDULER_FREQ)) * controller_val_instant;
 	}
+}
+
+float controller_mapped() {
+	if (controller_val_pitch < 0.04) {
+		return 0;
+	}
+	return (controller_val_pitch - 0.1) / (0.033333);
 }
 
 
@@ -185,13 +199,45 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 	}
 }
 
+int uart_error_count_pitch = 0;
+int uart_error_count_roll = 0;
+
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart) {
 	if (huart == &UART_VESC_PITCH) {
-		vesc_uart_cb_rxcplt(&vesc_pitch, huart);
+		uart_error_count_pitch++;
+		vesc_pitch.cooldown = 3;
+
+		HAL_UART_Abort_IT(&UART_VESC_PITCH);
+		__HAL_UART_CLEAR_OREFLAG(&UART_VESC_PITCH);
+
+		vesc_pitch.tx_waiting = false;
+		vesc_pitch.rx_queued = false;
 	}
 	if (huart == &UART_VESC_ROLL) {
-		vesc_uart_cb_rxcplt(&vesc_roll, huart);
+		uart_error_count_roll++;
+		vesc_roll.cooldown = 3;
+
+		HAL_UART_Abort_IT(&UART_VESC_ROLL);
+		__HAL_UART_CLEAR_OREFLAG(&UART_VESC_ROLL);
+
+		vesc_roll.tx_waiting = false;
+		vesc_roll.rx_queued = false;
 	}
+	// abort_vesc();
+}
+
+void abort_vesc() {
+	HAL_UART_Abort_IT(&UART_VESC_PITCH);
+	vesc_pitch.tx_waiting = false;
+	vesc_pitch.rx_queued = false;
+
+	HAL_UART_Abort_IT(&UART_VESC_ROLL);
+	vesc_roll.tx_waiting = false;
+	vesc_roll.rx_queued = false;
+/*
+	vesc_start_recv(&vesc_pitch);
+	vesc_start_recv(&vesc_roll);
+*/
 }
 
 bool dead_mans_switch_activated() {
@@ -217,6 +263,8 @@ void dead_mans_switch_update_led() {
 }
 
 #define I2C_TIMEOUT 20
+
+#define ACC_SANITY 40
 
 // Puts the MPU6050 into active mode, with the appropriate CFGs from main.h set
 void setup_mpu(I2C_HandleTypeDef *i2c, uint16_t acc_addr) {
@@ -296,24 +344,35 @@ struct {
 
 } CTRL;
 
+// For complementary filter
 float roll_angle = 0.;
+float pitch_angle = 0.;
 
-RollRegulator roll_reg = (RollRegulator) {
-	.setpoint_theta_0 = -0.04,
+float complementary_filter_gain = 1.;
 
-	.kp1 = -80,
-	.kd1 = -90,
+PitchRegulator pitch_reg = (PitchRegulator) {
+	.setpoint_speed = 0.,
+	.setpoint_theta_0 = -0.030,
+	.kp1 = 30,
+	.kd1 = 8,
 
-	.kp2 = 0.0001,
+	.kp2 = 0.2,
 };
 
-const float Q_T = 80.0;
-const float Q_W = 100.0;
+RollRegulator roll_reg = (RollRegulator) {
+	.setpoint_theta_0 = -0.010,
+
+	.kp1 = -80,
+	.kd1 = -70,
+
+	.kp2 = 0.0006,
+};
 
 #define MOTOR_CW 0
 #define MOTOR_CCW 1
 
-#define MOTOR_DIRECTION MOTOR_CCW
+#define MOTOR_DIRECTION_PITCH MOTOR_CCW
+#define MOTOR_DIRECTION_ROLL MOTOR_CW
 
 // #define QUEUE_DEBUG
 
@@ -389,6 +448,7 @@ int main(void)
 		float setpoint_theta;
 
 		float wheel_pos_d;
+		float pitch_rpm, roll_rpm;
 		unsigned int msgs_since_last;
 
 		int msg_idx, n_time_steps_since_last;
@@ -451,34 +511,39 @@ int main(void)
 
 			int dbglen = sprintf(
 				dbgbuf,
-				"msg = %4d, time steps = %4d, qsz = %4d, switch = %s, t = %8lu ms, "
+				"msg = %4d, nerr = %4dp/%4dr, time steps = %4d, qsz = %4d, switch = %s, t = %8lu ms, "
 				//"kp1 = %7.4f, kd1 = %7.4f, kp2 = %7.4f, setpoint_theta_0 = %7.4f, "
 				"ax = %7.4f, ay = %7.4f, az = %7.4f, "
 				"gx = %7.4f rad/s, gy = %7.4f rad/s, gz = %7.4f rad/s, "
-				"erpm_pitch = %4d, erpm_roll = %4d, "
+				"rpm_pitch = %7.4f, rpm_roll = %7.4f, "
 				"I_w_pitch = %7.4f A, I_w_roll = %7.4f A, "
-				//"theta_pitch = %7.5fmrad, theta_d_pitch = %7.5fmrad/s, "
-				// "theta_roll = %7.5fmrad, theta_d_roll = %7.5fmrad/s "
+				"theta_pitch = %7.5fmrad, "
 				"theta_roll_comp = %7.4f mrad, "
 				"theta_setpoint = %7.4f mrad, "
+				"ctrl duty = %7.4f%%, ctrl amount = %7.4f "
 				//"I (filtered) = %6ld mA, I (out) = %6ld mA"
 				"\r\n",
-				dbg_values.msg_idx, dbg_values.n_time_steps_since_last, queue_nelem(&MAIN_QUEUE), dead_mans ? "on" : "off", (int32_t) (us_since_startup() / 1000),
+				dbg_values.msg_idx, uart_error_count_pitch, uart_error_count_roll, dbg_values.n_time_steps_since_last, queue_nelem(&MAIN_QUEUE), dead_mans ? "on" : "off", (int32_t) (us_since_startup() / 1000),
 				//roll_reg.kp1, roll_reg.kd1, roll_reg.kp2, roll_reg.setpoint_theta_0,
 				CTRL.last_acc.ax, CTRL.last_acc.ay, CTRL.last_acc.az,
 				CTRL.last_acc.gx, CTRL.last_acc.gy, CTRL.last_acc.gz,
-				(int) CTRL.last_esc_pitch.erpm, (int) CTRL.last_esc_roll.erpm,
+				dbg_values.pitch_rpm, dbg_values.roll_rpm,
 				dbg_values.current_wanted_pitch, dbg_values.current_wanted_roll,
+				1000 * pitch_angle,
 				// 1000 * CTRL.st.x5, 1000 * CTRL.st.x6
 				1000 * roll_angle,
-				1000 * dbg_values.setpoint_theta
+				1000 * dbg_values.setpoint_theta,
+				100 * controller_val_pitch, controller_mapped()
 				//(int32_t) (1000 * vcr.input_filtered), (int32_t) (1000 * dbg_values.current_o)
 			);
+
+			CDC_Transmit_FS((uint8_t *) dbgbuf, dbglen);
+
+
 			dbg_values.msg_idx++;
 			dbg_values.n_time_steps_since_last = 0;
 
 
-			CDC_Transmit_FS((uint8_t *) dbgbuf, dbglen);
 			// Use below if you are debug printing other things
 			// HAL_UART_Transmit(&huart3, (uint8_t *) dbgbuf, dbglen, 10000);
 
@@ -501,58 +566,57 @@ int main(void)
 
 			dbg_values.dt = dt;
 
-#if MOTOR_DIRECTION == MOTOR_CW
-			float wheel_rpm_pitch = CTRL.last_esc_pitch.erpm / 22.9;
-#elif MOTOR_DIRECTION == MOTOR_CCW
+#if MOTOR_DIRECTION_PITCH == MOTOR_CW
 			float wheel_rpm_pitch = CTRL.last_esc_pitch.erpm / -22.9;
+#elif MOTOR_DIRECTION_PITCH == MOTOR_CCW
+			float wheel_rpm_pitch = CTRL.last_esc_pitch.erpm / 22.9;
 #else
 #error "Invalid motor direction"
 #endif
 
-			float wheel_rpm_roll = CTRL.last_esc_roll .erpm / 29.92;
+#if MOTOR_DIRECTION_ROLL == MOTOR_CW
+			float wheel_rpm_roll = CTRL.last_esc_roll.erpm / -29.92;
+#elif MOTOR_DIRECTION_ROLL == MOTOR_CCW
+			float wheel_rpm_roll = CTRL.last_esc_roll.erpm / 29.92;
+#else
+#error "Invalid motor direction"
+#endif
 
-			CTRL.q_t.m11 = Q_T * dt*dt*dt*dt / 4;
-			CTRL.q_t.m12 = Q_T * dt*dt*dt / 2;
-			CTRL.q_t.m21 = Q_T * dt*dt*dt / 2;
-			CTRL.q_t.m22 = Q_T * dt*dt / 2;
+			dbg_values.pitch_rpm = wheel_rpm_pitch;
+			dbg_values.roll_rpm = wheel_rpm_roll;
 
-			CTRL.q_w.m11 = Q_W * dt*dt*dt*dt / 4;
-			CTRL.q_w.m12 = Q_W * dt*dt*dt / 2;
-			CTRL.q_w.m21 = Q_W * dt*dt*dt / 2;
-			CTRL.q_w.m22 = Q_W * dt*dt / 2;
+			float ground_speed_pitch = wheel_rpm_pitch / 60 * 6.28 * 0.28;
+
 
 			float sensor_gyro_pitch = CTRL.last_acc.gy;
 			float sensor_gyro_roll = CTRL.last_acc.gx;
 
-			float acc_predicted_angle = atan2(CTRL.last_acc.ay, CTRL.last_acc.az);
+			float acc_predicted_angle_pitch = -atan2(CTRL.last_acc.ax, CTRL.last_acc.az);
+			float acc_predicted_angle_roll = atan2(CTRL.last_acc.ay, CTRL.last_acc.az);
 
-			float gain = 1 * dt;
-			roll_angle = (1 - gain) * roll_angle + dt * sensor_gyro_roll + gain * acc_predicted_angle;
+			// Sanity check: sometimes the accelerometer gives bogus values, we shouldn't ever go over 1 radian in angle
+			if (fabs(acc_predicted_angle_pitch) > 1 || fabs(acc_predicted_angle_roll) > 1) {
+				acc_predicted_angle_pitch = pitch_angle;
+				acc_predicted_angle_roll = roll_angle;
+			}
 
-			//kalman_filter_predict(0, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w, &CTRL.covs);
-			//roll_kalman_filter_predict(0, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w, &CTRL.covs);
+			float dgain = complementary_filter_gain * dt;
+			roll_angle = (1 - dgain) * roll_angle + dt * sensor_gyro_roll + dgain * acc_predicted_angle_roll;
+			pitch_angle = (1 - dgain) * pitch_angle + dt * sensor_gyro_pitch + dgain * acc_predicted_angle_pitch;
 
 			dbg_values.setpoint_theta = roll_reg_setpoint_theta(&roll_reg, dt, roll_angle, sensor_gyro_roll, wheel_rpm_roll);
 
-			float tau_pitch = LookaheadSpeedRegulator(0, CTRL.st.x1, CTRL.st.x2, CTRL.st.x4, dt);
+			pitch_reg.setpoint_speed = controller_mapped() * 0.2;
+
+			float tau_pitch = pitch_reg_step(&pitch_reg, dt, pitch_angle, sensor_gyro_pitch, ground_speed_pitch);
 			float tau_roll = roll_reg_step(&roll_reg, dt, roll_angle, sensor_gyro_roll, wheel_rpm_roll);
 
-#if MOTOR_DIRECTION == MOTOR_CW
-			float current_wanted_pitch = tau_pitch / 0.59; // see notes
-			float current_wanted_roll = tau_roll / 0.5; // TODO: guh
-#elif MOTOR_DIRECTION == MOTOR_CCW
-			float current_wanted_pitch = tau_pitch / -0.59; // see notes
-			float current_wanted_roll = tau_roll / -0.5; // TODO: guh
-#else
-#error "Invalid motor direction"
-#endif
+			float current_wanted_pitch = tau_pitch / 0.2;
+			float current_wanted_roll = tau_roll / 0.2;
 
 
 			dbg_values.current_wanted_pitch = current_wanted_pitch;
 			dbg_values.current_wanted_roll = current_wanted_roll;
-
-			//kalman_filter_update(sensor_gyro_pitch, wheel_rpm_pitch, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w, &CTRL.covs, &CTRL.r_vals);
-			//roll_kalman_filter_update(sensor_gyro_roll, dt, &CTRL.st, &CTRL.q_t, &CTRL.q_w, &CTRL.covs, &CTRL.r_vals);
 
 			float current_out_pitch, current_out_roll;
 			if (dead_mans_switch_activated()) {
@@ -571,8 +635,23 @@ int main(void)
 			}
 
 
-			//vesc_set_current(&vesc_pitch, current_out_pitch);
+#if MOTOR_DIRECTION_PITCH == MOTOR_CW
+			vesc_set_current(&vesc_pitch, -current_out_pitch);
+#elif MOTOR_DIRECTION_PITCH == MOTOR_CCW
+			vesc_set_current(&vesc_pitch, current_out_pitch);
+#else
+#error "Invalid motor direction"
+#endif
+
+#if MOTOR_DIRECTION_ROLL == MOTOR_CW
+			vesc_set_current(&vesc_roll, -current_out_roll);
+#elif MOTOR_DIRECTION_ROLL == MOTOR_CCW
 			vesc_set_current(&vesc_roll, current_out_roll);
+#else
+#error "Invalid motor direction"
+#endif
+
+
 
 			dbg_values.n_time_steps_since_last++;
 
@@ -604,8 +683,12 @@ int main(void)
 			CDC_Transmit_FS((uint8_t *) dbgbuf, dbglen);
 #endif
 
-			vesc_got_data(&vesc_pitch);
-			vesc_got_data(&vesc_roll);
+			if (msg.vesc_id == VESC_PITCH_ID) {
+				vesc_got_data(&vesc_pitch);
+			}
+			if (msg.vesc_id == VESC_ROLL_ID) {
+				vesc_got_data(&vesc_roll);
+			}
 			break;
 		}
 
@@ -660,7 +743,9 @@ int main(void)
 #endif
 
 			AccData acc_data = msg.acc_data;
-			CTRL.last_acc = acc_data;
+			if (fabs(acc_data.ax) < ACC_SANITY && fabs(acc_data.ay) < ACC_SANITY && fabs(acc_data.az) < ACC_SANITY) {
+				CTRL.last_acc = acc_data;
+			}
 
 			break;
 		}
@@ -881,7 +966,7 @@ static void MX_USART2_UART_Init(void)
   huart2.Init.Parity = UART_PARITY_NONE;
   huart2.Init.Mode = UART_MODE_TX_RX;
   huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart2.Init.OverSampling = UART_OVERSAMPLING_8;
   if (HAL_UART_Init(&huart2) != HAL_OK)
   {
     Error_Handler();
@@ -914,7 +999,7 @@ static void MX_USART3_UART_Init(void)
   huart3.Init.Parity = UART_PARITY_NONE;
   huart3.Init.Mode = UART_MODE_TX_RX;
   huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart3.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart3.Init.OverSampling = UART_OVERSAMPLING_8;
   if (HAL_UART_Init(&huart3) != HAL_OK)
   {
     Error_Handler();
@@ -958,6 +1043,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(DEADMAN_SW_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : CONTROLLER_PWM_Pin */
+  GPIO_InitStruct.Pin = CONTROLLER_PWM_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(CONTROLLER_PWM_GPIO_Port, &GPIO_InitStruct);
 
 }
 
