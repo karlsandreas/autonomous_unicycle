@@ -120,7 +120,7 @@ uint32_t ms_counter;
 #define ACC_FREQ 100
 #define VESC_FREQ 50
 #define DUMP_FREQ 100
-#define STEP_FREQ 500
+#define STEP_FREQ 100
 
 // (will take many hours to overflow)
 uint32_t scheduler_ctr = 0;
@@ -203,9 +203,30 @@ int uart_error_count_pitch = 0;
 int uart_error_count_roll = 0;
 
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart) {
+	char *errname = NULL;
+	if (huart->ErrorCode & HAL_UART_ERROR_PE) {
+		errname = "ERR PARITY\r\n";
+	}
+	if (huart->ErrorCode & HAL_UART_ERROR_NE) {
+		errname = "ERR NOISE\r\n";
+	}
+	if (huart->ErrorCode & HAL_UART_ERROR_FE) {
+		errname = "ERR FRAME\r\n";
+	}
+	if (huart->ErrorCode & HAL_UART_ERROR_ORE) {
+		errname = "ERR OVERRUN\r\n";
+	}
+	if (huart->ErrorCode & HAL_UART_ERROR_DMA) {
+		errname = "ERR DMA\r\n";
+	}
+	if (errname != NULL) {
+		CDC_Transmit_FS((uint8_t *) errname, strlen(errname));
+	}
+
 	if (huart == &UART_VESC_PITCH) {
+
 		uart_error_count_pitch++;
-		vesc_pitch.cooldown = 3;
+		vesc_pitch.cooldown = 1;
 
 		HAL_UART_Abort_IT(&UART_VESC_PITCH);
 		__HAL_UART_CLEAR_OREFLAG(&UART_VESC_PITCH);
@@ -215,7 +236,7 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart) {
 	}
 	if (huart == &UART_VESC_ROLL) {
 		uart_error_count_roll++;
-		vesc_roll.cooldown = 3;
+		vesc_roll.cooldown = 1;
 
 		HAL_UART_Abort_IT(&UART_VESC_ROLL);
 		__HAL_UART_CLEAR_OREFLAG(&UART_VESC_ROLL);
@@ -344,19 +365,23 @@ struct {
 
 } CTRL;
 
+#define PITCH_WHEEL_RAD (0.28)
+
 // For complementary filter
 float roll_angle = 0.;
 float pitch_angle = 0.;
+float pitch_ground_speed = 0.;
 
 float complementary_filter_gain = 1.;
+float complementary_filter_gain_speed = 4.;
 
 PitchRegulator pitch_reg = (PitchRegulator) {
 	.setpoint_speed = 0.,
-	.setpoint_theta_0 = -0.030,
-	.kp1 = 30,
-	.kd1 = 8,
+	.setpoint_theta_0 = -0.022,
+	.kp1 = 36,
+	.kd1 = 4,
 
-	.kp2 = 0.2,
+	.kp2 = 0.15,
 };
 
 RollRegulator roll_reg = (RollRegulator) {
@@ -496,16 +521,6 @@ int main(void)
 			break;
 
 		case MSG_SEND_DEBUG: {
-			// TODO: Send state of kalman filter and controller
-
-			/*
-			char ctrl_hex[2 * sizeof(CTRL) + 2];
-			char *ctrl_data = (void*) &CTRL;
-			for (int i = 0; i < sizeof(CTRL); i++) {
-				write_hex(&ctrl_hex[2*i], ctrl_data[i]);
-			}
-			ctrl_hex[2 * sizeof(CTRL)] = 0;
-			*/
 
 			bool dead_mans = dead_mans_switch_activated();
 
@@ -519,6 +534,7 @@ int main(void)
 				"I_w_pitch = %7.4f A, I_w_roll = %7.4f A, "
 				"theta_pitch = %7.5fmrad, "
 				"theta_roll_comp = %7.4f mrad, "
+				"ground_speed = %7.4f mm/s, "
 				"theta_setpoint = %7.4f mrad, "
 				"ctrl duty = %7.4f%%, ctrl amount = %7.4f "
 				//"I (filtered) = %6ld mA, I (out) = %6ld mA"
@@ -532,6 +548,7 @@ int main(void)
 				1000 * pitch_angle,
 				// 1000 * CTRL.st.x5, 1000 * CTRL.st.x6
 				1000 * roll_angle,
+				pitch_ground_speed * 1000,
 				1000 * dbg_values.setpoint_theta,
 				100 * controller_val_pitch, controller_mapped()
 				//(int32_t) (1000 * vcr.input_filtered), (int32_t) (1000 * dbg_values.current_o)
@@ -585,8 +602,10 @@ int main(void)
 			dbg_values.pitch_rpm = wheel_rpm_pitch;
 			dbg_values.roll_rpm = wheel_rpm_roll;
 
-			float ground_speed_pitch = wheel_rpm_pitch / 60 * 6.28 * 0.28;
+			float ground_speed_pitch_lf = wheel_rpm_pitch / 60 * 6.28 * PITCH_WHEEL_RAD;
+			float ground_acc_hf = CTRL.last_acc.gy;
 
+			pitch_ground_speed = (1 - dt * complementary_filter_gain_speed) * pitch_ground_speed + dt * ground_acc_hf + dt * complementary_filter_gain_speed * ground_speed_pitch_lf;
 
 			float sensor_gyro_pitch = CTRL.last_acc.gy;
 			float sensor_gyro_roll = CTRL.last_acc.gx;
@@ -608,7 +627,7 @@ int main(void)
 
 			pitch_reg.setpoint_speed = controller_mapped() * 0.2;
 
-			float tau_pitch = pitch_reg_step(&pitch_reg, dt, pitch_angle, sensor_gyro_pitch, ground_speed_pitch);
+			float tau_pitch = pitch_reg_step(&pitch_reg, dt, pitch_angle, sensor_gyro_pitch, pitch_ground_speed);
 			float tau_roll = roll_reg_step(&roll_reg, dt, roll_angle, sensor_gyro_roll, wheel_rpm_roll);
 
 			float current_wanted_pitch = tau_pitch / 0.2;

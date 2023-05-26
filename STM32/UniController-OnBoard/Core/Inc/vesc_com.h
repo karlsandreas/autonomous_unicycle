@@ -15,7 +15,7 @@
 #include "queue.h"
 
 #define RX_DATA_LEN 1000
-#define UART_RXSZ 128
+#define UART_RXSZ 64
 
 typedef struct {
 	uint8_t vesc_id;

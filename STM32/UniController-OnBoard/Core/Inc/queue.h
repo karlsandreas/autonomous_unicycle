@@ -48,8 +48,8 @@ typedef struct {
 		MSG_GOT_ESC_DATA,
 	} ty;
 	union {
-		AccData acc_data;
-		EscData esc_data;
+		AccData acc_data; // MSG_GOT_ACC_DATA
+		EscData esc_data; // MSG_GOT_ESC_DATA
 		uint8_t vesc_id; // For MSG_VESC_UART_GOT_DATA
 	};
 } Message;
